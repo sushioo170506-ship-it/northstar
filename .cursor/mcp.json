@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "social-superpowers": {
+      "type": "http",
+      "url": "https://superpowers.social/mcp"
+    },
+    "socialcrawl": {
+      "command": "node",
+      "args": ["${userHome}/.cursor/skills/socialcrawl-mcp/dist/index.js"],
+      "env": {
+        "SOCIALCRAWL_API_KEY": "${SOCIALCRAWL_API_KEY}"
+      }
+    }
+  }
+}
