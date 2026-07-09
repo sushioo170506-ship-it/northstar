@@ -1,25 +1,50 @@
 ---
-description: Wcget Step 6 报告组装 Skill — 生成自包含 HTML 报告 + PNG 图片包。主编排器进入 Step 6 时读取本文件。
+description: Wcget Step 6 报告组装 Skill — 将正文+图表组装为多格式交付物：自包含 HTML + PNG，并按需导出 Word（公文/通用格式）与飞书文档。主编排器进入 Step 6 时读取本文件。
 globs:
 alwaysApply: false
 ---
 
 # Wcget-build: 输出最终文件
 
-将报告正文、SVG 图表和 SVG 表格组装为最终交付物。
+将报告正文、SVG 图表和 SVG 表格组装为最终交付物。支持多种输出形式：**HTML（默认）、PNG、Word（可选公文/通用格式）、飞书文档**。
 
 ## 输入
 
 - `research-workflow/output/report.md`（Step 4 产物，含图表引用）
 - `research-workflow/output/figures/`（Step 5 产物，所有 SVG）
 
+## 输出格式选择（执行前先确认）
+
+进入本 Step 时，先向用户确认要交付哪些格式（可多选）。未指定时**默认 HTML + PNG**。
+
+| 代号 | 格式 | 产物 | 适用场景 |
+|------|------|------|----------|
+| `html` | 自包含 HTML（默认） | `report.html` | 网页分享、公众号、在线预览 |
+| `png`  | PNG 图片包（默认） | `figures_png/*.png` | 嵌入 PPT/IM/文档 |
+| `docx` | Word 文档 | `report.docx` | 正式存档、公文流转、线下评审 |
+| `feishu` | 飞书云文档 | 飞书文档链接 / `report.feishu.md` | 团队协作、在线复核、评论 |
+
+Word 还需二次确认**模板**：`gongwen`（党政机关公文格式）或 `general`（通用商务/研报格式）。
+
+---
+
 ## 可调用工具（可选/可替换）
 
-> 原文使用 `build_html.py`（组装 HTML）与 `svg2png.py`（resvg-py，SVG→PNG）。在 Cursor 环境若无这些脚本，可由 Agent 直接编写等价 Python（如用 `cairosvg` / `resvg` / Playwright 截图完成 PNG 导出）；核心是满足下方样式规范与质量自检。
+> 原文使用 `build_html.py`（组装 HTML）与 `svg2png.py`（resvg-py，SVG→PNG）。在 Cursor 环境若无这些脚本，可由 Agent 编写等价 Python（`cairosvg` / `resvg` / Playwright 截图）。核心是满足样式规范与质量自检。
+
+| 目标 | 推荐工具 | 备选 |
+|------|---------|------|
+| HTML 组装 | `build_html.py` | Agent 直接生成自包含 HTML |
+| SVG→PNG | `svg2png.py`（resvg-py，2×） | cairosvg / resvg / Playwright |
+| Markdown→Word | `pandoc`（`--reference-doc` 载入模板） | `python-docx` 逐块构建 |
+| 图表入 Word | 先 SVG→PNG（≥300 DPI）再插入 | EMF（更清晰，需 libreoffice 转换）|
+| 飞书文档 | 飞书开放平台 API（`docx.v1` 块） / MCP | 导出飞书可导入的 Markdown |
+
+---
 
 ## 执行
 
-### 步骤 1：生成 HTML
+### 步骤 1：生成 HTML（`html`）
 
 使用 `build_html.py` 或等价脚本构建**自包含** HTML。
 
@@ -46,32 +71,107 @@ alwaysApply: false
 - 打印：专色保持，表格分页控制
 - 字体：Noto Sans SC / PingFang SC / sans-serif 栈
 
-### 步骤 2：生成 PNG
-
-将所有 SVG 转换为 PNG：
+### 步骤 2：生成 PNG（`png`）
 
 - 工具：`svg2png.py`（resvg-py）或等价（cairosvg / resvg / Playwright）
 - 超采样：2×
 - 中文字体：SimHei（自动注册）
 - 输出目录：`research-workflow/output/figures_png/`
 
+### 步骤 3：生成 Word（`docx`，可选）
+
+Word 无法内联 SVG——**先确保 PNG 已生成（依赖步骤 2）**，正文中的图表/表格引用转为插入 PNG。
+
+推荐路径：`pandoc report.md --reference-doc=<模板>.docx -o report.docx`；或用 `python-docx` 逐块构建以精确控制公文格式。图表统一用 ≥300 DPI PNG 居中插入，图题置于图下方、编号连续。
+
+#### 模板 A：`gongwen` — 党政机关公文格式（参照 GB/T 9704-2012）
+
+| 元素 | 规范 |
+|------|------|
+| 页面 | A4；上边距 37mm、下 35mm、左 28mm、右 26mm |
+| 版心 | 每页 22 行 × 每行 28 字 |
+| 大标题 | 方正小标宋简体 二号（约 22pt），居中，红色/黑色按用途 |
+| 一级标题 | 黑体 三号，用「一、」 |
+| 二级标题 | 楷体_GB2312 三号，用「（一）」 |
+| 三级标题 | 仿宋 三号加粗，用「1.」 |
+| 正文 | 仿宋_GB2312 三号（16pt），行距固定值 28–30pt，首行缩进 2 字 |
+| 数字/年份 | 阿拉伯数字用 Times New Roman |
+| 页码 | 单页右、双页左，四号宋体，页脚下沿上一行 |
+| 成文落款 | 署名与日期右对齐，日期用阿拉伯数字 |
+| 图表 | 图题「图1 …」居中于图下；表题「表1 …」居中于表上；三线表优先 |
+
+> 公文格式以「判断驱动研报」呈现时，可保留研报的判断句小标题，但字体字号、缩进、行距、页边距、页码须严格套用上表；若用户要求"纯正式公文"，把判断句小标题改为规范的「一、（一）1.」层级序号。
+
+#### 模板 B：`general` — 通用商务/研报格式
+
+| 元素 | 规范 |
+|------|------|
+| 页面 | A4；上下 2.54cm、左右 3.17cm（Word 默认适度收窄） |
+| 大标题 | 思源黑体/微软雅黑 加粗 20–22pt，居中 |
+| 章节标题 | 加粗 15–16pt，可带主题色（与 HTML 蓝一致）|
+| 正文 | 思源宋体/宋体 10.5–11pt，行距 1.5，两端对齐 |
+| 关键数字 | 加粗，可主题色高亮 |
+| 图表 | PNG 居中，图题在下、灰色小字含数据来源 |
+| 页眉/页脚 | 页眉报告名，页脚页码「第 X 页 / 共 Y 页」 |
+| 封面（可选） | 标题 + 副标题 + 日期 + 数据截止日 + 免责声明 |
+
+### 步骤 4：生成飞书文档（`feishu`，可选）
+
+两种落地方式，按环境可用性择一：
+
+**方式 1：飞书开放平台 API（推荐，可直接成云文档）**
+- 前置：应用凭证（App ID/Secret）+ 目标文件夹 token；若无凭证，提示用户在 Cursor 后台配置 Secret 或改用方式 2。
+- 用 `docx.v1` 创建文档，将正文按块类型写入：标题块（Heading1–3）、正文块（Text）、有序/无序列表块、代码块、引用块、图片块（先上传 PNG 拿到 image_key 再插入）、表格块（用飞书原生表格块，而非图片，便于在线编辑）。
+- Markdown→飞书块的映射：`#/##/###` → Heading1/2/3；`**加粗**` → 文本加粗样式；Markdown 表格 → 飞书表格块；`![](figures_png/*.png)` → 图片块。
+- 产出：返回飞书文档 URL 给用户。
+
+**方式 2：导出飞书可导入的 Markdown（无 API 凭证时的兜底）**
+- 生成 `report.feishu.md`：图表引用改为指向 `figures_png/*.png`（飞书导入本地图片更稳），表格保留标准 Markdown 表格（飞书导入会转为原生表格）。
+- 提示用户在飞书「新建文档 → 导入 Markdown」手动导入，或粘贴。
+
+> 无论哪种方式，飞书版本应保留：核心论点、评分表（用原生表格块，可在线复核）、图表、参考来源、以及一个「待跟进问题」清单块，方便团队直接在文档内评论。
+
+---
+
 ## 输出
 
 ```
 research-workflow/output/
-├── report.html                # 自包含 HTML（内联所有 SVG）
-├── report.md                  # 报告正文
+├── report.html                # html：自包含 HTML（内联所有 SVG）
+├── report.md                  # 报告正文（源）
+├── report.docx                # docx：Word（gongwen / general 模板）
+├── report.feishu.md           # feishu 方式2：飞书可导入 Markdown（方式1 则产出云文档链接）
 ├── figures/                   # SVG 矢量图
 │   ├── fig1_* ～ figN_*.svg
 │   └── table_01 ～ table_NN.svg
-└── figures_png/               # PNG 位图 (2×)
+└── figures_png/               # png：PNG 位图 (2×)，同时供 docx/feishu 插图复用
     └── *.png
 ```
 
+---
+
 ## 质量自检（交付前终检由主编排器 wcget.mdc 统一执行）
 
+### 通用
+- [ ] 用户选定的每种格式都已产出对应文件/链接
+- [ ] 中文字体在所有格式下正常渲染
+
+### HTML（`html`）
 - [ ] HTML 标签平衡（`<table>`, `<figure>`, `<section>` 开闭匹配）
 - [ ] 所有 SVG 内联于 HTML
 - [ ] 响应式 + 打印样式
-- [ ] PNG 全部转换成功（N/N）
-- [ ] 中文字体正常渲染
+
+### PNG（`png`）
+- [ ] PNG 全部转换成功（N/N），供 docx/feishu 复用
+
+### Word（`docx`）
+- [ ] 模板已确认（gongwen / general）
+- [ ] `gongwen`：字体/字号/行距/页边距/缩进/页码符合上表；三线表；图表 PNG ≥300 DPI
+- [ ] `general`：标题层级/正文行距/图题含数据来源
+- [ ] 全部图表/表格已从 SVG 引用替换为插入的 PNG（或原生表格）
+- [ ] 目录/页码正确，全文可正常打开无损坏
+
+### 飞书（`feishu`）
+- [ ] 方式1：文档创建成功并返回可访问 URL；评分表为原生表格块
+- [ ] 方式2：`report.feishu.md` 导入后标题/表格/图片正常
+- [ ] 保留「待跟进问题」块，便于团队评论复核

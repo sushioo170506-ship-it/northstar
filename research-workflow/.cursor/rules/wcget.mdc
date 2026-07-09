@@ -34,7 +34,7 @@ alwaysApply: false
 | 3 | `wcget-process.mdc` | 数据锚点法评分（维度→赋分→边界声明） | `output/research_data.md` | 评分矩阵追加写入 `research_data.md` |
 | 4 | `wcget-write.mdc` | 按大纲骨架 + 数据锚点撰写正文 | 大纲 + `research_data.md` | `output/report.md` |
 | 5 | `wcget-figure.mdc` | 数据→图表类型→SVG→风格收束 | `research_data.md` + 大纲锚点 | `output/figures/*.svg` |
-| 6 | `wcget-build.mdc` | 组装 HTML 终稿 + PNG 导出 | `report.md` + `figures/` | `output/report.html` + `figures_png/` |
+| 6 | `wcget-build.mdc` | 组装终稿：HTML+PNG，按需 Word（公文/通用）/ 飞书文档 | `report.md` + `figures/` | `output/report.html` + `figures_png/`（+ 按需 `report.docx` / 飞书链接）|
 
 路径均相对于仓库内 `research-workflow/`。规则文件位于 `.cursor/rules/`。
 
@@ -105,9 +105,11 @@ Step 6: Wcget-build    →  report.html + figures_png/*.png
 - 产出 `research-workflow/output/figures/*.svg`
 
 ### Step 6 — 组装
+- 进入前先确认输出格式（html/png 默认，可加 docx/feishu；docx 需选 gongwen/general 模板）
 - 自包含 HTML（SVG 内联）+ 响应式/打印样式
 - PNG 全部转换成功
-- 产出 `report.html` + `figures_png/`
+- 选定的每种格式均已产出对应文件/链接
+- 产出 `report.html` + `figures_png/`（+ 按需 `report.docx` / 飞书文档）
 
 ---
 
