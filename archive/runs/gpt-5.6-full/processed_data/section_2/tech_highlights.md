@@ -1,0 +1,4 @@
+- `max` reasoning effort: 更高推理计算预算（S1）
+- `ultra` mode: subagents 协同处理复杂任务（S1）
+- layered safeguards: model-level -> real-time classifiers -> account-level review（S1/S3）
+- cache policy: write 1.25x, read 90% discount, min life 30m（S1）

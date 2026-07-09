@@ -1,0 +1,23 @@
+{
+  "workflow_version": "1.0",
+  "generated_at": "2026-07-09T08:54:52.163122+00:00",
+  "model_name": "GPT-5.6",
+  "data_cutoff_date": "2026-07-09",
+  "source_snapshot_hash": "gpt56-full-run-20260709",
+  "artifact_list": [
+    "brief.json",
+    "outline.json",
+    "evidence_base.json",
+    "references.bib",
+    "section_mapping.json",
+    "asset_plan.json",
+    "writing_pack.json",
+    "draft.md",
+    "decision.json",
+    "review_report.json",
+    "revised_draft.md",
+    "final.md",
+    "final.pdf",
+    "executive_summary.md"
+  ]
+}

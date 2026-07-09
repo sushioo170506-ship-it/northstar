@@ -1,0 +1,5 @@
+model,input_price,output_price,source
+GPT-5.6 Sol,5,30,S1
+GPT-5.6 Terra,2.5,15,S1
+GPT-5.6 Luna release,1,6,S1
+GPT-5.6 Luna docs,0.75,4.5,S2

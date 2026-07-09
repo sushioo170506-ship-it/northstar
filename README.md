@@ -12,3 +12,39 @@ This repository is used to collect and organize:
 - Productivity Tools
 
 The goal is to build a reusable AI knowledge and automation system.
+
+## Workflow Docs
+
+- [External Model Research Workflow](./external-model-research-workflow.md)
+- [External Model Research Workflow Config](./external-model-research-workflow.yaml)
+- [External Model Research Skills](./skills/external-model-research/README.md)
+
+## Smoke Test
+
+- Run: `python3 scripts/run_external_model_workflow_smoke_test.py`
+- Or: `make smoke-test`
+
+## Full Example Run (GPT-5.6)
+
+- Run: `python3 scripts/run_external_model_workflow_gpt56_full.py`
+- Or: `make full-run`
+- Output: `archive/runs/gpt-5.6-full/`
+
+## One-Line Skill Invocation (Slash Style)
+
+- Direct:
+  - `python3 scripts/call_external_model_skill.py "/model-report GPT-5.6"`
+  - `python3 scripts/call_external_model_skill.py "/step4 GPT-5.6"`
+- Make targets:
+  - `make skill CMD="/model-report GPT-5.6"`
+  - `make skill-interactive`
+
+Supported slash commands:
+- `/model-report` or `/orchestrator`
+- `/step1` ... `/step7`
+- `/list` (show mapping), `/help`
+
+## Skills Docs Style Check
+
+- Run: `python3 scripts/check_external_model_skills_style.py`
+- Or: `make lint-skills`

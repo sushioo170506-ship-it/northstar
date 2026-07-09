@@ -1,0 +1,5 @@
+risk,severity,trigger,mitigation
+release_status_desync,medium,page update mismatch,use account-level availability as source of truth
+luna_price_mismatch,medium,1/6 vs 0.75/4.5,reconcile with billing exports
+independent_eval_gap,medium_high,lack of unified third-party reruns,run internal benchmark suite
+guardrail_false_positive,medium_high,dual-use prompt blocks,add fallback and human review

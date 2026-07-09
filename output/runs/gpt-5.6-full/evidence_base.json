@@ -1,0 +1,157 @@
+{
+  "evidence_items": [
+    {
+      "id": "ev_001",
+      "type": "official_doc",
+      "value": "GPT-5.6 family includes Sol, Terra, Luna",
+      "timestamp": "2026-06-26",
+      "source": "OpenAI product release",
+      "source_url": "https://openai.com/index/previewing-gpt-5-6-sol/",
+      "confidence": "A+"
+    },
+    {
+      "id": "ev_002",
+      "type": "cost_data",
+      "value": "Sol pricing: $5 input / $30 output per 1M tokens",
+      "timestamp": "2026-06-26",
+      "source": "OpenAI product release",
+      "source_url": "https://openai.com/index/previewing-gpt-5-6-sol/",
+      "confidence": "A+"
+    },
+    {
+      "id": "ev_003",
+      "type": "cost_data",
+      "value": "Terra pricing: $2.50 input / $15 output per 1M tokens",
+      "timestamp": "2026-06-26",
+      "source": "OpenAI product release",
+      "source_url": "https://openai.com/index/previewing-gpt-5-6-sol/",
+      "confidence": "A+"
+    },
+    {
+      "id": "ev_004",
+      "type": "cost_data",
+      "value": "Luna pricing appears as $1/$6 in release post; $0.75/$4.50 on docs snapshot",
+      "timestamp": "2026-07-09",
+      "source": "OpenAI release + models docs",
+      "source_url": "https://platform.openai.com/docs/models",
+      "confidence": "B"
+    },
+    {
+      "id": "ev_005",
+      "type": "official_doc",
+      "value": "Initial launch was limited preview to trusted partners via API/Codex",
+      "timestamp": "2026-06-26",
+      "source": "OpenAI product release",
+      "source_url": "https://openai.com/index/previewing-gpt-5-6-sol/",
+      "confidence": "A+"
+    },
+    {
+      "id": "ev_006",
+      "type": "official_doc",
+      "value": "Developer community update indicates public launch on July 9",
+      "timestamp": "2026-07-08",
+      "source": "OpenAI Developer Community update",
+      "source_url": "https://community.openai.com/t/introducing-gpt-5-6-series-sol-terra-and-luna-coming-july-9/1384931/28",
+      "confidence": "A"
+    },
+    {
+      "id": "ev_007",
+      "type": "official_doc",
+      "value": "Models page states GPT-5.6 available to select trusted partners in preview, broad availability coming soon",
+      "timestamp": "2026-07-09",
+      "source": "OpenAI API docs models page",
+      "source_url": "https://platform.openai.com/docs/models",
+      "confidence": "A"
+    },
+    {
+      "id": "ev_008",
+      "type": "benchmark",
+      "value": "OpenAI reports SOTA claim on Terminal-Bench 2.1 for Sol",
+      "timestamp": "2026-06-26",
+      "source": "OpenAI product release",
+      "source_url": "https://openai.com/index/previewing-gpt-5-6-sol/",
+      "confidence": "B"
+    },
+    {
+      "id": "ev_009",
+      "type": "official_doc",
+      "value": "Preparedness tracked categories: High in Biological/Chemical and Cybersecurity, below High in AI Self-Improvement",
+      "timestamp": "2026-06-26",
+      "source": "GPT-5.6 Preview System Card",
+      "source_url": "https://deploymentsafety.openai.com/gpt-5-6-preview",
+      "confidence": "A+"
+    },
+    {
+      "id": "ev_010",
+      "type": "official_doc",
+      "value": "Layered safeguards include model-level safeguards, real-time checks, and account-level review",
+      "timestamp": "2026-06-26",
+      "source": "GPT-5.6 Preview System Card",
+      "source_url": "https://deploymentsafety.openai.com/gpt-5-6-preview",
+      "confidence": "A+"
+    },
+    {
+      "id": "ev_011",
+      "type": "third_party_eval",
+      "value": "Reuters timeline reports expected broader rollout after government review",
+      "timestamp": "2026-07-07",
+      "source": "Reuters syndicated report",
+      "source_url": "https://www.investing.com/news/stock-market-news/openai-gets-us-approval-for-broad-gpt56-rollout-axios-reports-4780650",
+      "confidence": "B"
+    },
+    {
+      "id": "ev_012",
+      "type": "official_doc",
+      "value": "Help Center article exists but has limited extractable detail via public fetch",
+      "timestamp": "2026-07-09",
+      "source": "OpenAI Help Center",
+      "source_url": "https://help.openai.com/en/articles/20001325-a-preview-of-gpt-56-sol-terra-and-luna",
+      "confidence": "B"
+    }
+  ],
+  "claim_checks": [
+    {
+      "claim": "GPT-5.6 is a three-tier model family",
+      "independent_sources": 2,
+      "status": "verified"
+    },
+    {
+      "claim": "Pricing for Sol/Terra is stable across official channels",
+      "independent_sources": 2,
+      "status": "verified"
+    },
+    {
+      "claim": "Luna pricing is unambiguous in public docs",
+      "independent_sources": 2,
+      "status": "conflicted"
+    },
+    {
+      "claim": "Public launch on 2026-07-09 is completed globally",
+      "independent_sources": 2,
+      "status": "partially_verified"
+    }
+  ],
+  "confidence_summary": {
+    "counts": {
+      "A+": 5,
+      "A": 2,
+      "B": 5,
+      "C": 0,
+      "D": 0
+    },
+    "ap_a_b_ratio": 1.0,
+    "total_items": 12
+  },
+  "data_gaps": [
+    {
+      "gap": "No independent large-scale enterprise benchmark for GPT-5.6 in private workloads",
+      "impact": "Cannot conclude production readiness without PoC",
+      "attempts": "Searched official docs, media summaries, community references"
+    },
+    {
+      "gap": "No unified single official page with final GA + complete pricing + per-tier limits",
+      "impact": "Potential mismatch between planning and actual billing/capacity",
+      "attempts": "Cross-checked release page, models docs, community updates"
+    }
+  ]
+}

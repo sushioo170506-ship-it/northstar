@@ -1,0 +1,8 @@
+flowchart LR
+R[Incoming task] --> T{Complexity?}
+T -- High --> S[Route to Sol]
+T -- Medium --> M[Route to Terra]
+T -- Low --> L[Route to Luna]
+S --> G[Gate checks]
+M --> G
+L --> G

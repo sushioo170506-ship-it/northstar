@@ -1,0 +1,53 @@
+{
+  "assets": [
+    {
+      "asset_id": "asset_001",
+      "type": "table",
+      "title": "GPT-5.6三档价格与场景建议",
+      "section_id": "sec_3",
+      "data_fields": [
+        "price_input_per_1m",
+        "price_output_per_1m",
+        "context_window",
+        "tier_fit"
+      ],
+      "source_evidence_ids": [
+        "ev_002",
+        "ev_003",
+        "ev_004",
+        "ev_007"
+      ]
+    },
+    {
+      "asset_id": "asset_002",
+      "type": "table",
+      "title": "风险-缓解矩阵",
+      "section_id": "sec_4",
+      "data_fields": [
+        "risk_name",
+        "risk_level",
+        "mitigation"
+      ],
+      "source_evidence_ids": [
+        "ev_009",
+        "ev_010",
+        "ev_011"
+      ]
+    },
+    {
+      "asset_id": "asset_003",
+      "type": "timeline",
+      "title": "GPT-5.6发布与可用性时间线",
+      "section_id": "sec_3",
+      "data_fields": [
+        "date",
+        "event"
+      ],
+      "source_evidence_ids": [
+        "ev_005",
+        "ev_006",
+        "ev_011"
+      ]
+    }
+  ]
+}

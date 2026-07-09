@@ -1,0 +1,108 @@
+version: "1.0"
+rubric_id: external-model-research-longform
+description: 高质量外部模型调研报告评分标准（从 Claude Mythos 5 长文风格抽象）
+applicable_for:
+  - tech-selection
+  - security-review
+  - investment-analysis
+  - competitor-tracking
+
+scoring:
+  total_score: 100
+  pass_score: 90
+  critical_dimensions:
+    - evidence_traceability
+    - logic_consistency
+    - decision_actionability
+  critical_min_score_each: 18
+
+dimensions:
+  - id: problem_framing
+    name: 问题定义与读者匹配
+    weight: 10
+    checks:
+      - 目标读者、决策问题、使用场景是否明确
+      - 报告范围边界与不覆盖内容是否声明
+      - 结论框架是否可执行（定位/能力/场景/边界/启示）
+
+  - id: evidence_traceability
+    name: 证据密度与可追溯性
+    weight: 20
+    checks:
+      - 核心结论是否可回链到 source_id
+      - 来源是否分层（官方/第三方/文献）
+      - 关键数字是否有口径与时间戳
+      - 引用冲突是否显式标注
+
+  - id: technical_depth
+    name: 技术拆解深度
+    weight: 15
+    checks:
+      - 是否使用“现象/观测 -> 学术溯源 -> 本质分析”三段式
+      - 是否说明机制为何有效及其失败模式
+      - 是否区分已证实事实与推断
+
+  - id: benchmark_and_comparison
+    name: 评测与横向对标完整性
+    weight: 15
+    checks:
+      - benchmark 是否覆盖多维能力（通用+专项）
+      - 竞品对比是否同口径、可解释
+      - 是否给出成本/部署/可用性等非能力维度对比
+
+  - id: governance_and_safety
+    name: 安全治理与部署治理
+    weight: 10
+    checks:
+      - 是否覆盖模型安全机制、分级访问、部署约束
+      - 是否区分能力风险与治理风险
+      - 是否说明风险控制边界与假设条件
+
+  - id: limitations_and_risks
+    name: 局限与风险诚实性
+    weight: 10
+    checks:
+      - 是否有独立局限章节
+      - 是否包含不确定性、外部有效性与评测偏差
+      - 是否形成风险-影响-缓解-责任映射
+
+  - id: decision_actionability
+    name: 决策可执行性
+    weight: 10
+    checks:
+      - 是否提供场景结论（适用/不适用/前提条件）
+      - 是否提供模型启示与后续动作
+      - 是否提供加权评分卡
+      - 是否提供 30/60/90 或 90 天路线图与退出条件
+
+  - id: structure_and_readability
+    name: 结构与可读性
+    weight: 5
+    checks:
+      - 章节结构是否完整且层级清晰
+      - 段落是否“判断句 + 证据 + 解读”组织
+      - 是否避免空泛背景套话
+
+  - id: reproducibility
+    name: 方法透明与可复现
+    weight: 5
+    checks:
+      - 是否给出数据窗口与采集方法说明
+      - 中间产物（表/图/证据账本）是否齐全
+      - 关键计算是否可复算
+
+hard_fail_rules:
+  - 核心结论无证据编号或来源链接
+  - 关键对比口径不一致且未声明
+  - 缺少场景化推荐表或缺少禁用边界
+  - 缺少风险-影响-缓解-责任映射
+  - 缺少评分卡或路线图
+  - 长篇模式未达到最低信息密度门槛
+
+output_schema:
+  review_checklist_required_sections:
+    - 评分总览
+    - 各维度得分与扣分说明
+    - 一票否决检查
+    - 回退建议（step2/3/4/5）
+    - 最终结论（pass/fail）

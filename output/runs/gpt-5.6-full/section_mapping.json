@@ -1,0 +1,64 @@
+{
+  "section_evidence_map": [
+    {
+      "section_id": "sec_0",
+      "primary_evidence_ids": [
+        "ev_001",
+        "ev_002",
+        "ev_003"
+      ],
+      "secondary_evidence_ids": [
+        "ev_004"
+      ]
+    },
+    {
+      "section_id": "sec_1",
+      "primary_evidence_ids": [
+        "ev_001",
+        "ev_005"
+      ],
+      "secondary_evidence_ids": []
+    },
+    {
+      "section_id": "sec_2",
+      "primary_evidence_ids": [
+        "ev_001",
+        "ev_007"
+      ],
+      "secondary_evidence_ids": [
+        "ev_008"
+      ]
+    },
+    {
+      "section_id": "sec_3",
+      "primary_evidence_ids": [
+        "ev_002",
+        "ev_003",
+        "ev_004"
+      ],
+      "secondary_evidence_ids": [
+        "ev_011"
+      ]
+    },
+    {
+      "section_id": "sec_4",
+      "primary_evidence_ids": [
+        "ev_009",
+        "ev_010"
+      ],
+      "secondary_evidence_ids": [
+        "ev_012"
+      ]
+    },
+    {
+      "section_id": "sec_5",
+      "primary_evidence_ids": [
+        "ev_006",
+        "ev_011"
+      ],
+      "secondary_evidence_ids": [
+        "ev_007"
+      ]
+    }
+  ]
+}

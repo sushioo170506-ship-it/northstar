@@ -1,0 +1,9 @@
+{
+  "model_name": "Qwen3-32B",
+  "report_type": "tech-selection",
+  "audience": "tech-lead",
+  "decision_goal": "Assess whether this model should enter production PoC",
+  "depth": "standard",
+  "output_formats": ["md", "pdf"],
+  "time_window": "last_12_months"
+}

@@ -1,0 +1,207 @@
+version: "2.0"
+
+workflow:
+  id: model-report-orchestrator
+  name: Model Report Orchestrator
+  description: 输入模型名称，按“定调->搭大纲->采素材->加工素材->写正文->复核->输出”自动生成报告
+  orchestrator_skill: model-report-orchestrator
+  root_dir: archive
+  rubric_file: skills/external-model-research/model-report-rubric.yaml
+  playbook_file: skills/external-model-research/model-report-playbook.md
+
+defaults:
+  report_type: tech-selection
+  length: long
+  style: technical-rigorous
+  output_channels: [md, pdf, docx]
+  minimum_quality:
+    min_sources: 25
+    min_official_sources: 8
+    min_thirdparty_sources: 10
+    min_competitors: 5
+    min_benchmark_metrics: 25
+    min_benchmark_dimensions: 8
+    min_tables: 12
+    min_figure_specs: 4
+    min_references: 30
+    review_pass_score: 90
+    min_critical_dimension_score: 18
+
+skills:
+  - id: step1
+    name: mr-step1-scope
+    input:
+      required: [model_name, audience_profile, analysis_goal, usage_scenario, top_risk]
+    output:
+      file: archive/scope.md
+    gate:
+      - 三个问题已回答
+      - 读者画像具体
+      - 报告类型单选明确
+      - 结论输出框架明确（定位/能力/场景/边界/启示）
+      - 已设置丰富度门槛（来源/竞品/benchmark/表图）
+
+  - id: step2
+    name: mr-step2-outline
+    depends_on: [step1]
+    input:
+      files: [archive/scope.md]
+      required: [model_name]
+    output:
+      file: archive/outline.md
+    gate:
+      - 每章有核心问题
+      - 每章有素材需求
+      - 需要图表的章节已标注
+      - 每章有最低证据数标注
+      - 长篇大纲含表图最低产出计划（表>=12, 图>=4）
+      - 长篇大纲含评分卡与路线图产出规划
+      - 长篇大纲含双轨分析（能力轨+治理轨）与技术三段式拆解规划
+
+  - id: step3
+    name: mr-step3-collect
+    depends_on: [step2]
+    input:
+      files: [archive/outline.md]
+      required: [model_name]
+    output:
+      dir: archive/raw_data
+      required_structure:
+        - archive/raw_data/paper
+        - archive/raw_data/official
+        - archive/raw_data/benchmarks
+        - archive/raw_data/competitors
+        - archive/raw_data/ecosystem
+        - archive/raw_data/references.md
+    gate:
+      - 官方技术报告已采集
+      - 基础参数字段>=10
+      - benchmark>=5
+      - 竞品>=2
+      - 来源URL齐全
+      - 官方与第三方分开
+      - source_index.csv 已生成
+      - benchmark_catalog.csv 与 competitor_catalog.csv 已生成
+      - 长篇模式下: 来源>=25, 官方>=8, 第三方>=10, benchmark>=25, 竞品>=5
+
+  - id: step4
+    name: mr-step4-process
+    depends_on: [step3]
+    input:
+      files: [archive/outline.md]
+      dir: archive/raw_data
+    output:
+      dir: archive/processed_data
+      required_files:
+        - archive/processed_data/gaps.md
+    gate:
+      - 素材按章节归位
+      - 核心参数和分数已表格化
+      - 图表已生成或标注暂缺
+      - gaps检测完成
+      - evidence_map.csv 已生成
+      - evidence_ledger.csv 已生成
+      - 长篇模式下: 表>=12, 图>=4
+      - 长篇模式下: benchmark_master_table/competitor_matrix/risk_register/decision_scorecard/roadmap_90d 已生成
+      - 长篇模式下: tech_route_3layer/capability_governance_dualtrack 已生成
+    fail_route:
+      on_severe_gap: step3
+
+  - id: step5
+    name: mr-step5-write
+    depends_on: [step4]
+    input:
+      files:
+        - archive/scope.md
+        - archive/outline.md
+      dir: archive/processed_data
+    output:
+      file: archive/report.md
+    gate:
+      - 段首职能清晰
+      - 关键数字附解读
+      - 开篇非背景套话
+      - 结论场景化
+      - 核心结论均有证据引用
+      - 长篇模式下报告字数>=8000
+      - 长篇模式下包含加权评分卡与90天路线图
+
+  - id: step6
+    name: mr-step6-review
+    depends_on: [step5]
+    input:
+      files:
+        - archive/report.md
+        - archive/scope.md
+        - archive/outline.md
+    output:
+      file: archive/review_checklist.md
+      status_field: pass_or_fail
+    gate:
+      - 清单逐项检查
+      - 不通过项有修正建议
+      - 严重问题标记必须回退
+      - 量化评分总分>=90
+      - evidence_traceability/logic_consistency/decision_actionability >=18
+      - 评分输出格式符合 rubric 要求
+
+  - id: step7
+    name: mr-step7-output
+    depends_on: [step6]
+    input:
+      files:
+        - archive/report.md
+        - archive/review_checklist.md
+        - archive/scope.md
+    output:
+      dir: archive/output
+      required_files:
+        - archive/output/report.md
+        - archive/output/report.pdf
+        - archive/output/report.docx
+        - archive/output/executive_summary.md
+        - archive/output/decision_brief.md
+    gate:
+      - 摘要可独立阅读
+      - 渠道格式转换完成
+      - 中文渲染正常
+      - 图表显示正常
+      - 中间产物已归档
+      - 长篇模式下表图数量达到门槛
+      - DOCX 与 MD 结构一致
+
+transitions:
+  - from: step1
+    to: step2
+  - from: step2
+    to: step3
+  - from: step3
+    to: step4
+  - from: step4
+    to: step5
+    condition: no_severe_gap
+  - from: step4
+    to: step3
+    condition: severe_gap_detected
+  - from: step5
+    to: step6
+  - from: step6
+    to: step7
+    condition: review_pass
+  - from: step6
+    to: step3
+    condition: fact_check_failed
+  - from: step6
+    to: step2
+    condition: completeness_failed_by_outline
+  - from: step6
+    to: step4
+    condition: completeness_failed_by_processing
+  - from: step6
+    to: step5
+    condition: readability_or_logic_or_writing_failed
+
+final_artifacts:
+  - archive/output/report.md
+  - archive/output/report.pdf
+  - archive/output/executive_summary.md
