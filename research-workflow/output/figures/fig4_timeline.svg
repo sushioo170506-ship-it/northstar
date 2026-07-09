@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="576pt" height="244.8pt" viewBox="0 0 576 244.8" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-07-09T04:14:41.693746</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 244.8 
+L 576 244.8 
+L 576 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="line2d_1">
+    <path d="M 11.88 127.173 
+L 564.12 127.173 
+" clip-path="url(#pe844af6d1e)" style="fill: none; stroke: #000000; stroke-linecap: square"/>
+   </g>
+   <g id="PathCollection_1">
+    <defs>
+     <path id="m93dab9bf75" d="M 0 4.743416 
+C 1.257969 4.743416 2.464584 4.24362 3.354102 3.354102 
+C 4.24362 2.464584 4.743416 1.257969 4.743416 0 
+C 4.743416 -1.257969 4.24362 -2.464584 3.354102 -3.354102 
+C 2.464584 -4.24362 1.257969 -4.743416 0 -4.743416 
+C -1.257969 -4.743416 -2.464584 -4.24362 -3.354102 -3.354102 
+C -4.24362 -2.464584 -4.743416 -1.257969 -4.743416 0 
+C -4.743416 1.257969 -4.24362 2.464584 -3.354102 3.354102 
+C -2.464584 4.24362 -1.257969 4.743416 0 4.743416 
+z
+" style="stroke: #005ab5"/>
+    </defs>
+    <g clip-path="url(#pe844af6d1e)">
+     <use xlink:href="#m93dab9bf75" x="65.322581" y="127.173" style="fill: #005ab5; stroke: #005ab5"/>
+    </g>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle" x="65.322581" y="112.966442" transform="rotate(-0 65.322581 112.966442)">2026-04-XX</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 7.5px; font-family: 'Noto Sans CJK SC', sans-serif; fill: #333333" transform="translate(37.793479 79.095224)">Mythos Preview</text>
+    <text style="font-size: 7.5px; font-family: 'Noto Sans CJK SC', sans-serif; fill: #333333" transform="translate(34.680393 87.450692)">经 Glasswing 发布</text>
+   </g>
+   <g id="PathCollection_2">
+    <g clip-path="url(#pe844af6d1e)">
+     <use xlink:href="#m93dab9bf75" x="243.464516" y="127.173" style="fill: #005ab5; stroke: #005ab5"/>
+    </g>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle" x="243.464516" y="147.459558" transform="rotate(-0 243.464516 147.459558)">2026-06-09</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 7.5px; font-family: 'Noto Sans CJK SC', sans-serif; fill: #333333" transform="translate(212.255727 171.620308)">Fable 5 / Mythos 5</text>
+    <!-- 双轨发布 $10/$50 -->
+    <g style="fill: #333333" transform="translate(217.402016 179.975776)">
+     <text>
+      <tspan x="0" y="-0.671875" style="font-size: 7.5px; font-family: 'Noto Sans CJK SC'; fill: #333333">双</tspan>
+      <tspan x="7.499939" y="-0.671875" style="font-size: 7.5px; font-family: 'Noto Sans CJK SC'; fill: #333333">轨</tspan>
+      <tspan x="14.999878" y="-0.671875" style="font-size: 7.5px; font-family: 'Noto Sans CJK SC'; fill: #333333">发</tspan>
+      <tspan x="22.499817" y="-0.671875" style="font-size: 7.5px; font-family: 'Noto Sans CJK SC'; fill: #333333">布</tspan>
+      <tspan x="29.999756" y="-0.671875" style="font-size: 7.5px; font-family: 'Noto Sans CJK SC'; fill: #333333"> </tspan>
+      <tspan x="43.750061" y="-0.671875" style="font-size: 7.5px; font-family: 'Noto Sans CJK SC'; fill: #333333">5</tspan>
+      <tspan x="47.912521" y="-0.671875" style="font-size: 7.5px; font-family: 'Noto Sans CJK SC'; fill: #333333">0</tspan>
+      <tspan x="31.679749" y="-0.671875" style="font-size: 7.5px; font-family: 'DejaVu Sans'; fill: #333333">1</tspan>
+      <tspan x="36.451477" y="-0.671875" style="font-size: 7.5px; font-family: 'DejaVu Sans'; fill: #333333">0</tspan>
+      <tspan x="41.223206" y="-0.671875" style="font-size: 7.5px; font-family: 'DejaVu Sans'; fill: #333333">/</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="PathCollection_3">
+    <defs>
+     <path id="m379a99051a" d="M 0 4.743416 
+C 1.257969 4.743416 2.464584 4.24362 3.354102 3.354102 
+C 4.24362 2.464584 4.743416 1.257969 4.743416 0 
+C 4.743416 -1.257969 4.24362 -2.464584 3.354102 -3.354102 
+C 2.464584 -4.24362 1.257969 -4.743416 0 -4.743416 
+C -1.257969 -4.743416 -2.464584 -4.24362 -3.354102 -3.354102 
+C -4.24362 -2.464584 -4.743416 -1.257969 -4.743416 0 
+C -4.743416 1.257969 -4.24362 2.464584 -3.354102 3.354102 
+C -2.464584 4.24362 -1.257969 4.743416 0 4.743416 
+z
+" style="stroke: #dc3220"/>
+    </defs>
+    <g clip-path="url(#pe844af6d1e)">
+     <use xlink:href="#m379a99051a" x="296.907097" y="127.173" style="fill: #dc3220; stroke: #dc3220"/>
+    </g>
+   </g>
+   <g id="text_5">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle" x="296.907097" y="112.966442" transform="rotate(-0 296.907097 112.966442)">2026-06-12</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 7.5px; font-family: 'Noto Sans CJK SC', sans-serif; fill: #333333" transform="translate(274.407097 80.925692)">美出口管制令</text>
+    <text style="font-size: 7.5px; font-family: 'Noto Sans CJK SC', sans-serif; fill: #333333" transform="translate(263.157097 88.425692)">全球下线（含本土）</text>
+   </g>
+   <g id="PathCollection_4">
+    <g clip-path="url(#pe844af6d1e)">
+     <use xlink:href="#m93dab9bf75" x="439.420645" y="127.173" style="fill: #005ab5; stroke: #005ab5"/>
+    </g>
+   </g>
+   <g id="text_7">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle" x="439.420645" y="147.459558" transform="rotate(-0 439.420645 147.459558)">2026-06-26</text>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 7.5px; font-family: 'Noto Sans CJK SC', sans-serif; fill: #333333" transform="translate(418.683145 171.620308)">US 批准部分</text>
+    <text style="font-size: 7.5px; font-family: 'Noto Sans CJK SC', sans-serif; fill: #333333" transform="translate(418.364395 179.120308)">恢复 Mythos</text>
+   </g>
+   <g id="PathCollection_5">
+    <defs>
+     <path id="mc1628f64d7" d="M 0 4.743416 
+C 1.257969 4.743416 2.464584 4.24362 3.354102 3.354102 
+C 4.24362 2.464584 4.743416 1.257969 4.743416 0 
+C 4.743416 -1.257969 4.24362 -2.464584 3.354102 -3.354102 
+C 2.464584 -4.24362 1.257969 -4.743416 0 -4.743416 
+C -1.257969 -4.743416 -2.464584 -4.24362 -3.354102 -3.354102 
+C -4.24362 -2.464584 -4.743416 -1.257969 -4.743416 0 
+C -4.743416 1.257969 -4.24362 2.464584 -3.354102 3.354102 
+C -2.464584 4.24362 -1.257969 4.743416 0 4.743416 
+z
+" style="stroke: #009e73"/>
+    </defs>
+    <g clip-path="url(#pe844af6d1e)">
+     <use xlink:href="#mc1628f64d7" x="510.677419" y="127.173" style="fill: #009e73; stroke: #009e73"/>
+    </g>
+   </g>
+   <g id="text_9">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle" x="510.677419" y="112.966442" transform="rotate(-0 510.677419 112.966442)">2026-06-30</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 7.5px; font-family: 'Noto Sans CJK SC', sans-serif; fill: #333333" transform="translate(495.677419 80.925692)">管制解除</text>
+    <text style="font-size: 7.5px; font-family: 'Noto Sans CJK SC', sans-serif; fill: #333333" transform="translate(474.871365 88.425692)">Fable 07-01 全球恢复</text>
+   </g>
+   <g id="text_11">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #dc3220" x="332.535484" y="195.298154" transform="rotate(-0 332.535484 195.298154)">← 18 天全球不可用 →</text>
+   </g>
+   <g id="text_12">
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle" x="288" y="22.77" transform="rotate(-0 288 22.77)">发布 3 天即被关停 18 天：Mythos/Fable 5 的可用性是政策变量</text>
+   </g>
+  </g>
+  <g id="text_13">
+   <text style="font-size: 6px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: start; fill: #666666" x="5.76" y="240.947625" transform="rotate(-0 5.76 240.947625)">数据来源: Anthropic 官方 / DataCamp / SuperCLUE / NextFuture / Lushbinary（2026）</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pe844af6d1e">
+   <rect x="11.88" y="28.77" width="552.24" height="196.806"/>
+  </clipPath>
+ </defs>
+</svg>
