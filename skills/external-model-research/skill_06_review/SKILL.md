@@ -10,6 +10,7 @@ description: Step 6 — 按量化标准复核报告质量，执行一票否决�
 - `archive/report.md`
 - `archive/scope.md`
 - `archive/outline.md`（用于核对完整性）
+- `skills/external-model-research/model-report-rubric.yaml`（评分标准）
 
 ## 输出
 - `archive/review_checklist.md`（逐项通过/不通过 + 修正建议）
@@ -24,20 +25,29 @@ description: Step 6 — 按量化标准复核报告质量，执行一票否决�
 7. **决策可执行性检查**：有评分卡、路线图、风险映射与场景边界。
 
 ## 量化评分（新增）
-- 建议对 7 个维度打分（总分 100）：
-  - 事实性
-  - 完整性
-  - 决策可用性
-  - 逻辑一致性
-  - 写作质量
-  - 信息密度
-  - 可执行性
+按 `model-report-rubric.yaml` 维度打分（总分 100），并输出每维扣分理由：
+- problem_framing
+- evidence_traceability
+- technical_depth
+- benchmark_and_comparison
+- governance_and_safety
+- limitations_and_risks
+- decision_actionability
+- structure_and_readability
+- reproducibility
 - 通过阈值：
   - 总分 >= 90
-  - 且事实性 >= 18
-  - 且逻辑一致性 >= 18
-  - 且信息密度 >= 16
-  - 且可执行性 >= 16
+  - 且 evidence_traceability >= 18
+  - 且 logic_consistency（映射到逻辑一致性检查） >= 18
+  - 且 decision_actionability >= 18
+
+## 打分输出格式（必须）
+`archive/review_checklist.md` 必须包含：
+1. 评分总览（总分/是否通过）
+2. 各维度得分表（权重、得分、扣分说明）
+3. 一票否决检查（逐条）
+4. 回退建议（step2/3/4/5）
+5. 最终判定（PASS/FAIL）
 
 ## 结果处理
 - 全部通过 -> 进入 Step 7。

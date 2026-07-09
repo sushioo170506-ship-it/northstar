@@ -6,6 +6,8 @@ workflow:
   description: 输入模型名称，按“定调->搭大纲->采素材->加工素材->写正文->复核->输出”自动生成报告
   orchestrator_skill: model-report-orchestrator
   root_dir: archive
+  rubric_file: skills/external-model-research/model-report-rubric.yaml
+  playbook_file: skills/external-model-research/model-report-playbook.md
 
 defaults:
   report_type: tech-selection
@@ -23,6 +25,7 @@ defaults:
     min_figure_specs: 4
     min_references: 30
     review_pass_score: 90
+    min_critical_dimension_score: 18
 
 skills:
   - id: step1
@@ -53,6 +56,7 @@ skills:
       - 每章有最低证据数标注
       - 长篇大纲含表图最低产出计划（表>=12, 图>=4）
       - 长篇大纲含评分卡与路线图产出规划
+      - 长篇大纲含双轨分析（能力轨+治理轨）与技术三段式拆解规划
 
   - id: step3
     name: mr-step3-collect
@@ -99,6 +103,7 @@ skills:
       - evidence_ledger.csv 已生成
       - 长篇模式下: 表>=12, 图>=4
       - 长篇模式下: benchmark_master_table/competitor_matrix/risk_register/decision_scorecard/roadmap_90d 已生成
+      - 长篇模式下: tech_route_3layer/capability_governance_dualtrack 已生成
     fail_route:
       on_severe_gap: step3
 
@@ -137,8 +142,8 @@ skills:
       - 不通过项有修正建议
       - 严重问题标记必须回退
       - 量化评分总分>=90
-      - 事实性和逻辑一致性分别>=18/20
-      - 信息密度与可执行性维度通过
+      - evidence_traceability/logic_consistency/decision_actionability >=18
+      - 评分输出格式符合 rubric 要求
 
   - id: step7
     name: mr-step7-output

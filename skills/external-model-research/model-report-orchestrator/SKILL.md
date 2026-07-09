@@ -7,6 +7,13 @@ description: 外部模型调研报告自动生成工作流（高丰富度版）�
 本 skill 仅负责编排和卡口，不负责具体写作细节。  
 目标不是“能写完”，而是“达到你已验证的长篇深度标准（以 Claude Mythos 5 完整稿为参考标尺）”。
 
+## 标准配置（必须加载）
+- 评分标准：`skills/external-model-research/model-report-rubric.yaml`
+- 可复用模块：`skills/external-model-research/model-report-playbook.md`
+- 执行规则：
+  - Step 6 必须按 rubric 维度打分并输出扣分理由；
+  - Step 2/4/5 必须落地 playbook 的结构、双轨分析、决策模块。
+
 ## 执行流程
 
 ```text
@@ -52,6 +59,11 @@ Step 4 或 Step 5 至少包含以下内容块：
 - `risk_register.*`（风险-影响-缓解-责任）
 - `decision_scorecard.*`（加权评分）
 - `roadmap_90d.*`（分阶段行动计划）
+
+## 样稿沉淀模块（必须落地到 skill）
+- 技术拆解采用“三段式”：现象/观测 -> 学术溯源 -> 本质分析
+- 分析采用“双轨”：能力轨 + 治理轨
+- 结论包含“适用场景 + 不适用边界 + 行动路径”
 
 ## Step 6 一票否决项
 出现任一项，必须回退且不得进入 Step 7：

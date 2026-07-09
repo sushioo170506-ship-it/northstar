@@ -57,6 +57,8 @@ def main() -> int:
         repo / "skills" / "external-model-research" / "skill_05_write_decide" / "SKILL.md",
         repo / "skills" / "external-model-research" / "skill_06_review" / "SKILL.md",
         repo / "skills" / "external-model-research" / "skill_07_publish" / "SKILL.md",
+        repo / "skills" / "external-model-research" / "model-report-rubric.yaml",
+        repo / "skills" / "external-model-research" / "model-report-playbook.md",
     ]
     for path in required_paths:
         ensure(path.exists(), f"Missing required file: {path}")
@@ -71,6 +73,8 @@ def main() -> int:
         "name: mr-step5-write",
         "name: mr-step6-review",
         "name: mr-step7-output",
+        "rubric_file: skills/external-model-research/model-report-rubric.yaml",
+        "playbook_file: skills/external-model-research/model-report-playbook.md",
         "min_sources: 25",
         "min_competitors: 5",
         "min_benchmark_metrics: 25",

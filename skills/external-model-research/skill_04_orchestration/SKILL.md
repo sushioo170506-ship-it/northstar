@@ -9,6 +9,7 @@ description: Step 4 — 将原始素材加工成可写作、可复核、可决�
 ## 输入
 - `archive/raw_data/`
 - `archive/outline.md`
+- `skills/external-model-research/model-report-playbook.md`（模块清单）
 
 ## 输出
 写入 `archive/processed_data/`，推荐目录：
@@ -53,6 +54,8 @@ processed_data/
 - `processed_data/tables/risk_register.md`（风险-影响-缓解-责任）
 - `processed_data/tables/decision_scorecard.md`（加权评分输入）
 - `processed_data/tables/roadmap_90d.md`（阶段目标/KPI/退出条件）
+- `processed_data/tables/tech_route_3layer.md`（现象/溯源/本质）
+- `processed_data/tables/capability_governance_dualtrack.md`（能力轨/治理轨）
 
 ## 缺失分级规则（新增）
 - P0（严重缺失）：关键章节无核心数据或无可追溯来源 -> 必须回退 Step 3
@@ -70,6 +73,7 @@ processed_data/
 - `evidence_ledger.csv` 已生成且 claim/source 可回链。
 - 长篇模式下，强制中间产物全部存在。
 - 若表图数量低于大纲门槛，必须回退补加工。
+- `risk_register` 字段完整（risk/severity/trigger/impact/mitigation/owner/status）。
 
 ## 交接
 将 `archive/processed_data/` 交给 `mr-step5-write`。
