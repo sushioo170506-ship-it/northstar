@@ -21,6 +21,7 @@
 - 评分标准（rubric）：[model-report-rubric.yaml](./model-report-rubric.yaml)
 - 模块清单（playbook）：[model-report-playbook.md](./model-report-playbook.md)
 - 文档风格规范（style guide）：[skills-style-guide.md](./skills-style-guide.md)
+- 风格检查脚本：`python3 /workspace/scripts/check_external_model_skills_style.py`
 
 ## Recommended Workflow
 
