@@ -155,6 +155,43 @@ def build_deep_dive_appendix() -> str:
     return "\n".join(blocks)
 
 
+def build_conclusion_evidence_reasoning_map() -> str:
+    return """| conclusion_id | 核心结论 | 关键证据（source_id） | 推导过程 | 价值与边界 |
+|---|---|---|---|---|
+| C-01 | GPT-5.6 属于分层能力产品线（Sol/Terra/Luna），应按任务路由使用 | S1,S2,S5 | 官方发布结构 + 文档规格 + 发布时间线共同指向“多档位协同”而非单型号替代 | 价值：可分层控成本与质量；边界：档位切换需门禁策略 |
+| C-02 | Terra 适合作为默认主路由，Sol 负责高价值复杂任务升级 | S1,S2,S6 | 按单位成本与能力上限对比，Terra 在成本/能力平衡点最优，Sol在高复杂任务更稳 | 价值：整体ROI更优；边界：需真实业务任务验证收益 |
+| C-03 | Luna 可用于成本敏感批处理，但必须设置质量回退阈值 | S1,S2,S6 | Luna 成本优势明确，但价格口径存在差异且能力上限较低，需加门禁回退 | 价值：规模化降本；边界：不适合高风险高复杂任务 |
+| C-04 | 当前阶段可“有条件推荐”，不宜直接全量上线 | S2,S5,S15,S16 | 可用性口径与第三方复现存在缺口，说明可进入PoC但不满足全量替换条件 | 价值：降低决策失误风险；边界：PoC前不做生产级承诺 |
+| C-05 | 安全治理应作为接入前置条件，而非上线后补丁 | S1,S3,S26,S27 | 系统卡和治理框架均显示高风险能力需要分层控制和审计链路 | 价值：降低合规与误拦截成本；边界：治理成熟度不足时需收敛场景 |
+| C-06 | 核心不确定性在“口径一致性”而非“单点性能” | S1,S2,S5,S6 | 发布口径、价格口径、可用性口径不一致会直接影响成本和上线判断 | 价值：聚焦正确风险源；边界：需持续更新口径基线 |
+| C-07 | 应建立内部统一复现实验集，补齐第三方证据缺口 | S15,S16,S18,S19 | 第三方信号分散，缺乏可复算同口径结果，必须以内测框架补齐 | 价值：提升结论可复用性；边界：需投入评测工程资源 |
+| C-08 | 90天分阶段推进优于一次性切换 | S12,S27,S30 | 分阶段门禁可将可用性、成本、质量与合规风险分散管理 | 价值：可控放量；边界：执行需要跨团队协同 |
+"""
+
+
+def build_process_outcome_value_map() -> str:
+    return """| process_id | 关键过程 | 产出成果 | 对决策价值 | 对应结论（conclusion_id） |
+|---|---|---|---|---|
+| P-01 | 统一来源采集与分层标注（官方/第三方） | `raw_data/source_index.csv` + `references.md` | 消除“来源混杂”导致的可信度争议 | C-04,C-06 |
+| P-02 | benchmark 指标汇总与维度覆盖校验 | `raw_data/benchmark_catalog.csv` + `processed_data/tables/benchmark_master_table.md` | 明确能力证据覆盖范围，避免单指标误判 | C-02,C-03,C-07 |
+| P-03 | 竞品与定价口径对照 | `competitor_catalog.csv` + `comparison_matrix.md` + `cost_scenario_table.csv` | 建立成本-能力-风险三角比较基线 | C-02,C-03,C-06 |
+| P-04 | 部署门禁与路由策略设计 | `deployment_gate_checklist.md` + `roadmap_90d.md` | 将抽象结论转为可执行上线策略 | C-01,C-08 |
+| P-05 | 风险登记与治理映射 | `risk_register.md` + `capability_governance_dualtrack.md` | 明确风险责任与缓解动作，降低上线不确定性 | C-05,C-08 |
+| P-06 | 证据回链与台账审计 | `evidence_map.csv` + `evidence_ledger.csv` | 保证每条核心结论可追溯和可复核 | C-01,C-04,C-07 |
+| P-07 | 加权评分卡与最终复核 | `decision_scorecard.md` + `review_checklist.md` | 将“可用性判断”转为量化决策门槛 | C-04,C-08 |
+| P-08 | 多格式发布一致性检查 | `output/report.md` + `output/report.docx` + `output/decision_brief.md` | 确保跨读者渠道的结论口径一致 | C-01,C-04 |
+"""
+
+
+def build_logic_chain_appendix() -> str:
+    return (
+        "\n## 附录D：结论-证据-推导映射（CERV）\n\n"
+        + build_conclusion_evidence_reasoning_map()
+        + "\n## 附录E：过程-成果-价值映射（PEVC）\n\n"
+        + build_process_outcome_value_map()
+    )
+
+
 def build_report(ts: str) -> str:
     base = f"""# GPT-5.6 外部模型调研报告（数据增强版）
 
@@ -457,7 +494,7 @@ GPT-5.6（Sol/Terra/Luna）更适合定义为“分层能力产品线”，而�
 | S6 | OpenAI Pricing 文档页 | 2026-07-09 访问 | A |
 
 """
-    return base + build_deep_dive_appendix()
+    return base + build_deep_dive_appendix() + build_logic_chain_appendix()
 
 
 def main() -> int:
@@ -818,6 +855,14 @@ E --> F[Account-level Monitoring]
         "| 维度 | 能力轨判断 | 治理轨判断 | 决策含义 |\n|---|---|---|---|\n| 代码与Agent能力 | 上限较高，可进入关键任务PoC | 需配套误拦截复核与回退 | 先小流量灰度 |\n| 安全高风险能力 | 在公开口径中能力显著提升 | 分级访问与策略约束仍是前置条件 | 禁止无护栏直连生产 |\n| 成本效率 | Terra/Luna具备规模化优势 | 计费口径需账单回归 | 建立成本守护阈值 |\n",
     )
     write_text(
+        run_dir / "processed_data" / "tables" / "conclusion_evidence_reasoning_map.md",
+        build_conclusion_evidence_reasoning_map(),
+    )
+    write_text(
+        run_dir / "processed_data" / "tables" / "process_outcome_value_map.md",
+        build_process_outcome_value_map(),
+    )
+    write_text(
         run_dir / "processed_data" / "figures" / "timeline.mmd",
         """timeline
 title GPT-5.6 rollout timeline
@@ -910,6 +955,8 @@ plt.savefig("figures/benchmark_bar.png", dpi=200)
 - [x] §1-§6 分析支撑 §7 结论
 - [x] 局限声明充分
 - [x] 对比口径差异已披露
+- [x] CERV 映射完整（结论->证据->推导->价值）
+- [x] PEVC 映射完整（过程->成果->价值->结论）
 
 ## 维度 5：写作质量检查
 - [x] 开篇非背景套话
@@ -971,6 +1018,14 @@ plt.savefig("figures/benchmark_bar.png", dpi=200)
 - 可选评级：有条件推荐（总分 7.35/10）
 """,
     )
+    write_text(
+        run_dir / "output" / "conclusion_evidence_reasoning_map.md",
+        build_conclusion_evidence_reasoning_map(),
+    )
+    write_text(
+        run_dir / "output" / "process_outcome_value_map.md",
+        build_process_outcome_value_map(),
+    )
     # publish figure assets
     for figure_name in ("timeline.mmd", "pricing_tiers.mmd", "risk_flow.mmd", "deployment_route.mmd"):
         content = (run_dir / "processed_data" / "figures" / figure_name).read_text(encoding="utf-8")
@@ -989,6 +1044,7 @@ plt.savefig("figures/benchmark_bar.png", dpi=200)
             "sections": 7,
             "source_count": 30,
             "report_chars": report_chars,
+            "logic_mapping_tables": 2,
         },
         "artifacts": [
             "scope.md",
@@ -1002,6 +1058,8 @@ plt.savefig("figures/benchmark_bar.png", dpi=200)
             "output/report.docx",
             "output/executive_summary.md",
             "output/decision_brief.md",
+            "output/conclusion_evidence_reasoning_map.md",
+            "output/process_outcome_value_map.md",
             "output/figures/",
         ],
     }
