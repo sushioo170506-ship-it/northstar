@@ -1,7 +1,7 @@
 # mr-step4-process
 
-name: mr-step4-process  
-description: Step 4 — 将原始素材加工为可直接写入报告的结构化内容块：归位、表格化、图表化、要点提炼、缺失检测。
+name: mr-step4-process
+description: Step 4 — 将原始素材加工成可写作、可复核、可决策的结构化证据包（表格/图表/账本/矩阵）。
 
 ## 作用
 这是从“收集到的东西”到“能写进报告的东西”的转换层。
@@ -23,6 +23,7 @@ processed_data/
 ├── section_6/
 ├── section_7/
 ├── figures/
+├── tables/
 └── gaps.md
 ```
 
@@ -31,11 +32,13 @@ processed_data/
   - `key_points.md`（3-8条要点）
   - 结构化表格（csv/md）
   - 图表规格（mermaid 或绘图脚本）
-- 长篇详实报告建议下限：
-  - 表格 >= 6
-  - 图表规格 >= 3
+- 长篇详实报告硬下限：
+  - 表格 >= 12
+  - 图表规格 >= 4
   - 含证据映射文件 `processed_data/evidence_map.csv`
     - 字段：`section,evidence_id,claim_id,strength`
+  - 含 `processed_data/evidence_ledger.csv`
+    - 字段：`claim_id,claim_text,source_id,quote_snippet,confidence`
 
 ## 加工动作
 1. **信息归位**：将素材按章节分配到 `section_X/`。
@@ -43,6 +46,13 @@ processed_data/
 3. **提炼要点**：将长段落压缩为 3-5 条可写 bullet points。
 4. **生成图表**：按大纲生成柱状图、雷达图、架构图、时间线等。
 5. **缺失检测**：输出 `gaps.md`，逐章标明 `齐全/待补/缺失`。
+
+## 强制中间产物（长篇）
+- `processed_data/tables/benchmark_master_table.md`
+- `processed_data/tables/competitor_matrix.md`
+- `processed_data/tables/risk_register.md`（风险-影响-缓解-责任）
+- `processed_data/tables/decision_scorecard.md`（加权评分输入）
+- `processed_data/tables/roadmap_90d.md`（阶段目标/KPI/退出条件）
 
 ## 缺失分级规则（新增）
 - P0（严重缺失）：关键章节无核心数据或无可追溯来源 -> 必须回退 Step 3
@@ -57,6 +67,8 @@ processed_data/
 - `gaps.md` 已完成且描述清晰。
 - 若章节素材严重缺失：必须回退 Step 3 补采。
 - `evidence_map.csv` 已生成，结论可追踪到证据。
+- `evidence_ledger.csv` 已生成且 claim/source 可回链。
+- 长篇模式下，强制中间产物全部存在。
 - 若表图数量低于大纲门槛，必须回退补加工。
 
 ## 交接

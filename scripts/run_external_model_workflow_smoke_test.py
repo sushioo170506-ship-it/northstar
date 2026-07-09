@@ -71,17 +71,22 @@ def main() -> int:
         "name: mr-step5-write",
         "name: mr-step6-review",
         "name: mr-step7-output",
-        "min_sources: 12",
-        "min_benchmark_metrics: 8",
-        "min_tables: 6",
-        "min_figure_specs: 3",
+        "min_sources: 25",
+        "min_competitors: 5",
+        "min_benchmark_metrics: 25",
+        "min_tables: 12",
+        "min_figure_specs: 4",
+        "review_pass_score: 90",
     ):
         ensure(token in yaml_text, f"Workflow yaml missing token: {token}")
 
     orchestrator_text = (
         repo / "skills" / "external-model-research" / "model-report-orchestrator" / "SKILL.md"
     ).read_text(encoding="utf-8")
-    ensure("防“浅报告”硬门槛" in orchestrator_text, "Orchestrator missing anti-shallow gate section")
+    ensure(
+        ("防“浅报告”硬门槛" in orchestrator_text) or ("高丰富度硬门槛" in orchestrator_text),
+        "Orchestrator missing anti-shallow gate section",
+    )
 
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = Path("/tmp") / f"model-report-orchestrator-smoke-{run_id}"
@@ -98,7 +103,7 @@ def main() -> int:
 
 ## 报告参数
 - 报告类型: 技术选型
-- 篇幅: 简报(1000-2000字)
+- 篇幅: 简报(1500-3000字)
 - 风格: 决策简报风
 - 结论形式: 推荐/有条件推荐/不推荐
 """
@@ -118,12 +123,28 @@ def main() -> int:
     write_text(archive_dir / "raw_data" / "benchmarks" / "scores_thirdparty.csv", "metric,value\nMMLU,80.1\n")
     write_text(archive_dir / "raw_data" / "competitors" / "matrix.csv", "model,mmlu\nA,79.8\n")
     write_text(archive_dir / "raw_data" / "ecosystem" / "license.txt", "Apache-2.0\n")
+    write_text(
+        archive_dir / "raw_data" / "benchmark_catalog.csv",
+        "metric_id,dimension,benchmark_name,value,model,unit,source_id\nm1,reasoning,MMLU,80.1,SmokeModel,%,s1\n",
+    )
+    write_text(
+        archive_dir / "raw_data" / "competitor_catalog.csv",
+        "model_name,release_window,strengths,weaknesses,pricing,source_id\nA,2026Q2,math,coding,2/12,s2\n",
+    )
     write_text(archive_dir / "raw_data" / "references.md", "- https://example.com\n")
 
     # Step 4: processed_data
     write_text(archive_dir / "processed_data" / "section_1" / "info_card.md", "- param: 32B\n")
     write_text(archive_dir / "processed_data" / "section_3" / "benchmark_table.csv", "model,mmlu\nSmokeModel,80.1\n")
     write_text(archive_dir / "processed_data" / "figures" / "benchmark_comparison.txt", "placeholder figure\n")
+    write_text(
+        archive_dir / "processed_data" / "evidence_map.csv",
+        "section,evidence_id,claim_id,strength\nsection_3,e1,c1,strong\n",
+    )
+    write_text(
+        archive_dir / "processed_data" / "evidence_ledger.csv",
+        "claim_id,claim_text,source_id,quote_snippet,confidence\nc1,test claim,s1,test quote,0.8\n",
+    )
     write_text(archive_dir / "processed_data" / "gaps.md", "§1 ✅ 齐全\n§2 ⚠️ 待补采\n")
 
     # Step 5: report
@@ -152,9 +173,14 @@ def main() -> int:
     # Step 7: output
     write_text(archive_dir / "output" / "report.md", report_md)
     write_minimal_pdf(archive_dir / "output" / "report.pdf")
+    write_text(archive_dir / "output" / "report.docx", "placeholder docx\n")
     write_text(
         archive_dir / "output" / "executive_summary.md",
         "一句话结论：有条件推荐。\n核心发现：能力达标、数据来源清晰、需补采部署数据。\n",
+    )
+    write_text(
+        archive_dir / "output" / "decision_brief.md",
+        "评级：有条件推荐\n评分卡：能力与安全强，成本与可获得性弱。\n",
     )
     write_text(archive_dir / "output" / "figures" / "placeholder.txt", "figure asset\n")
     write_text(archive_dir / "output" / "slides" / "placeholder.txt", "slides asset\n")
@@ -164,12 +190,18 @@ def main() -> int:
         archive_dir / "scope.md",
         archive_dir / "outline.md",
         archive_dir / "raw_data" / "references.md",
+        archive_dir / "raw_data" / "benchmark_catalog.csv",
+        archive_dir / "raw_data" / "competitor_catalog.csv",
         archive_dir / "processed_data" / "gaps.md",
+        archive_dir / "processed_data" / "evidence_map.csv",
+        archive_dir / "processed_data" / "evidence_ledger.csv",
         archive_dir / "report.md",
         archive_dir / "review_checklist.md",
         archive_dir / "output" / "report.md",
         archive_dir / "output" / "report.pdf",
+        archive_dir / "output" / "report.docx",
         archive_dir / "output" / "executive_summary.md",
+        archive_dir / "output" / "decision_brief.md",
     ]
     for path in required:
         ensure(path.exists(), f"Missing artifact: {path}")
