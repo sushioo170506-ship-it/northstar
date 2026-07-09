@@ -1,0 +1,33 @@
+{
+  "decision": "conditional_recommend",
+  "rationale": [
+    "Model family offers clear capability-cost tiers suitable for routing strategy.",
+    "Official documentation provides enough baseline for PoC entry but not enough for direct production rollout."
+  ],
+  "assumptions": [
+    "Account-level access and region availability are verified before rollout.",
+    "Billing and policy behavior are validated under real traffic."
+  ],
+  "risks": [
+    "Public information inconsistency across channels.",
+    "Potential guardrail false positives in dual-use workflows.",
+    "Vendor lock-in without fallback routing."
+  ],
+  "action_plan": [
+    {
+      "action": "Run 2-week PoC with Terra as default and Sol escalation",
+      "owner_role": "ML platform team",
+      "acceptance_metric": "Quality >= baseline+8% or cost <= baseline-20%"
+    },
+    {
+      "action": "Validate guardrail block rate and fallback path",
+      "owner_role": "Safety engineering",
+      "acceptance_metric": "False positive rate within business threshold"
+    },
+    {
+      "action": "Reconcile pricing and usage with billing export",
+      "owner_role": "FinOps",
+      "acceptance_metric": "Planned vs billed variance < 5%"
+    }
+  ]
+}

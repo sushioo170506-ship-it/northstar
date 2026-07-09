@@ -1,0 +1,44 @@
+{
+  "section_briefs": [
+    {
+      "section_id": "sec_0",
+      "section_judgment": "建议有条件纳入PoC。",
+      "paragraph_plan": [
+        {
+          "role": "judgment",
+          "evidence_ids": [
+            "ev_001",
+            "ev_002",
+            "ev_003"
+          ]
+        },
+        {
+          "role": "limitation",
+          "evidence_ids": [
+            "ev_004",
+            "ev_007"
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "sec_4",
+      "section_judgment": "安全策略更强但部署摩擦也更高。",
+      "paragraph_plan": [
+        {
+          "role": "evidence",
+          "evidence_ids": [
+            "ev_009",
+            "ev_010"
+          ]
+        },
+        {
+          "role": "implication",
+          "evidence_ids": [
+            "ev_012"
+          ]
+        }
+      ]
+    }
+  ]
+}

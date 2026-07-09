@@ -1,0 +1,96 @@
+{
+  "sections": [
+    {
+      "id": "sec_0",
+      "title": "执行摘要",
+      "core_question": "最终推荐是什么？",
+      "evidence_requirements": [
+        "official_doc",
+        "cost_data",
+        "risk"
+      ],
+      "planned_assets": [
+        "table"
+      ],
+      "dod": [
+        "必须给出明确结论分级"
+      ]
+    },
+    {
+      "id": "sec_1",
+      "title": "调研目标与范围",
+      "core_question": "本报告解决什么决策问题？",
+      "evidence_requirements": [
+        "official_doc"
+      ],
+      "planned_assets": [
+        "none"
+      ],
+      "dod": [
+        "明确范围与边界"
+      ]
+    },
+    {
+      "id": "sec_2",
+      "title": "模型概览与定位",
+      "core_question": "三档模型分别适合什么任务？",
+      "evidence_requirements": [
+        "official_doc",
+        "third_party_eval"
+      ],
+      "planned_assets": [
+        "table"
+      ],
+      "dod": [
+        "给出路由建议"
+      ]
+    },
+    {
+      "id": "sec_3",
+      "title": "能力/成本/可用性评估",
+      "core_question": "模型是否具备投入 PoC 的现实条件？",
+      "evidence_requirements": [
+        "official_doc",
+        "benchmark",
+        "cost_data"
+      ],
+      "planned_assets": [
+        "table",
+        "line_chart"
+      ],
+      "dod": [
+        "覆盖能力、价格、可用性三维"
+      ]
+    },
+    {
+      "id": "sec_4",
+      "title": "安全与合规",
+      "core_question": "部署中的风险级别和治理要求是什么？",
+      "evidence_requirements": [
+        "official_doc",
+        "regulation"
+      ],
+      "planned_assets": [
+        "flowchart"
+      ],
+      "dod": [
+        "列出至少3条风险及缓解方案"
+      ]
+    },
+    {
+      "id": "sec_5",
+      "title": "PoC计划与结论",
+      "core_question": "如何执行验证并做上线决策？",
+      "evidence_requirements": [
+        "official_doc",
+        "third_party_eval"
+      ],
+      "planned_assets": [
+        "timeline"
+      ],
+      "dod": [
+        "包含验收门槛和回退条件"
+      ]
+    }
+  ]
+}

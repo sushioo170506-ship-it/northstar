@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "issues": [
+    {
+      "severity": "minor",
+      "description": "Luna pricing has conflicting public values and is explicitly marked as uncertainty.",
+      "location": "Section 3.3",
+      "fix_suggestion": "Validate with live billing data before production launch."
+    }
+  ],
+  "gate_reason": ""
+}
