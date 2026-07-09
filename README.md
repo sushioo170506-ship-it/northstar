@@ -18,3 +18,8 @@ The goal is to build a reusable AI knowledge and automation system.
 - [External Model Research Workflow](./external-model-research-workflow.md)
 - [External Model Research Workflow Config](./external-model-research-workflow.yaml)
 - [External Model Research Skills](./skills/external-model-research/README.md)
+
+## Smoke Test
+
+- Input: `examples/external-model-research-smoke-input.json`
+- Run: `python3 scripts/run_external_model_workflow_smoke_test.py`
