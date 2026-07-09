@@ -1,146 +1,170 @@
-version: "1.0"
+version: "2.0"
+
 workflow:
-  id: external-model-research-report
-  name: External Model Research Report Workflow
-  description: 输入一个模型名并自动生成外部模型调研报告
-  defaults:
-    report_type: tech-selection
-    audience: tech-lead
-    depth: standard
-    output_formats: [md, pdf]
-    language: zh-CN
+  id: model-report-orchestrator
+  name: Model Report Orchestrator
+  description: 输入模型名称，按“定调->搭大纲->采素材->加工素材->写正文->复核->输出”自动生成报告
+  orchestrator_skill: model-report-orchestrator
+  root_dir: archive
+
+defaults:
+  report_type: tech-selection
+  length: long
+  style: technical-rigorous
+  output_channels: [md, pdf]
 
 skills:
-  - id: skill_01_brief
-    name: MR-brief
-    purpose: 明确定调（读者、决策目标、交付约束）
+  - id: step1
+    name: mr-step1-scope
     input:
+      required: [model_name, audience_profile, decision_goal, top_risk]
+    output:
+      file: archive/scope.md
+    gate:
+      - 三个问题已回答
+      - 读者画像具体
+      - 报告类型单选明确
+      - 结论形式明确
+
+  - id: step2
+    name: mr-step2-outline
+    depends_on: [step1]
+    input:
+      files: [archive/scope.md]
       required: [model_name]
-      optional: [report_type, audience, decision_goal, output_formats, depth, time_window]
     output:
-      file: output/brief.json
+      file: archive/outline.md
     gate:
-      - 必须定义决策动作
-      - 必须定义结论表达形式
-      - 必须定义不评估边界
+      - 每章有核心问题
+      - 每章有素材需求
+      - 需要图表的章节已标注
 
-  - id: skill_02_outline
-    name: MR-outline
-    purpose: 生成章节骨架与证据需求
-    depends_on: [skill_01_brief]
+  - id: step3
+    name: mr-step3-collect
+    depends_on: [step2]
     input:
-      files: [output/brief.json]
+      files: [archive/outline.md]
+      required: [model_name]
     output:
-      file: output/outline.json
+      dir: archive/raw_data
+      required_structure:
+        - archive/raw_data/paper
+        - archive/raw_data/official
+        - archive/raw_data/benchmarks
+        - archive/raw_data/competitors
+        - archive/raw_data/ecosystem
+        - archive/raw_data/references.md
     gate:
-      - 每章包含核心问题、证据需求、DoD
+      - 官方技术报告已采集
+      - 基础参数字段>=10
+      - benchmark>=5
+      - 竞品>=2
+      - 来源URL齐全
+      - 官方与第三方分开
 
-  - id: skill_03_evidence
-    name: MR-evidence
-    purpose: 证据采集、交叉验证与可信度分级
-    depends_on: [skill_02_outline]
+  - id: step4
+    name: mr-step4-process
+    depends_on: [step3]
     input:
-      files: [output/brief.json, output/outline.json]
+      files: [archive/outline.md]
+      dir: archive/raw_data
     output:
-      files: [output/evidence_base.json, output/references.bib]
+      dir: archive/processed_data
+      required_files:
+        - archive/processed_data/gaps.md
     gate:
-      - 核心claim至少2个独立来源（无法满足需标注）
-      - 关键数字必须有数字+时间+来源
-      - A+/A/B证据占比建议不低于80%
+      - 素材按章节归位
+      - 核心参数和分数已表格化
+      - 图表已生成或标注暂缺
+      - gaps检测完成
+    fail_route:
+      on_severe_gap: step3
 
-  - id: skill_04_orchestration
-    name: MR-orchestration
-    purpose: 信息处理与编排（证据映射、图表规划、写作包）
-    depends_on: [skill_03_evidence]
-    input:
-      files: [output/outline.json, output/evidence_base.json]
-    output:
-      files:
-        - output/section_mapping.json
-        - output/asset_plan.json
-        - output/writing_pack.json
-    gate:
-      - 每章至少1条主证据
-      - 每个核心判断绑定证据ID
-      - 图表字段可追溯
-
-  - id: skill_05_write_decide
-    name: MR-write-decide
-    purpose: 结构化写作并生成结论与行动建议
-    depends_on: [skill_04_orchestration]
-    input:
-      files:
-        - output/brief.json
-        - output/writing_pack.json
-        - output/asset_plan.json
-        - output/evidence_base.json
-    output:
-      files: [output/draft.md, output/decision.json]
-    gate:
-      - 结论与证据一致
-      - 结论可执行（含动作与验收指标）
-      - 明确适用边界与风险
-
-  - id: skill_06_review
-    name: MR-review
-    purpose: 事实/逻辑/完整性/可用性复核
-    depends_on: [skill_05_write_decide]
+  - id: step5
+    name: mr-step5-write
+    depends_on: [step4]
     input:
       files:
-        - output/draft.md
-        - output/decision.json
-        - output/outline.json
-        - output/evidence_base.json
+        - archive/scope.md
+        - archive/outline.md
+      dir: archive/processed_data
     output:
-      files: [output/review_report.json, output/revised_draft.md]
+      file: archive/report.md
     gate:
-      - critical问题必须为0
-      - major问题必须清零后才能发布
+      - 段首职能清晰
+      - 关键数字附解读
+      - 开篇非背景套话
+      - 结论场景化
 
-  - id: skill_07_publish
-    name: MR-publish
-    purpose: 多格式输出与版本归档
-    depends_on: [skill_06_review]
+  - id: step6
+    name: mr-step6-review
+    depends_on: [step5]
     input:
       files:
-        - output/revised_draft.md
-        - output/decision.json
-        - output/asset_plan.json
-        - output/review_report.json
+        - archive/report.md
+        - archive/scope.md
+        - archive/outline.md
     output:
-      files:
-        - output/final.md
-        - output/final.pdf
-        - output/executive_summary.md
-        - output/archive.json
+      file: archive/review_checklist.md
+      status_field: pass_or_fail
     gate:
-      - 多格式结论一致
-      - 引用与图表链接有效
-      - 归档元数据完整
+      - 清单逐项检查
+      - 不通过项有修正建议
+      - 严重问题标记必须回退
+
+  - id: step7
+    name: mr-step7-output
+    depends_on: [step6]
+    input:
+      files:
+        - archive/report.md
+        - archive/review_checklist.md
+        - archive/scope.md
+    output:
+      dir: archive/output
+      required_files:
+        - archive/output/report.md
+        - archive/output/report.pdf
+        - archive/output/executive_summary.md
+    gate:
+      - 摘要可独立阅读
+      - 渠道格式转换完成
+      - 中文渲染正常
+      - 图表显示正常
+      - 中间产物已归档
 
 transitions:
-  - from: skill_01_brief
-    to: skill_02_outline
-  - from: skill_02_outline
-    to: skill_03_evidence
-  - from: skill_03_evidence
-    to: skill_04_orchestration
-  - from: skill_04_orchestration
-    to: skill_05_write_decide
-  - from: skill_05_write_decide
-    to: skill_06_review
-  - from: skill_06_review
-    to: skill_07_publish
-    condition: review_passed
-  - from: skill_06_review
-    to: skill_05_write_decide
-    condition: review_failed_and_fixable_by_rewrite
-  - from: skill_06_review
-    to: skill_03_evidence
-    condition: review_failed_due_to_evidence_gap
+  - from: step1
+    to: step2
+  - from: step2
+    to: step3
+  - from: step3
+    to: step4
+  - from: step4
+    to: step5
+    condition: no_severe_gap
+  - from: step4
+    to: step3
+    condition: severe_gap_detected
+  - from: step5
+    to: step6
+  - from: step6
+    to: step7
+    condition: review_pass
+  - from: step6
+    to: step3
+    condition: fact_check_failed
+  - from: step6
+    to: step2
+    condition: completeness_failed_by_outline
+  - from: step6
+    to: step4
+    condition: completeness_failed_by_processing
+  - from: step6
+    to: step5
+    condition: readability_or_logic_or_writing_failed
 
 final_artifacts:
-  - output/final.md
-  - output/final.pdf
-  - output/executive_summary.md
-  - output/archive.json
+  - archive/output/report.md
+  - archive/output/report.pdf
+  - archive/output/executive_summary.md

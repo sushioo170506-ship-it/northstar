@@ -1,0 +1,4 @@
+- https://openai.com/index/previewing-gpt-5-6-sol/
+- https://platform.openai.com/docs/models
+- https://deploymentsafety.openai.com/gpt-5-6-preview
+- https://community.openai.com/t/introducing-gpt-5-6-series-sol-terra-and-luna-coming-july-9/1384931

@@ -1,42 +1,40 @@
-# skill_05_write_decide
+# mr-step5-write
 
-name: MR-write-decide  
-description: 外部模型调研报告 Step 5 — 基于写作包生成正文，并同步形成决策结论。
+name: mr-step5-write  
+description: Step 5 — 将加工后的内容块组装为连贯报告正文，结论在正文中自然形成。
 
-## 目标
-将结构化证据转化为可读正文，并产出可执行结论。
-
-## 职责边界
-- **做**：章节写作、结论分级、行动建议。
-- **不做**：新增未经核验的数据、发布归档。
+## 作用
+把 `processed_data/` 中的表格、图表、要点转为可读报告，避免“拼贴式”写作。
 
 ## 输入
-- `output/brief.json`
-- `output/writing_pack.json`
-- `output/asset_plan.json`
-- `output/evidence_base.json`
+- `archive/processed_data/`
+- `archive/outline.md`
+- `archive/scope.md`
 
 ## 输出
-- `output/draft.md`
-- `output/decision.json`
+- `archive/report.md`（报告初稿）
 
 ## 写作规则
-1. 每节先给判断，再给证据，再给解释（judgment -> evidence -> implication）。
-2. 关键数字必须带时间和来源标注。
-3. 明确适用边界与不推荐场景。
-4. 结论避免模糊表述，必须可执行。
+1. **章节依赖顺序**：优先写 §3 -> §2 -> §4 -> §5 -> §6 -> §1 -> §7 -> Executive Summary。  
+2. **每段一个职能**：段首第一句声明判断/发现/对比/解读/局限/行动。  
+3. **数据不能裸奔**：关键数字后必须跟“这意味着...”的解释句。  
+4. **结论嵌入正文**：§7 就是结论章节，不额外拆“下结论”步骤。  
+5. **开篇限制**：禁止背景套话，必须用反直觉数字/认知冲突/直接结论开篇。
 
-## 执行步骤
-1. 按 `writing_pack` 逐节生成正文。
-2. 插入可视化占位（来自 `asset_plan`）。
-3. 汇总证据和风险，输出结论分级。
-4. 写出行动建议（PoC、验收指标、回滚条件）。
+## §7 结论章节最低结构
+- 综合评估
+- 适用场景推荐（建议表格）
+- 风险提示（含影响程度）
+- 综合评级（推荐/有条件推荐/不推荐 + 一句话理由）
 
 ## 质量卡口
-- 所有核心结论可追溯到证据 ID。
-- `decision.json` 必须包含 `decision/rationale/risks/action_plan`。
-- 结论与正文不能冲突。
+- 章节按依赖顺序完成，不是机械从 §1 写到 §7。
+- 每段段首声明职能。
+- 每个关键数字有“这意味着”解读。
+- 开篇非背景铺垫。
+- 结论章节有具体场景推荐。
+- 文风与 `scope.md` 约定一致。
 
 ## 交接
-将 `output/draft.md` 与 `output/decision.json` 交给 `skill_06_review`。
+将 `archive/report.md` 交给 `mr-step6-review`。
 

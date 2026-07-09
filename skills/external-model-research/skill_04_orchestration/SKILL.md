@@ -1,37 +1,46 @@
-# skill_04_orchestration
+# mr-step4-process
 
-name: MR-orchestration  
-description: 外部模型调研报告 Step 4 — 信息处理与编排：证据映射、可视化规划、写作输入包生成。
+name: mr-step4-process  
+description: Step 4 — 将原始素材加工为可直接写入报告的结构化内容块：归位、表格化、图表化、要点提炼、缺失检测。
 
-## 目标
-在写正文前完成“先编排后写作”，防止资料堆砌。
-
-## 职责边界
-- **做**：证据映射章节、图表/表格/流程图规划、段落级写作包。
-- **不做**：完整正文生成与终稿润色。
+## 作用
+这是从“收集到的东西”到“能写进报告的东西”的转换层。
 
 ## 输入
-- `output/outline.json`
-- `output/evidence_base.json`
+- `archive/raw_data/`
+- `archive/outline.md`
 
 ## 输出
-- `output/section_mapping.json`
-- `output/asset_plan.json`
-- `output/writing_pack.json`
+写入 `archive/processed_data/`，推荐目录：
 
-## 执行步骤
-1. 将证据按章节映射，区分主证据/辅证据。
-2. 标记冲突证据与不确定证据。
-3. 决定表达形式：正文、表格、图表、流程图、时间线。
-4. 生成可视化资产计划（标题、字段、来源证据 ID）。
-5. 生成段落级写作包（判断句、证据句、解读句）。
+```text
+processed_data/
+├── section_1/
+├── section_2/
+├── section_3/
+├── section_4/
+├── section_5/
+├── section_6/
+├── section_7/
+├── figures/
+└── gaps.md
+```
+
+## 加工动作
+1. **信息归位**：将素材按章节分配到 `section_X/`。
+2. **表格化**：将参数、benchmark、竞品对比转成统一表格。
+3. **提炼要点**：将长段落压缩为 3-5 条可写 bullet points。
+4. **生成图表**：按大纲生成柱状图、雷达图、架构图、时间线等。
+5. **缺失检测**：输出 `gaps.md`，逐章标明 `齐全/待补/缺失`。
 
 ## 质量卡口
-- 每章至少 1 条高可信主证据。
-- 每个核心判断必须绑定证据 ID。
-- 可视化资产字段必须可回溯到证据来源。
-- 存在冲突证据时必须在写作包中显式提示。
+- 所有素材已按章节归位。
+- 关键参数/分数已表格化。
+- 长篇论文描述已提炼为要点。
+- 大纲标注图表已生成，或标注“因数据不足暂缺”。
+- `gaps.md` 已完成且描述清晰。
+- 若章节素材严重缺失：必须回退 Step 3 补采。
 
 ## 交接
-将 `output/writing_pack.json` 与 `output/asset_plan.json` 交给 `skill_05_write_decide`。
+将 `archive/processed_data/` 交给 `mr-step5-write`。
 

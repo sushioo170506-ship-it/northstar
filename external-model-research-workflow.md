@@ -1,256 +1,162 @@
-# 外部模型调研报告自动化工作流（Skill 编排文档）
+# 外部模型调研报告工作流（按七步技能编排）
 
-> 目标：输入一个模型名，自动生成一份可用于技术选型/安全审查/竞品追踪的外部模型调研报告。  
-> 设计参考：你提供的“研究报告工作流”思路（主 Skill 编排 + 子 Skill 串联 + 质量卡口 + 回路修正）。
-
----
-
-## 1. 设计原则（参考文章后的落地约束）
-
-本工作流采用「**1 个主流程 + 7 个独立 Skill**」的串联模型：
-
-1. **单步单责**：每个 Skill 只做一类事情，避免职责重叠。
-2. **标准输入输出**：每步都输出结构化文件，供下一步消费。
-3. **质量卡口**：每步完成后强校验，通过才进入下一步。
-4. **失败回路**：复核失败自动回流到写作或证据步骤，不带病发布。
-5. **可追溯**：所有关键结论必须能回溯到来源与版本。
+> 主 Skill：`model-report-orchestrator`  
+> 流程：定调 -> 搭大纲 -> 采素材 -> 加工素材 -> 写正文 -> 复核 -> 输出
 
 ---
 
-## 2. 总流程（7 步 = 7 Skills）
+## 1. 主 Skill（编排器）
+
+**name**: `model-report-orchestrator`  
+**description**: 外部模型调研报告自动生成工作流 — 输入模型名称，按七步输出完整报告。
+
+**职责边界**：  
+本 skill 只负责串联子 skill、传递中间产物、执行质量卡口。  
+具体写大纲、采数据、加工素材、写正文由子 skill 负责。
+
+---
+
+## 2. 执行流程（严格顺序）
 
 ```text
-Step 1 定调 (skill_01_brief)
-   -> Step 2 搭大纲 (skill_02_outline)
-   -> Step 3 证据采集与核验 (skill_03_evidence)
-   -> Step 4 信息处理与编排 (skill_04_orchestration)
-   -> Step 5 结构化写作与结论 (skill_05_write_decide)
-   -> Step 6 复核 (skill_06_review)
-   -> Step 7 输出与归档 (skill_07_publish)
+Step 1: 定调        -> 报告企划书（读者画像 + 报告类型 + 结论形式）
+Step 2: 搭大纲      -> 章节大纲（含素材需求标注）
+Step 3: 采素材      -> raw_data/（原始素材，按章节分类）
+Step 4: 加工素材    -> processed_data/（结构化内容块：表格/图表/要点）
+                      (若缺素材 -> 回退 Step 3)
+Step 5: 写正文      -> report.md（报告初稿）
+Step 6: 复核        -> 复核清单（通过/不通过）
+                      (不通过 -> 按问题类型回退)
+Step 7: 输出        -> output/（最终交付件）
 ```
 
-失败回路：
-- `skill_06_review` 未通过且属于表达/逻辑问题 -> 回 `skill_05_write_decide`
-- `skill_06_review` 未通过且属于证据缺口 -> 回 `skill_03_evidence`
+---
+
+## 3. 子 Skill 定义
+
+### Skill 1: `mr-step1-scope`（定调）
+
+- 作用：确定读者画像、报告类型、结论形式和约束条件。
+- 输入：模型名称 + 3个必答问题（谁看/看完做什么/最怕什么）。
+- 输出：`archive/scope.md`（报告企划书）。
+- 质量卡口：
+  - 三个问题必须都有回答；
+  - 读者画像必须具体到角色与决策场景；
+  - 报告类型必须单选明确；
+  - 结论形式必须可执行（推荐/有条件推荐/不推荐 或 绿黄红）。
+
+### Skill 2: `mr-step2-outline`（搭大纲）
+
+- 作用：生成章节骨架并标注每章素材需求。
+- 输入：`archive/scope.md` + 模型名称。
+- 输出：`archive/outline.md`。
+- 规则：按报告类型使用预设骨架（技术选型/安全审查/投资研判/竞品追踪）并按读者与篇幅裁剪。
+- 质量卡口：
+  - 每章必须有核心问题；
+  - 每章必须有素材需求；
+  - 需要图表的章节必须显式标注。
+
+### Skill 3: `mr-step3-collect`（采素材）
+
+- 作用：按大纲采集原始信息，不做加工、不下判断。
+- 输入：`archive/outline.md` + 模型名称。
+- 输出：`archive/raw_data/`（paper/official/benchmarks/competitors/ecosystem/references）。
+- 质量卡口：
+  - 官方技术报告/论文必采；
+  - 基础参数 >= 10 字段；
+  - benchmark >= 5；
+  - 直接竞品 >= 2；
+  - 每条素材有 URL 与时间戳；
+  - 官方与第三方素材分开存放。
+
+### Skill 4: `mr-step4-process`（加工素材）
+
+- 作用：把原始素材加工成可写入正文的结构化内容块。
+- 输入：`archive/raw_data/` + `archive/outline.md`。
+- 输出：`archive/processed_data/` + `archive/processed_data/gaps.md`。
+- 动作：信息归位、表格化、要点提炼、图表生成、缺失检测。
+- 质量卡口：
+  - 素材按章节归位；
+  - 关键参数/分数已表格化；
+  - 图表按大纲需求生成（或标注暂缺）；
+  - gaps 检测完整；
+  - 素材严重缺失必须回退 Step 3。
+
+### Skill 5: `mr-step5-write`（写正文）
+
+- 作用：将内容块组装为连贯正文，结论在正文中自然形成。
+- 输入：`archive/processed_data/` + `archive/outline.md` + `archive/scope.md`。
+- 输出：`archive/report.md`。
+- 写作规则：
+  - 按依赖顺序写章节（优先 §3、§2、§4...）；
+  - 每段一个职能（判断/发现/对比/解读/局限/行动）；
+  - 关键数字后必须跟“这意味着...”；
+  - 禁止背景套话开篇；
+  - §7 结论必须给出场景化推荐。
+
+### Skill 6: `mr-step6-review`（复核）
+
+- 作用：按清单做事实性、完整性、读者视角、逻辑一致性、写作质量检查。
+- 输入：`archive/report.md` + `archive/scope.md` + `archive/outline.md`。
+- 输出：`archive/review_checklist.md`（通过/不通过 + 修正建议）。
+- 回退规则：
+  - 事实性不通过 -> Step 3；
+  - 完整性不通过 -> Step 2 或 Step 4；
+  - 读者视角/逻辑/写作质量不通过 -> Step 5。
+
+### Skill 7: `mr-step7-output`（输出）
+
+- 作用：按交付渠道转换格式并归档中间产物。
+- 输入：`archive/report.md`（复核通过）+ `archive/scope.md` + `archive/review_checklist.md`。
+- 输出：`archive/output/`：
+  - `report.md`
+  - `report.pdf`
+  - `executive_summary.md`
+  - `figures/`
+  - `slides/`（可选）
+- 质量卡口：
+  - Executive Summary 可独立阅读；
+  - 目标格式转换完成；
+  - PDF 中文可读；
+  - 图表显示正常；
+  - 中间产物归档完整。
 
 ---
 
-## 3. Skill 编排清单（职责、输入、输出、卡口）
-
-### Skill 01 — `skill_01_brief`（定调）
-
-**作用**  
-把“模型名”转成可执行任务定义，确定读者、决策目标、报告类型和交付格式。
-
-**输入**  
-- `model_name`（必填）
-- `report_type`（默认 `tech-selection`）
-- `audience`（默认 `tech-lead`）
-- `output_formats`（默认 `md,pdf`）
-- `depth`（`quick/standard/deep`）
-
-**输出**  
-- `output/brief.json`
-
-**质量卡口**  
-- 明确“看完后做什么决策”
-- 明确结论表达方式（推荐/有条件推荐/不推荐 或 绿黄红）
-- 明确不评估边界
-
----
-
-### Skill 02 — `skill_02_outline`（搭大纲）
-
-**作用**  
-生成章节骨架，并为每章标注核心问题、证据需求和完成标准（DoD）。
-
-**输入**  
-- `output/brief.json`
-
-**输出**  
-- `output/outline.json`
-
-**质量卡口**  
-- 每章必须包含：核心问题 + 证据类型 + DoD
-- 大纲结构可映射回决策目标
-
----
-
-### Skill 03 — `skill_03_evidence`（证据采集与核验）
-
-**作用**  
-按大纲批量采集资料并做交叉验证、去重和可信度分级。
-
-**输入**  
-- `output/brief.json`
-- `output/outline.json`
-
-**输出**  
-- `output/evidence_base.json`
-- `output/references.bib`（可选）
-
-**质量卡口**  
-- 核心 claim 至少 2 个独立来源（无法满足要显式标注）
-- 关键数据需包含“数字 + 时间 + 来源”
-- A+/A/B 采信比例建议 >= 80%
-- 冲突数据需保留并标注处理策略
-
----
-
-### Skill 04 — `skill_04_orchestration`（信息处理与编排）
-
-**作用**  
-在写正文前完成“证据映射 + 可视化规划 + 叙事排序”，避免直接堆料写作。
-
-**输入**  
-- `output/outline.json`
-- `output/evidence_base.json`
-
-**输出**  
-- `output/section_mapping.json`（证据 -> 章节）
-- `output/asset_plan.json`（图表/表格/流程图计划）
-- `output/writing_pack.json`（段落级写作输入包）
-
-**质量卡口**  
-- 每章至少 1 条高可信主证据
-- 每个核心判断都绑定证据 ID
-- 图表计划字段可追溯来源
-
----
-
-### Skill 05 — `skill_05_write_decide`（结构化写作与结论）
-
-**作用**  
-基于写作包生成正文，同时产出可执行结论和行动建议。
-
-**输入**  
-- `output/brief.json`
-- `output/writing_pack.json`
-- `output/asset_plan.json`
-- `output/evidence_base.json`
-
-**输出**  
-- `output/draft.md`
-- `output/decision.json`
-
-**质量卡口**  
-- 结论与正文证据一致
-- 给出明确决策分级（推荐/有条件推荐/不推荐）
-- 包含适用边界、风险与下一步动作
-
----
-
-### Skill 06 — `skill_06_review`（复核）
-
-**作用**  
-执行事实、逻辑、一致性、完整性和可用性检查，输出修订稿。
-
-**输入**  
-- `output/draft.md`
-- `output/decision.json`
-- `output/outline.json`
-- `output/evidence_base.json`
-
-**输出**  
-- `output/review_report.json`
-- `output/revised_draft.md`
-
-**质量卡口**  
-- `critical = 0` 才允许发布
-- `major > 0` 则必须返修
-
----
-
-### Skill 07 — `skill_07_publish`（输出与归档）
-
-**作用**  
-生成交付件并归档版本元数据，支持后续审计和增量更新。
-
-**输入**  
-- `output/revised_draft.md`
-- `output/decision.json`
-- `output/asset_plan.json`
-- `output/review_report.json`
-
-**输出**  
-- `output/final.md`
-- `output/final.pdf`
-- `output/executive_summary.md`
-- `output/archive.json`
-
-**质量卡口**  
-- 各格式核心结论一致
-- 图表和引用链接可用
-- 记录数据截止时间、模型版本和产物清单
-
----
-
-## 4. 标准目录结构
+## 4. 目录约定
 
 ```text
-output/
-├── brief.json
-├── outline.json
-├── evidence_base.json
-├── references.bib
-├── section_mapping.json
-├── asset_plan.json
-├── writing_pack.json
-├── draft.md
-├── decision.json
-├── review_report.json
-├── revised_draft.md
-├── final.md
-├── final.pdf
-├── executive_summary.md
-└── archive.json
+archive/
+├── scope.md
+├── outline.md
+├── raw_data/
+├── processed_data/
+│   ├── section_1/
+│   ├── section_2/
+│   ├── ...
+│   ├── figures/
+│   └── gaps.md
+├── report.md
+├── review_checklist.md
+└── output/
+    ├── report.md
+    ├── report.pdf
+    ├── executive_summary.md
+    ├── figures/
+    └── slides/
 ```
 
 ---
 
-## 5. 运行入口参数（最小集）
+## 5. 7 个 Skill 速查表
 
-```yaml
-model_name: "示例模型名"
-report_type: "tech-selection"
-audience: "tech-lead"
-depth: "standard"
-output_formats: ["md", "pdf"]
-time_window: "last_12_months"
-```
-
----
-
-## 6. 编排策略建议（主 Skill / Orchestrator 逻辑）
-
-主编排器只做三件事：
-
-1. **按顺序调用** `01 -> 07`
-2. **检查卡口结果**，不通过则回退
-3. **记录中间产物与状态**，保障可恢复执行
-
-建议状态机：
-
-```text
-pending -> running -> passed -> (next)
-                     \-> failed -> retry_once -> failed -> route_back
-```
-
----
-
-## 7. 与“研究报告工作流”思路的映射关系
-
-- “主 skill 串联子 skill” -> 这里的主编排器 + 7 个独立 Skill
-- “先大纲后数据后处理后写作” -> 这里的 Step 02/03/04/05
-- “图表与输出独立步骤” -> 并入编排层与发布层（通过 `asset_plan` 和 `publish` 保证）
-- “质量终检” -> Step 06 作为强门禁，未通过不允许发布
-
----
-
-## 8. 使用建议（第一版上线）
-
-1. 先跑 `tech-selection` 类型，减少分支复杂度。
-2. 先保证结构化产物完整，再优化文风。
-3. 先做“可追溯正确”，再做“自动图表美化”。
-4. 发布后保留 `archive.json`，用于后续增量更新（模型新版本发布时复跑 Step 03~07）。
+| Skill | 一句话职责 | 输入 | 输出 | 回退 |
+|---|---|---|---|---|
+| mr-step1-scope | 定义读者、定位、结论形式 | 模型名称+3问 | scope.md | — |
+| mr-step2-outline | 构建骨架并标注素材需求 | scope.md | outline.md | -> step1 |
+| mr-step3-collect | 采集原始素材 | outline.md + 模型名 | raw_data/ | -> step2 |
+| mr-step4-process | 素材加工成结构化块 | raw_data/ + outline.md | processed_data/ + gaps.md | -> step3 |
+| mr-step5-write | 生成连贯正文 | processed_data/ + outline.md + scope.md | report.md | -> step4 |
+| mr-step6-review | 质量复核与回退判定 | report.md + scope.md + outline.md | review_checklist.md | -> step2/3/4/5 |
+| mr-step7-output | 格式转换与交付归档 | report.md + review_checklist.md | output/ | -> step6 |
 

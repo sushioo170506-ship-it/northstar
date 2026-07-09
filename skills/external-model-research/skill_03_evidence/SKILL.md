@@ -1,45 +1,57 @@
-# skill_03_evidence
+# mr-step3-collect
 
-name: MR-evidence  
-description: 外部模型调研报告 Step 3 — 多源采集、关键 claim 交叉验证、可信度分级。
+name: mr-step3-collect  
+description: Step 3 — 根据大纲素材需求采集原始信息，不加工、不筛选、先收集。
 
-## 目标
-构建结构化证据库，确保关键结论有来源、有时间、有版本。
-
-## 职责边界
-- **做**：采集、去重、核验、分级、缺口标注。
-- **不做**：正文叙事与最终结论裁决。
+## 作用
+按章节需求批量采素材，本阶段只采集，不评判“可信度结论”。
 
 ## 输入
-- `output/brief.json`
-- `output/outline.json`
+- `archive/outline.md`
+- 模型名称
 
 ## 输出
-- `output/evidence_base.json`
-- `output/references.bib`（可选）
+写入 `archive/raw_data/`，推荐目录：
 
-建议字段：
-- `evidence_items[]`: `id/type/value/unit/timestamp/source/source_url/confidence`
-- `claim_checks[]`: `claim/independent_sources/status`
-- `data_gaps[]`: `gap/attempts/impact`
+```text
+raw_data/
+├── paper/
+├── official/
+├── benchmarks/
+├── competitors/
+├── ecosystem/
+└── references.md
+```
 
-## 采集优先级
-官方文档/模型卡/论文 > 第三方独立评测 > 社区实测 > 媒体转载
+## 渠道优先级
+1. 官方技术报告 / arXiv 论文  
+2. 模型卡 / HuggingFace / GitHub  
+3. 官方 API 与部署文档  
+4. 第三方评测（Open LLM Leaderboard / LMSYS）  
+5. 社区实测（Reddit / 知乎 / X）  
+6. 新闻与行业分析
 
-## 执行步骤
-1. 按大纲逐章列出证据需求清单。
-2. 对每条需求进行多源采集并结构化记录。
-3. 同指标去重并执行交叉验证。
-4. 对关键 claim 打 `verified/partially_verified/conflicted/unverified`。
-5. 对数据点标注可信度等级（A+/A/B/C/D）。
-6. 记录无法验证项与数据缺口。
+## 最低采集粒度
+- 论文/技术报告：>= 1 篇（官方技术报告必采）
+- 基础参数：>= 10 个字段
+- Benchmark：>= 5 个主流基准
+- 竞品数据：>= 2 个直接竞品
+- 社区评价：>= 3 条独立来源
+- 部署信息：>= 3 个指标（显存/延迟/吞吐/价格）
+
+## 注意事项
+- 每条素材必须标注来源 URL 与时间戳。
+- 官方与第三方数据分开存放（文件名带 `_official` / `_thirdparty`）。
+- 采集不全不阻塞：在后续加工阶段标注“待补采”。
 
 ## 质量卡口
-- 每个核心 claim 至少 2 个独立来源（不足要显式标注）。
-- 每个关键数字首次记录时必须有“数字+时间+来源”。
-- 采信证据中 A+/A/B 比例建议 >= 80%（不足需说明原因）。
-- 保留冲突数据，不允许简单删除。
+- 官方技术报告/论文已采集。
+- 基础参数 >= 10 字段。
+- Benchmark >= 5。
+- 竞品 >= 2。
+- 每条素材有来源 URL。
+- 官方与第三方数据已区分。
 
 ## 交接
-将 `output/evidence_base.json` 交给 `skill_04_orchestration`。
+将 `archive/raw_data/` 交给 `mr-step4-process`。
 

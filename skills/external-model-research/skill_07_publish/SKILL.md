@@ -1,44 +1,51 @@
-# skill_07_publish
+# mr-step7-output
 
-name: MR-publish  
-description: 外部模型调研报告 Step 7 — 多格式输出、摘要提炼与版本归档。
+name: mr-step7-output  
+description: Step 7 — 按交付渠道转换最终格式，输出可分发交付件并完成归档。
 
-## 目标
-输出可直接分发的报告文件，并保留可追溯归档信息。
-
-## 职责边界
-- **做**：格式转换、摘要生成、版本归档。
-- **不做**：重写核心结论（若需重写应回到上一步）。
+## 作用
+将复核通过的 `report.md` 按目标渠道适配，不只是“另存为”。
 
 ## 输入
-- `output/revised_draft.md`
-- `output/decision.json`
-- `output/asset_plan.json`
-- `output/review_report.json`
+- `archive/report.md`（复核通过）
+- `archive/scope.md`（交付渠道、篇幅、风格要求）
+- `archive/review_checklist.md`
 
 ## 输出
-- `output/final.md`
-- `output/final.pdf`
-- `output/final.docx`（可选）
-- `output/final.pptx`（可选）
-- `output/executive_summary.md`
-- `output/archive.json`
+写入 `archive/output/`：
 
-## 执行步骤
-1. 固化终稿内容与图表引用编号。
-2. 生成管理层摘要（可独立阅读）。
-3. 输出多格式文件并检查一致性。
-4. 写入归档元数据：模型版本、数据截止日、引用快照、产物清单。
+```text
+output/
+├── report.md
+├── report.pdf
+├── executive_summary.md
+├── figures/
+└── slides/    # 如需要
+```
+
+## 输出动作
+1. **提炼 Executive Summary（<= 300 字）**
+   - 一句话结论（<= 50 字）
+   - 核心发现 3-5 条
+   - 关键对比表
+   - 推荐意见
+2. **格式转换**
+   - PDF：Pandoc / md-to-pdf（中文字体嵌入）
+   - HTML：Pandoc + CSS（响应式）
+   - PPT：Pandoc 或手工拆页
+   - Notion/飞书：检查 Markdown 兼容
+3. **素材归档**
+   - `archive/scope.md`
+   - `archive/outline.md`
+   - `archive/raw_data/`
+   - `archive/processed_data/`
+   - `archive/report.md`
+   - `archive/output/`
 
 ## 质量卡口
-- 各格式核心结论一致（不得出现版本漂移）。
-- 关键图表和引用链接可用。
-- `archive.json` 完整可追溯。
-
-## 交付完成条件
-存在并可打开：
-- `output/final.md`
-- `output/final.pdf`
-- `output/executive_summary.md`
-- `output/archive.json`
+- Executive Summary 已生成且可独立阅读。
+- 目标格式均已转换完成。
+- PDF 中文字体正常渲染。
+- 图表在目标格式中可见且不失真。
+- 中间产物已归档可追溯。
 
