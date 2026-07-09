@@ -721,6 +721,14 @@ E --> F[Account-level Monitoring]
         "| 阶段 | 目标 | KPI | 退出条件 |\n|---|---|---|---|\n| P0 | 准入验证 | 可用/成本通过 | 任一门禁失败 |\n| P1 | 价值验证 | 质量提升或降本 | 指标不达标 |\n| P2 | 放量验证 | 稳定性合格 | 延迟或误拦截超阈值 |\n",
     )
     write_text(
+        run_dir / "processed_data" / "tables" / "tech_route_3layer.md",
+        "| 技术路线 | 现象/观测 | 学术溯源 | 本质分析 |\n|---|---|---|---|\n| 推理增强 | max reasoning effort | test-time compute scaling | 通过额外推理预算换取复杂任务稳定性 |\n| 多代理执行 | ultra mode + subagents | multi-agent planning | 用任务分解降低长链路失败概率 |\n| 安全分层 | 模型+分类器+账户审查 | defense-in-depth | 将安全从单点模型扩展为系统治理 |\n",
+    )
+    write_text(
+        run_dir / "processed_data" / "tables" / "capability_governance_dualtrack.md",
+        "| 维度 | 能力轨判断 | 治理轨判断 | 决策含义 |\n|---|---|---|---|\n| 代码与Agent能力 | 上限较高，可进入关键任务PoC | 需配套误拦截复核与回退 | 先小流量灰度 |\n| 安全高风险能力 | 在公开口径中能力显著提升 | 分级访问与策略约束仍是前置条件 | 禁止无护栏直连生产 |\n| 成本效率 | Terra/Luna具备规模化优势 | 计费口径需账单回归 | 建立成本守护阈值 |\n",
+    )
+    write_text(
         run_dir / "processed_data" / "figures" / "timeline.mmd",
         """timeline
 title GPT-5.6 rollout timeline
