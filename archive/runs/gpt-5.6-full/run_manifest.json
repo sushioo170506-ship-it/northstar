@@ -1,14 +1,15 @@
 {
   "workflow_id": "model-report-orchestrator",
   "run_name": "gpt-5.6-full",
-  "generated_at": "2026-07-09T10:17:42.358649+00:00",
+  "generated_at": "2026-07-09T10:25:00.338970+00:00",
   "model_name": "GPT-5.6",
   "data_cutoff": "2026-07-09",
   "artifact_summary": {
     "tables": 12,
     "figure_specs": 4,
     "sections": 7,
-    "source_count": 30
+    "source_count": 30,
+    "report_chars": 32916
   },
   "artifacts": [
     "scope.md",

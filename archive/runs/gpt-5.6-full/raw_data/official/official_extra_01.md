@@ -1,3 +1,5 @@
-来源: https://example.org/gpt-5-6/official-01
+来源ID: S7
+来源: https://platform.openai.com/docs/guides/reasoning
 时间: 2026-07-09
-用途: 官方口径补充记录
+类型: 官方推理指南
+章节映射: section_2|section_5

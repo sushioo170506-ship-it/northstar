@@ -1,3 +1,5 @@
-来源: https://example.org/gpt-5-6/official-06
+来源ID: S12
+来源: https://status.openai.com/
 时间: 2026-07-09
-用途: 官方口径补充记录
+类型: 官方服务状态页
+章节映射: section_5

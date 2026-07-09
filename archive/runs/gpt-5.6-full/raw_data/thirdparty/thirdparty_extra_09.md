@@ -1,3 +1,5 @@
-来源: https://example.org/gpt-5-6/thirdparty-09
+来源ID: S21
+来源: https://paperswithcode.com/sota/question-answering-on-mmlu
 时间: 2026-07-09
-用途: 第三方评测/案例补充
+类型: PapersWithCode-MMLU
+章节映射: section_3

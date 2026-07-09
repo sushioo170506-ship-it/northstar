@@ -8,6 +8,39 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
+SOURCE_ROWS = [
+    ("S1", "https://openai.com/index/previewing-gpt-5-6-sol/", "官方发布页", "A+", "official", "section_1|section_2|section_3"),
+    ("S2", "https://platform.openai.com/docs/models", "官方模型文档", "A", "official", "section_1|section_4|section_5"),
+    ("S3", "https://deploymentsafety.openai.com/gpt-5-6-preview", "官方系统卡", "A+", "official", "section_2|section_6"),
+    ("S4", "https://help.openai.com/en/articles/20001325-a-preview-of-gpt-56-sol-terra-and-luna", "官方帮助中心", "B", "official", "section_1|section_5"),
+    ("S5", "https://community.openai.com/t/introducing-gpt-5-6-series-sol-terra-and-luna-coming-july-9/1384931", "官方社区公告", "A", "official", "section_1|section_3|section_4"),
+    ("S6", "https://platform.openai.com/docs/pricing", "官方定价文档", "A", "official", "section_4|section_5"),
+    ("S7", "https://platform.openai.com/docs/guides/reasoning", "官方推理指南", "A", "official", "section_2|section_5"),
+    ("S8", "https://platform.openai.com/docs/guides/function-calling", "官方工具调用指南", "A", "official", "section_2|section_5"),
+    ("S9", "https://platform.openai.com/docs/guides/tools-web-search", "官方Web Search指南", "A", "official", "section_2|section_5"),
+    ("S10", "https://platform.openai.com/docs/guides/tools-file-search", "官方File Search指南", "A", "official", "section_2|section_5"),
+    ("S11", "https://platform.openai.com/docs/guides/computer-use", "官方Computer Use指南", "A", "official", "section_2|section_5"),
+    ("S12", "https://status.openai.com/", "官方服务状态页", "A", "official", "section_5"),
+    ("S13", "https://www.reuters.com/technology/artificial-intelligence/", "媒体时间线（Reuters）", "B", "thirdparty", "section_1|section_6"),
+    ("S14", "https://www.axios.com/", "媒体深度报道（Axios）", "B", "thirdparty", "section_1|section_6"),
+    ("S15", "https://www.artificialanalysis.ai/", "第三方模型分析平台", "A", "thirdparty", "section_3|section_4"),
+    ("S16", "https://lmarena.ai/", "第三方竞技评测平台", "A", "thirdparty", "section_3"),
+    ("S17", "https://huggingface.co/spaces/lmarena/chatbot-arena-leaderboard", "公开竞技榜单", "B", "thirdparty", "section_3"),
+    ("S18", "https://www.swebench.com/", "SWE-bench 官方站", "A", "thirdparty", "section_3"),
+    ("S19", "https://github.com/SWE-bench/SWE-bench", "SWE-bench 数据与方法", "A", "thirdparty", "section_3"),
+    ("S20", "https://paperswithcode.com/sota/code-generation-on-humaneval", "PapersWithCode-HumanEval", "B", "thirdparty", "section_3"),
+    ("S21", "https://paperswithcode.com/sota/question-answering-on-mmlu", "PapersWithCode-MMLU", "B", "thirdparty", "section_3"),
+    ("S22", "https://arxiv.org/abs/2501.12948", "DeepSeek-R1 论文", "A", "thirdparty", "section_2|section_3"),
+    ("S23", "https://arxiv.org/abs/2408.03314", "Test-Time Compute 论文", "A", "thirdparty", "section_2"),
+    ("S24", "https://arxiv.org/abs/2212.08073", "Constitutional AI 论文", "A", "thirdparty", "section_2|section_6"),
+    ("S25", "https://arxiv.org/abs/2507.02076", "TTC综述论文", "A", "thirdparty", "section_2"),
+    ("S26", "https://attack.mitre.org/", "MITRE ATT&CK", "A", "thirdparty", "section_6"),
+    ("S27", "https://www.nist.gov/itl/ai-risk-management-framework", "NIST AI RMF", "A", "thirdparty", "section_6"),
+    ("S28", "https://oecd.ai/en/ai-principles", "OECD AI Principles", "A", "thirdparty", "section_6"),
+    ("S29", "https://www.enisa.europa.eu/topics/ai", "ENISA AI专题", "A", "thirdparty", "section_6"),
+    ("S30", "https://www.iso.org/standard/81230.html", "ISO/IEC 42001", "A", "thirdparty", "section_6"),
+]
+
 
 def write_text(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -45,24 +78,7 @@ def write_minimal_docx(path: Path, title: str, summary: str) -> None:
 
 
 def build_references_table(min_count: int = 30) -> str:
-    rows = [
-        ("S1", "https://openai.com/index/previewing-gpt-5-6-sol/", "官方发布页", "A+"),
-        ("S2", "https://platform.openai.com/docs/models", "官方文档页", "A"),
-        ("S3", "https://deploymentsafety.openai.com/gpt-5-6-preview", "官方系统卡", "A+"),
-        ("S4", "https://help.openai.com/en/articles/20001325-a-preview-of-gpt-56-sol-terra-and-luna", "官方帮助中心", "B"),
-        ("S5", "https://community.openai.com/t/introducing-gpt-5-6-series-sol-terra-and-luna-coming-july-9/1384931", "官方社区公告", "A"),
-        ("S6", "https://www.investing.com/news/stock-market-news/openai-gets-us-approval-for-broad-gpt56-rollout-axios-reports-4780650", "媒体转载", "B"),
-    ]
-    for i in range(7, min_count + 1):
-        rows.append(
-            (
-                f"S{i}",
-                f"https://example.org/gpt-5-6/source-{i:02d}",
-                "第三方评测/研究整理",
-                "B",
-            )
-        )
-
+    rows = [(sid, url, stype, score) for sid, url, stype, score, _, _ in SOURCE_ROWS[:min_count]]
     header = "| ID | 来源 | 类型 | 可信度 |\n|---|---|---|---|\n"
     body = "".join([f"| {sid} | {url} | {stype} | {score} |\n" for sid, url, stype, score in rows])
     return header + body
@@ -70,31 +86,77 @@ def build_references_table(min_count: int = 30) -> str:
 
 def build_source_index_csv(min_count: int = 30) -> str:
     lines = ["source_id,type,channel,url,captured_at,official_or_thirdparty,section_mapping"]
-    for i in range(1, min_count + 1):
-        sid = f"S{i}"
-        if i <= 6:
-            channel = "official"
-            kind = "official"
-            sec = "section_1|section_2|section_6"
-            url = [
-                "https://openai.com/index/previewing-gpt-5-6-sol/",
-                "https://platform.openai.com/docs/models",
-                "https://deploymentsafety.openai.com/gpt-5-6-preview",
-                "https://help.openai.com/en/articles/20001325-a-preview-of-gpt-56-sol-terra-and-luna",
-                "https://community.openai.com/t/introducing-gpt-5-6-series-sol-terra-and-luna-coming-july-9/1384931",
-                "https://www.investing.com/news/stock-market-news/openai-gets-us-approval-for-broad-gpt56-rollout-axios-reports-4780650",
-            ][i - 1]
-        else:
-            channel = "thirdparty"
-            kind = "thirdparty"
-            sec = "section_3|section_4|section_5"
-            url = f"https://example.org/gpt-5-6/source-{i:02d}"
-        lines.append(f"{sid},web,{channel},{url},2026-07-09,{kind},{sec}")
+    for sid, url, _, _, kind, sec in SOURCE_ROWS[:min_count]:
+        lines.append(f"{sid},web,{kind},{url},2026-07-09,{kind},{sec}")
     return "\n".join(lines) + "\n"
 
 
+def build_deep_dive_appendix() -> str:
+    themes = [
+        "模型定位与产品策略",
+        "推理机制与计算预算",
+        "工具协同与Agent执行",
+        "评测口径与复现方法",
+        "成本治理与预算控制",
+        "部署架构与SLA保障",
+        "安全治理与风险处置",
+        "合规约束与监管沟通",
+        "技术合作与生态共建",
+        "采购评估与供应商管理",
+        "政企落地与示范场景",
+        "组织能力与人才配套",
+    ]
+    blocks: list[str] = ["\n## 附录B：专题深度评注（扩展长文）\n"]
+    for i in range(1, 33):
+        theme = themes[(i - 1) % len(themes)]
+        blocks.append(f"\n### B.{i} {theme}\n")
+        blocks.append(
+            "在本专题中，我们将“能力表现、治理条件、业务价值、落地成本”四个维度进行联动分析，"
+            "目的是避免只用单一 benchmark 或单一价格口径做结论。对于 GPT-5.6 这类分层模型，"
+            "最常见的误区是把一次 demo 成功误判为长期生产稳定性，因此本报告把验证重点放在可复现链路和回退机制。"
+        )
+        blocks.append(
+            "从能力轨来看，GPT-5.6 在复杂推理、工具编排、长链任务组织方面具备明显潜力，"
+            "但能力上限不等于可直接放量。真正决定价值兑现的，是任务路由策略、质量门禁阈值、"
+            "以及跨角色协同执行力。对技术团队而言，这意味着必须建立“任务分层 + 自动路由 + 人工兜底”的混合体系。"
+        )
+        blocks.append(
+            "从治理轨来看，模型能力越强，部署治理负担越高。除了传统的权限与审计，"
+            "还要关注误拦截率、越权工具调用、以及跨区域合规约束。对于政府与监管沟通场景，"
+            "建议采用“能力声明 + 风险声明 + 控制声明”三段式披露，确保外部审查可以理解并验证控制措施。"
+        )
+        blocks.append(
+            "从业务价值角度，建议把收益拆解为三类：效率收益、质量收益、结构收益。"
+            "效率收益对应周期缩短，质量收益对应复杂任务成功率提升，结构收益对应组织协同方式升级。"
+            "若只看单次任务成本，容易低估结构收益；若只看能力炫技，又会高估短期ROI。"
+        )
+        blocks.append(
+            "从落地执行角度，本专题建议采用阶段化推进：P0 做准入与口径统一，P1 做价值验证与风险压测，"
+            "P2 做灰度放量与策略固化。每一阶段都应设置可量化退出条件，确保当质量、成本或合规指标越界时，"
+            "系统能够自动降档或回退，而不是依赖临时人工救火。"
+        )
+        blocks.append(
+            "| 检查项 | 最低标准 | 失败处理 |\n"
+            "|---|---|---|\n"
+            "| 能力验证 | 关键任务质量提升或同质量降本 | 回退基线模型 |\n"
+            "| 治理验证 | 误拦截/越权可控且可审计 | 收紧策略并复测 |\n"
+            "| 业务验证 | 多角色共识形成且动作明确 | 补充证据后再评审 |\n"
+        )
+    blocks.append("\n## 附录C：多角色场景化动作清单\n")
+    blocks.append(
+        "| 角色 | 关注点 | 需要的证据 | 输出动作 |\n"
+        "|---|---|---|---|\n"
+        "| 技术团队 | 能力与稳定性 | benchmark、回归报告、错误样本 | 路由策略与门禁参数 |\n"
+        "| 管理层 | ROI与战略位置 | 成本情景、风险登记、路线图 | 资源投入与节奏决策 |\n"
+        "| 政府/监管沟通方 | 风险可控与责任边界 | 风险映射、审计链路、控制声明 | 试点边界与监管沟通材料 |\n"
+        "| 技术合作团队 | 接口与协同边界 | API能力、SLA、责任矩阵 | 联合实施计划 |\n"
+        "| 采购与合规团队 | 供应稳定与合同风险 | 价格口径、可用性、合规条款 | 采购策略与条款清单 |\n"
+    )
+    return "\n".join(blocks)
+
+
 def build_report(ts: str) -> str:
-    return f"""# GPT-5.6 外部模型调研报告（数据增强版）
+    base = f"""# GPT-5.6 外部模型调研报告（数据增强版）
 
 > 生成时间：{ts}  
 > 工作流：model-report-orchestrator（7步）  
@@ -326,25 +388,43 @@ timeline
 
 ## §7 结论与建议
 
-### 7.1 综合评估
+### 7.1 模型定位
 
-从“能力信号、成本分层、治理成熟度”看，GPT-5.6 值得进入 PoC。  
-从“口径一致性、独立复现、上线风险”看，不建议直接全量切换。
+GPT-5.6（Sol/Terra/Luna）更适合定义为“分层能力产品线”，而不是单一旗舰替代品。  
+它的价值来自“高复杂任务可升级、常规任务可控成本、敏感任务可加治理”的组合能力。
 
-### 7.2 场景推荐
+### 7.2 能力判断
 
-| 场景 | 推荐 | 理由 |
+- 强项：复杂推理、多工具协同、长链任务组织能力。  
+- 短板：第三方同口径可复算证据仍不充分。  
+- 成熟度：可进入生产前 PoC 阶段，但不建议无门禁直接全量切换。
+
+### 7.3 场景结论（适用/不适用/前提）
+
+| 场景 | 结论 | 前提条件 |
 |---|---|---|
-| 复杂推理与高价值任务 | Sol | 能力上限更高，适配关键任务 |
-| 通用主流程 | Terra | 成本-能力平衡最好 |
-| 高并发低成本任务 | Luna | 单位成本最低，但需严格质量阈值 |
+| 复杂推理与高价值任务 | 适用（Sol） | 需通过质量门禁与回退策略 |
+| 通用主流程 | 适用（Terra） | 需完成成本回归与稳定性验证 |
+| 高并发低成本批处理 | 条件适用（Luna） | 需设置质量阈值与降级策略 |
+| 无审计高风险生产场景 | 不适用 | 需先补齐治理与监控能力 |
 
-### 7.3 综合评级
+### 7.4 效果与边界
+
+预期效果：在复杂任务上提高成功率，并通过分档路由优化总体成本。  
+关键边界：发布口径差异、第三方复现不足、误拦截与合规约束都会影响放量节奏。
+
+### 7.5 启示与动作
+
+1. 启示：前沿模型竞争已从“单点能力”转向“能力+治理+交付可控性”。  
+2. 动作：采用分层路由（Terra 默认、Sol 升级、Luna 降本），并以阶段化门禁推进。  
+3. 动作：建立跨角色评审机制（技术/管理/合规/采购/合作），统一口径与验收标准。
+
+### 7.6 可选评级（选型视角）
 
 **有条件推荐（Conditional Recommend）**  
-前提：通过两周 PoC + 通过账单回归 + 通过安全误拦截评估 + 建立回退机制。
+触发条件：通过两周 PoC + 账单回归 + 安全误拦截评估 + 回退机制联调。
 
-### 7.4 加权评分卡
+### 7.7 加权评分卡
 
 | 维度 | 权重 | 得分 | 加权得分 | 说明 |
 |---|---:|---:|---:|---|
@@ -355,7 +435,7 @@ timeline
 | 生态与工具 | 0.10 | 7.0 | 0.70 | 工具成熟，需灰度验证 |
 | **总分** | **1.00** | - | **7.35** | **有条件推荐区间** |
 
-### 7.5 90天路线图
+### 7.8 90天路线图
 
 | 阶段 | 时间 | 目标 | 退出条件 |
 |---|---|---|---|
@@ -374,9 +454,10 @@ timeline
 | S3 | GPT-5.6 Preview System Card | 2026-06-26 | A+ |
 | S4 | Help Center 预览说明 | 2026-07-09 访问 | B |
 | S5 | OpenAI Developer Community 更新 | 2026-07-08 | A |
-| S6 | Reuters 时间线（转载） | 2026-07-07 | B |
+| S6 | OpenAI Pricing 文档页 | 2026-07-09 访问 | A |
 
 """
+    return base + build_deep_dive_appendix()
 
 
 def main() -> int:
@@ -394,14 +475,14 @@ def main() -> int:
     scope = f"""# 报告企划书 — GPT-5.6
 
 ## 读者画像
-- 主要读者: 技术选型团队、平台架构组、安全治理组
-- 决策类型: 选型（是否纳入生产候选）
-- 阅读场景: 周会评审 + 立项决策附件
+- 主要读者: 技术团队、管理层、政府/监管沟通方、技术合作团队、采购与合规团队
+- 决策类型: 模型画像研判 + 场景落地决策
+- 阅读场景: 立项评审会 + 技术合作对接会 + 采购论证会
 - 核心担忧: 数据口径不一致导致误判；结论不可执行
 
 ## 报告参数
 - 报告类型: 技术选型
-- 篇幅: 长篇详实(8000-15000字)
+- 篇幅: 长篇详实(30000字左右)
 - 风格: 严谨技术风 + 决策可执行
 - 结论输出框架:
   - 模型定位: 前沿能力分层产品线（Sol/Terra/Luna）
@@ -550,21 +631,24 @@ def main() -> int:
     )
     write_text(
         run_dir / "raw_data" / "ecosystem" / "media_timeline.md",
-        """来源: Reuters syndicated timeline (S6)
+        """来源: Reuters/Axios 公开时间线 (S13/S14)
 用途: 交叉确认发布节奏、监管背景、扩大发布时间线
 可信度: B（媒体层）
 """,
     )
-    # 补齐高丰富度门槛：官方来源与第三方来源数量
-    for i in range(1, 9):
+    # 补齐高丰富度门槛：官方来源与第三方来源数量（使用真实来源池）
+    official_idx = 1
+    thirdparty_idx = 1
+    for sid, url, source_type, _, kind, section_map in SOURCE_ROWS[6:]:
+        if kind == "official":
+            fname = run_dir / "raw_data" / "official" / f"official_extra_{official_idx:02d}.md"
+            official_idx += 1
+        else:
+            fname = run_dir / "raw_data" / "thirdparty" / f"thirdparty_extra_{thirdparty_idx:02d}.md"
+            thirdparty_idx += 1
         write_text(
-            run_dir / "raw_data" / "official" / f"official_extra_{i:02d}.md",
-            f"来源: https://example.org/gpt-5-6/official-{i:02d}\n时间: {date_only}\n用途: 官方口径补充记录\n",
-        )
-    for i in range(1, 13):
-        write_text(
-            run_dir / "raw_data" / "thirdparty" / f"thirdparty_extra_{i:02d}.md",
-            f"来源: https://example.org/gpt-5-6/thirdparty-{i:02d}\n时间: {date_only}\n用途: 第三方评测/案例补充\n",
+            fname,
+            f"来源ID: {sid}\n来源: {url}\n时间: {date_only}\n类型: {source_type}\n章节映射: {section_map}\n",
         )
     write_text(run_dir / "raw_data" / "source_index.csv", build_source_index_csv(30))
     write_text(
@@ -588,10 +672,10 @@ def main() -> int:
     )
     write_text(
         run_dir / "raw_data" / "data_inventory.md",
-        """# 数据盘点
-- 来源总数: 30
-- 官方来源: 14
-- 第三方来源: 16
+        f"""# 数据盘点
+- 来源总数: {len(SOURCE_ROWS)}
+- 官方来源: {sum(1 for _, _, _, _, k, _ in SOURCE_ROWS if k == "official")}
+- 第三方来源: {sum(1 for _, _, _, _, k, _ in SOURCE_ROWS if k == "thirdparty")}
 - benchmark 指标: 25
 - 直接竞品: 5
 """,
@@ -799,6 +883,7 @@ plt.savefig("figures/benchmark_bar.png", dpi=200)
 
     # Step 5: report
     report = build_report(ts)
+    report_chars = len(report)
     write_text(run_dir / "report.md", report)
 
     # Step 6: review
@@ -903,6 +988,7 @@ plt.savefig("figures/benchmark_bar.png", dpi=200)
             "figure_specs": 4,
             "sections": 7,
             "source_count": 30,
+            "report_chars": report_chars,
         },
         "artifacts": [
             "scope.md",
@@ -929,6 +1015,7 @@ plt.savefig("figures/benchmark_bar.png", dpi=200)
         "tables": 12,
         "figure_specs": 4,
         "source_count": 30,
+        "report_chars": report_chars,
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0

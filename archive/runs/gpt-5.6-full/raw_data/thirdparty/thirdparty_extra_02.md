@@ -1,3 +1,5 @@
-来源: https://example.org/gpt-5-6/thirdparty-02
+来源ID: S14
+来源: https://www.axios.com/
 时间: 2026-07-09
-用途: 第三方评测/案例补充
+类型: 媒体深度报道（Axios）
+章节映射: section_1|section_6
