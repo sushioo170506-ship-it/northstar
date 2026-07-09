@@ -57,8 +57,10 @@ research-workflow/
 - [x] 主 Skill `wcget.mdc`（编排器）
 - [x] `wcget-outline` 大纲（五步构建法 + 支持自定义骨架）
 - [x] `wcget-data` 数据（三支柱七线 + 三角交叉验证 + 可信度分级）
-- [ ] `wcget-process` 评分/数据处理
-- [ ] `wcget-write` 正文
-- [ ] `wcget-figure` 图表
-- [ ] `wcget-build` 报告组装
+- [x] `wcget-process` 评分/数据处理（数据锚点法：维度→赋分公式→未量产惩罚→6 条边界声明）
+- [x] `wcget-write` 正文（语言宪法 + 数据三要素 + 刺点五段式 + 节奏映射）
+- [x] `wcget-figure` 图表（类型决策树 + 视觉风格 + 表格 SVG + 6–10 张配置）
+- [x] `wcget-build` 报告组装（自包含 HTML + PNG 2× 导出）
 - [ ] 端到端试跑（Mythos5）
+
+> 六个子 Skill 均已按知乎原文全文落地；原文引用的外部工具（`nature-*` / `render_tables.py` / `build_html.py` / `svg2png.py`）在 Cursor 环境标注为「可选/可替换」，可由 Agent 用等价 Python 实现。
