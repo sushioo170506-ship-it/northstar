@@ -55,7 +55,7 @@ research-workflow/
 ## 落地进度
 
 - [x] 主 Skill `wcget.mdc`（编排器）
-- [ ] `wcget-outline` 大纲
+- [x] `wcget-outline` 大纲（五步构建法 + 支持自定义骨架）
 - [ ] `wcget-data` 数据
 - [ ] `wcget-process` 评分/数据处理
 - [ ] `wcget-write` 正文
