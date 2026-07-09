@@ -55,6 +55,12 @@ description: Step 6 — 按 rubric 进行最终复核，输出量化评分与回
 - 结构与完整性问题 -> 回 Step2 或 Step4；
 - 逻辑/可读性/结论表达问题 -> 回 Step5。
 
+## 质量卡口
+- 已按 rubric 输出总分与维度得分；
+- 关键维度阈值与一票否决检查已执行；
+- 回退建议具体到目标步骤；
+- 最终 PASS/FAIL 结论明确且可追溯。
+
 ## 交接
 通过后将 `archive/report.md` 与 `archive/review_checklist.md` 交给 `mr-step7-output`。
 

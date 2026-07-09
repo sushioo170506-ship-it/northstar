@@ -12,6 +12,11 @@ description: 外部模型调研报告总编排器，负责 7 步流程串联、�
 - 报告读者包含技术、管理、政府监管沟通、合作、采购与合规等多角色。
 - 对信息密度、证据链和结论可执行性有硬门槛要求。
 
+## 输入
+- 模型名称与任务目标（来自用户输入）
+- 工作流配置（`external-model-research-workflow.yaml`）
+- 评分标准与模块清单（rubric + playbook）
+
 ## 标准加载项（必须）
 - 评分标准：`skills/external-model-research/model-report-rubric.yaml`
 - 模块清单：`skills/external-model-research/model-report-playbook.md`
@@ -27,6 +32,11 @@ description: 外部模型调研报告总编排器，负责 7 步流程串联、�
 5. `mr-step5-write`：写正文（模型画像与行动结论）
 6. `mr-step6-review`：复核（评分+一票否决）
 7. `mr-step7-output`：输出（多格式交付）
+
+## 输出
+- 各步骤执行状态（通过/失败/回退）
+- 回退指令与修正方向（回退到对应 step）
+- 最终交付完整性结论（是否允许发布）
 
 ## 高丰富度硬门槛（必须执行）
 对 `长篇详实` 报告，任一项不达标即失败：
@@ -58,6 +68,16 @@ description: 外部模型调研报告总编排器，负责 7 步流程串联、�
 - Step6 -> Step4：证据块缺失；
 - Step6 -> Step5：逻辑/读者适配/结论可执行性不足；
 - Step7 -> Step6：格式转换导致信息丢失或错位。
+
+## 质量卡口
+- 已加载 rubric 与 playbook；
+- 各 step 的必备产物和门槛均被校验；
+- 一票否决项触发时已阻断发布；
+- 回退路径明确且可执行。
+
+## 交接
+- 启动阶段：将任务交给 `mr-step1-scope`；
+- 结束阶段：在 Step7 输出通过后交付 `archive/output/`。
 
 ## 交付目录
 ```text

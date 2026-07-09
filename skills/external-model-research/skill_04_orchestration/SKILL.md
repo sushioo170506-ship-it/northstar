@@ -29,7 +29,7 @@ description: Step 4 — 将原始素材加工为可写作、可复核、可决�
 - `tech_route_3layer.md`
 - `capability_governance_dualtrack.md`
 
-## 加工动作
+## 执行动作
 1. 按章节归位素材；
 2. 将关键参数、benchmark、对标信息表格化；
 3. 生成图表规格与要点卡；
