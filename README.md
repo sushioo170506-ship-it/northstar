@@ -30,6 +30,20 @@ The goal is to build a reusable AI knowledge and automation system.
 - Or: `make full-run`
 - Output: `archive/runs/gpt-5.6-full/`
 
+## One-Line Skill Invocation (Slash Style)
+
+- Direct:
+  - `python3 scripts/call_external_model_skill.py "/model-report GPT-5.6"`
+  - `python3 scripts/call_external_model_skill.py "/step4 GPT-5.6"`
+- Make targets:
+  - `make skill CMD="/model-report GPT-5.6"`
+  - `make skill-interactive`
+
+Supported slash commands:
+- `/model-report` or `/orchestrator`
+- `/step1` ... `/step7`
+- `/list` (show mapping), `/help`
+
 ## Skills Docs Style Check
 
 - Run: `python3 scripts/check_external_model_skills_style.py`

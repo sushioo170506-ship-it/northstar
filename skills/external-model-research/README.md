@@ -27,6 +27,28 @@
 
 `scope -> outline -> collect -> process -> write -> review -> output`
 
+## Quick Invocation Wrapper (Slash Style)
+
+如果你希望“输入一条命令就调用”，使用统一封装入口：
+
+- `python3 /workspace/scripts/call_external_model_skill.py "/model-report GPT-5.6"`
+- `python3 /workspace/scripts/call_external_model_skill.py "/step4 GPT-5.6"`
+- `python3 /workspace/scripts/call_external_model_skill.py --interactive`
+
+命令映射：
+- `/model-report` 或 `/orchestrator` -> `model-report-orchestrator`
+- `/step1` -> `mr-step1-scope`
+- `/step2` -> `mr-step2-outline`
+- `/step3` -> `mr-step3-collect`
+- `/step4` -> `mr-step4-process`
+- `/step5` -> `mr-step5-write`
+- `/step6` -> `mr-step6-review`
+- `/step7` -> `mr-step7-output`
+
+说明：
+- 当前封装后端会先跑完整 orchestrator，再返回你指定 step 的关键产物路径；
+- 这样你只需记住“/命令 + 模型名”即可调用。
+
 回路规则：
 - `step4 -> step3`（素材缺失）
 - `step6 -> step3`（事实性问题）
