@@ -56,7 +56,7 @@ research-workflow/
 
 - [x] 主 Skill `wcget.mdc`（编排器）
 - [x] `wcget-outline` 大纲（五步构建法 + 支持自定义骨架）
-- [ ] `wcget-data` 数据
+- [x] `wcget-data` 数据（三支柱七线 + 三角交叉验证 + 可信度分级）
 - [ ] `wcget-process` 评分/数据处理
 - [ ] `wcget-write` 正文
 - [ ] `wcget-figure` 图表
