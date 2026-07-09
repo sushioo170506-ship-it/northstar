@@ -12,6 +12,13 @@ defaults:
   length: long
   style: technical-rigorous
   output_channels: [md, pdf]
+  minimum_quality:
+    min_sources: 12
+    min_competitors: 3
+    min_benchmark_metrics: 8
+    min_tables: 6
+    min_figure_specs: 3
+    review_pass_score: 85
 
 skills:
   - id: step1
@@ -38,6 +45,8 @@ skills:
       - 每章有核心问题
       - 每章有素材需求
       - 需要图表的章节已标注
+      - 每章有最低证据数标注
+      - 长篇大纲含表图最低产出计划（表>=6, 图>=3）
 
   - id: step3
     name: mr-step3-collect
@@ -61,6 +70,8 @@ skills:
       - 竞品>=2
       - 来源URL齐全
       - 官方与第三方分开
+      - source_index.csv 已生成
+      - 长篇模式下: 来源>=12, benchmark>=8, 竞品>=3
 
   - id: step4
     name: mr-step4-process
@@ -77,6 +88,8 @@ skills:
       - 核心参数和分数已表格化
       - 图表已生成或标注暂缺
       - gaps检测完成
+      - evidence_map.csv 已生成
+      - 长篇模式下: 表>=6, 图>=3
     fail_route:
       on_severe_gap: step3
 
@@ -95,6 +108,8 @@ skills:
       - 关键数字附解读
       - 开篇非背景套话
       - 结论场景化
+      - 核心结论均有证据引用
+      - 长篇模式下报告字数>=3000
 
   - id: step6
     name: mr-step6-review
@@ -111,6 +126,8 @@ skills:
       - 清单逐项检查
       - 不通过项有修正建议
       - 严重问题标记必须回退
+      - 量化评分总分>=85
+      - 事实性和逻辑一致性分别>=18/20
 
   - id: step7
     name: mr-step7-output
@@ -132,6 +149,7 @@ skills:
       - 中文渲染正常
       - 图表显示正常
       - 中间产物已归档
+      - 长篇模式下表图数量达到门槛
 
 transitions:
   - from: step1

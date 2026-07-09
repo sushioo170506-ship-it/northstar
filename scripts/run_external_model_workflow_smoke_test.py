@@ -71,8 +71,17 @@ def main() -> int:
         "name: mr-step5-write",
         "name: mr-step6-review",
         "name: mr-step7-output",
+        "min_sources: 12",
+        "min_benchmark_metrics: 8",
+        "min_tables: 6",
+        "min_figure_specs: 3",
     ):
         ensure(token in yaml_text, f"Workflow yaml missing token: {token}")
+
+    orchestrator_text = (
+        repo / "skills" / "external-model-research" / "model-report-orchestrator" / "SKILL.md"
+    ).read_text(encoding="utf-8")
+    ensure("防“浅报告”硬门槛" in orchestrator_text, "Orchestrator missing anti-shallow gate section")
 
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = Path("/tmp") / f"model-report-orchestrator-smoke-{run_id}"
