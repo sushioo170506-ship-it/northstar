@@ -1,48 +1,45 @@
 ---
 name: comparison-synthesis
 description: >-
-  Integrates verified claims and first-hand test results into a structured
-  comparison (model × dimension) plus a narrative analysis, keeping facts
-  separate from inference and carrying credibility/date annotations. Use after
-  verification (and optional probing) and before report authoring, whenever
-  scattered findings must become a coherent, comparable picture — especially for
-  multi-model selection. Produces a filled comparison table and the analysis
-  that supports the recommendation.
+  Integrates the deep-analysis outputs into a weighted, decision-oriented
+  synthesis — a scored fit matrix and comparison table across the weighted
+  criteria, keeping facts separate from inference and carrying credibility/date
+  annotations, so scattered findings become a defensible basis for a
+  recommendation. Use after the deep-analysis pillars and positioning, before
+  report authoring. Produces the filled requirements→fit matrix, a weighted
+  score, and the annotated comparison table.
 ---
 
 # Comparison Synthesis
 
-Assemble the pieces into a structured, comparable picture. This is where
-fragments become insight.
+Assemble the pillars into a scored, decision-oriented picture. This is where
+evidence becomes a defensible recommendation basis.
 
 ## Inputs
-- Verified claims (Confirmed/Disputed/Unconfirmed) from `cross-verification`.
-- First-hand measurements from `hands-on-probing` (if run).
-- Evaluation dimensions from `research-scoping`.
+- Outputs of all Phase C pillars + `competitive-positioning`; the weighted
+  criteria and fit-matrix skeleton from `decision-framing`.
 
 ## Steps
-
-1. **Build the comparison table**: rows = candidate models (or the single model
-   vs. its alternatives/baselines), columns = the evaluation dimensions. See the
-   `comparison-table.md` template in `research-report-authoring`.
-2. **Fill each cell with a finding + annotation**: value, credibility tier
-   (A–D), confidence (Confirmed/Disputed/Unconfirmed), and date/version.
-   Empty cells become explicit "unknown" entries — never leave them blank and
-   ambiguous.
-3. **Separate fact from inference.** Present verifiable findings first; clearly
-   mark your analysis/interpretation as such (e.g., "Fact:" vs "Assessment:").
-4. **Analyze trade-offs.** Highlight where candidates differ, where one wins,
-   and where the choice depends on the user's priorities/weights.
-5. **Tie back to the decision.** Map findings onto the P0 questions from scoping
-   so the synthesis directly informs the recommendation.
-6. **Carry forward unknowns and disputes** so the report can state them.
+1. **Complete the requirements→capability fit matrix.** Each requirement: met /
+   partial / unmet + evidence + credibility + confidence. Empty = explicit unknown.
+2. **Score against the weighted criteria.** For each candidate, rate each
+   weighted dimension and compute a weighted total. Treat the score as a
+   *decision aid*, not truth — show the inputs and note sensitivity to weights.
+3. **Build the annotated comparison table**: rows = candidates/tiers, columns =
+   weighted dimensions; each cell = finding + tier (A–D) + confidence +
+   date/version. Never leave a silent blank; use explicit "unknown".
+4. **Separate Fact from Assessment** throughout.
+5. **Reconcile across pillars.** Surface tensions (e.g., top capability but worst
+   cost-per-success and highest risk) — these are the crux of the decision.
+6. **Tie back to P0 questions** and carry forward disputes and known unknowns.
 
 ## Output (hand to `research-report-authoring`)
-- A filled, annotated comparison table.
-- A narrative analysis of trade-offs, keyed to the decision.
-- The consolidated known-unknowns / disputed list.
+- Completed, scored fit matrix.
+- Weighted comparison table with annotations + weight-sensitivity note.
+- Narrative of trade-offs keyed to the decision; consolidated unknowns/disputes.
 
 ## Quality checks
-- Every cell is comparable across candidates and annotated.
-- Fact and inference are visually distinct.
-- The analysis clearly points toward (but does not yet state) a recommendation.
+- Scores are transparent (inputs shown) and sensitivity to weights is noted.
+- Every cell is comparable and annotated; no silent blanks.
+- Fact and inference are visually distinct; the synthesis points toward a
+  recommendation without yet stating it.

@@ -3,7 +3,7 @@ name: source-credibility-grading
 description: >-
   Assigns a credibility tier to each collected piece of evidence and flags
   conflicts of interest, cherry-picking, and staleness. Use after
-  layered-sourcing and before cross-verification whenever evidence about an
+  evidence-sourcing and before cross-verification whenever evidence about an
   external model must be weighted by trustworthiness. Produces a graded evidence
   base so that stronger claims carry more weight in synthesis and the final
   report can annotate confidence.
@@ -16,7 +16,7 @@ value-add of external research: distinguishing "officially stated",
 "independently verified", and "heard on a forum".
 
 ## Inputs
-- The evidence pool from `layered-sourcing`.
+- The evidence pool from `evidence-sourcing`.
 
 ## Grading rubric
 

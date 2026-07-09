@@ -1,65 +1,80 @@
 # External Model Research Report: <Model / Comparison Name>
 
 - **Prepared for (audience):** <engineers / leadership / legal>
-- **Decision this supports:** <adopt vs not / vendor A vs B / compliance / ...>
+- **Decision this supports:** <adopt vs not / A vs B vs status quo / compliance>
+- **Recommendation (one line):** <what to do> — conditional on <preconditions>
 - **Author:** <name>
-- **Information current as of:** <YYYY-MM-DD>
-- **Recommended re-check by:** <YYYY-MM-DD>
+- **Information current as of:** <YYYY-MM-DD> · **Re-check by:** <YYYY-MM-DD>
 - **Models & versions in scope:** <model @ version, ...>
 
-> Credibility legend — A: verified independent / first-hand · B: first-party
-> factual · C: vendor/marketing claim · D: community/anecdotal.
+> Credibility — A: verified independent / first-hand · B: first-party factual ·
+> C: vendor/marketing claim · D: community/anecdotal.
 > Confidence — Confirmed (≥2 independent) · Disputed · Unconfirmed (single source).
+> ⚠ = vendor-supplied — discount and verify.
 
 ---
 
 ## 1. Executive Summary (for decision-makers)
+- **Recommendation & rationale:** <what to do, why> — **conditional on** <preconditions>.
+- **This changes if:** <what would flip it> (see Watch-list, §12).
+- **Weighted verdict:** <score/ranking + the 1–2 factors that drove it>.
+- **Top findings:** 1) … `[tier][conf]` 2) … 3) …
+- **Top risks / unknowns:** <the few that matter most>.
+- **Pilot plan (next step):** <what to test, success metric, guardrails>.
 
-- **Recommendation:** <what to do> — **conditional on** <preconditions>.
-- **This changes if:** <what new info would flip the recommendation>.
-- **Top findings:**
-  1. <finding> `[tier][confidence]`
-  2. ...
-- **Top risks / unknowns:** <the 2–3 that matter most for the decision>.
+## 2. Decision Frame & Method
+- Decision, options, and "good enough" bar.
+- Workload/use-case profile evaluated against.
+- Weighted criteria (sum to 100%).
+- **Methodology:** what was researched and **first-hand tested**, and what was
+  **not** (scope of confidence / reproducibility).
 
-## 2. Scope & Questions
+## 3. Requirements → Capability Fit Matrix
+<insert fit matrix from comparison-table.md: requirement · met/partial/unmet · evidence · confidence>
 
-- Prioritized questions (P0/P1/P2): <list>
-- Out of scope: <list>
+## 4. Capability Profile (not just scores)
+- Strengths / weaknesses / unproven, mapped to our workload.
+- **Benchmark decode:** what each cited benchmark measures, relevance, self- vs
+  independent scores, contamination/config caveats. `[tier][conf][date]`
+- Representative qualitative examples (good and bad).
 
-## 3. Findings by Dimension (for technical readers)
+## 5. First-hand Test Results
+- Protocol (tasks, metric, n, params/version), environment, raw results,
+  transcripts, and how they confirm/contradict prior claims. `[A]`
+- *(If no access: state that explicitly and mark all performance claims second-hand.)*
 
-For each dimension: **Fact:** <verifiable finding> `[source][tier][confidence][date]`
-then **Assessment:** <your interpretation, clearly marked as inference>.
+## 6. Failure Modes & Boundaries
+- Catalog: failure mode · trigger · likelihood · impact · evidence · mitigation · residual.
+- Impact on benchmark trust (e.g., reward-hacking → scores need corroboration).
 
-- **Capability / quality:** ...
-- **Cost:** ...
-- **Latency / limits / context:** ...
-- **Integration / ecosystem:** ...
-- **Data & privacy:** ...
-- **Licensing & compliance:** ...
-- **Reliability / support / roadmap:** ...
-- **Safety & risk:** ...
+## 7. Cost & TCO
+<insert tco-model.md: per-task, monthly-at-scale, cost-per-successful-task, scenarios, assumptions>
 
-## 4. Comparison Table
+## 8. Operational Readiness
+- Latency (p50/p95), throughput, rate limits, availability/regions, data
+  residency, SLA, versioning/deprecation, access/onboarding, support, vendor
+  stability. Ready / caveated / blocker per dimension; hard blockers called out.
 
-<insert filled comparison-table.md>
+## 9. Risk & Compliance Register
+- Risk · evidence · likelihood · impact · mitigation · residual. Showstoppers flagged.
+- Data-use/training terms and output IP explicitly addressed.
 
-## 5. First-hand Test Results (if any)
+## 10. Competitive Positioning
+- Trade-off frontier vs alternatives (incl. status quo).
+- "Choose this when … / choose <alternative> when …".
 
-- Protocol, environment (version/params/date), raw results, and how they
-  support/contradict prior claims. `[tier A]`
+## 11. Weighted Comparison
+<insert weighted comparison table; show inputs and weight-sensitivity note>
 
-## 6. Known Unknowns & Disputed Claims
+## 12. Known Unknowns, Disputes & Watch-list
+- **Unknowns:** important things no source answered.
+- **Disputed:** claim — side 1 vs side 2 — which is more credible & why.
+- **Watch-list:** signals that would change the recommendation (new independent
+  evals, GA, price/version changes, roadmap moves).
 
-- **Unknowns:** <important things no source answered>
-- **Disputed:** <claim — side 1 vs side 2 — which is more credible & why>
+## 13. Recommendation & Next Steps
+- Decision-ready, conditional recommendation; pilot plan with success metrics and
+  guardrails; vendor due-diligence questions to resolve open items.
 
-## 7. Recommendation & Next Steps
-
-- Decision-ready recommendation, preconditions, and suggested next actions
-  (e.g., pilot, further testing, contract questions to ask the vendor).
-
-## 8. Sources
-
-- Numbered list: <title — author/org — URL — tier — date accessed>.
+## 14. Sources
+- Numbered: title — author/org — URL — tier — date accessed.

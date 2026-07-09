@@ -32,7 +32,7 @@ stronger than one repeated by the same interested source.
    Disputed claims as candidates for `hands-on-probing`.
 5. **Compile known unknowns.** Anything important that no source answers.
 
-## Output (hand to `hands-on-probing` and/or `comparison-synthesis`)
+## Output (hand to the Phase C deep-analysis skills, esp. `capability-profiling` and `hands-on-probing`)
 - Verified claims tagged Confirmed / Disputed / Unconfirmed with confidence.
 - A prioritized "should test first-hand" list.
 - An explicit known-unknowns list.

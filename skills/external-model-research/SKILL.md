@@ -1,103 +1,107 @@
 ---
 name: external-model-research
 description: >-
-  Orchestrates an end-to-end research report about an EXTERNAL / third-party
-  model (LLM APIs, open-weight models, or vendor/commercial models) that the
-  agent does NOT own and can only study through public/second-hand information
-  plus optional black-box testing. Use this whenever the user asks to
-  "research", "survey", "evaluate", "compare", "do due diligence on", or "write
-  a report about" one or more models they did not build themselves — especially
-  for adoption/selection, competitive analysis, or compliance decisions. This
-  skill sequences and delegates to the sub-skills research-scoping,
-  layered-sourcing, source-credibility-grading, cross-verification,
-  hands-on-probing, comparison-synthesis, and research-report-authoring to
-  deliver a finished, decision-ready report.
+  Orchestrates an in-depth, decision-grade research report about an EXTERNAL /
+  third-party model (LLM APIs, open-weight models, or vendor/commercial models)
+  the agent does NOT own and can only study through public/second-hand
+  information plus first-hand black-box testing. Use whenever the user asks to
+  "research", "survey", "evaluate", "deep-dive", "compare", "do due diligence
+  on", or "write a report about" one or more models they did not build — for
+  adoption/selection, competitive analysis, or compliance decisions. Enforces a
+  quality bar (see references/report-quality-checklist.md) and sequences the
+  sub-skills: decision-framing, evidence-sourcing, source-credibility-grading,
+  cross-verification, capability-profiling, hands-on-probing,
+  failure-mode-analysis, cost-tco-modeling, operational-readiness,
+  risk-compliance-review, competitive-positioning, comparison-synthesis, and
+  research-report-authoring.
 ---
 
 # External Model Research (Orchestrator)
 
-You are producing a research report about a model you do **not** own. Your job
-is not to document what *you* built, but to **gather external information,
-judge how trustworthy it is, verify it where possible, and synthesize it into a
-decision-ready deliverable**. Treat every claim as second-hand until proven
-otherwise.
+You are producing a **decision-grade** report about a model you do **not** own.
+The value of the report = using **defensible, reproducible evidence** to
+**de-risk and accelerate a specific decision**. A link-aggregation summary is a
+failure; a report that changes what the reader does — with justification — is
+the goal.
 
-## When to use this skill
+## When to use
 
-Trigger on requests like:
-- "Research / survey / evaluate model X."
-- "Compare model X vs Y vs Z for <use case>."
-- "Should we adopt X? Do due diligence."
-- "Write a competitive analysis / vendor report on X."
+Trigger on "research / evaluate / deep-dive / compare / due-diligence / write a
+report on" one or more models the user did not build. If the user wants to
+document a model **they trained**, this does not apply (that is model-card work).
 
-If the user instead wants to document a model **they trained themselves**, this
-skill does not apply — that is internal model-card work.
+## The quality bar (non-negotiable)
 
-## Core principles (apply throughout)
+A report is only acceptable if it answers, with evidence, four questions:
 
-1. **Everything is a claim with a source.** No conclusion may appear in the
-   final report without an attributable source or a first-hand test.
-2. **Separate fact from inference.** Mark what is verifiable vs. your analysis.
-3. **Name the unknowns.** "We could not find X" is a valid, valuable finding.
-4. **Distrust the vendor's own benchmarks.** Watch for cherry-picking and
-   benchmark contamination; prefer independent evals and your own tests.
-5. **Stamp everything with a date and model version.** External models change
-   fast; an unstamped claim is worthless.
+1. **Can it do the job?** — capability profile, requirement fit, first-hand
+   proof, failure modes.
+2. **What will it really cost and can we operate it?** — TCO, production
+   readiness.
+3. **What could go wrong?** — technical, business, and compliance risk.
+4. **Should we, vs. the alternatives — and how do we know?** — positioning,
+   conditional recommendation, evidence quality.
 
-## Workflow (delegate to sub-skills in order)
+Three底线 apply to every section:
+- **Decision-grounded** — every finding maps back to the decision ("so what for
+  us?"). No orphan facts.
+- **Defensible** — source-graded, cross-verified, fact separated from inference,
+  uncertainty stated.
+- **Reproducible** — methodology disclosed; first-hand tests repeatable.
 
-Run these stages. Each maps to a dedicated sub-skill — invoke that skill for the
-detailed procedure, then carry its output to the next stage.
+Load `research-report-authoring/references/report-quality-checklist.md` at the
+start and treat it as the definition of done.
 
-1. **Scope** → `research-scoping`
-   Turn the vague goal into a prioritized question list, target audience, and
-   the decision the report must support. Output: question list + evaluation
-   dimensions.
+## Core principles
 
-2. **Source** → `layered-sourcing`
-   Systematically collect information in tiers (first-party authoritative →
-   independent third-party → community/rumor → vendor marketing). Output: an
-   evidence pool where every item has a URL and a capture date.
+1. Everything is a claim with a source or a first-hand test — no orphan claims.
+2. Separate **Fact** (verifiable) from **Assessment** (your inference).
+3. Name the unknowns — a documented gap is a finding.
+4. Distrust vendor benchmarks (cherry-picking, contamination); prefer
+   independent evals and your own tests.
+5. Stamp every claim with model version + date; models change fast.
+6. Prefer depth over coverage: a rigorous answer on the P0 questions beats a
+   shallow pass over everything.
 
-3. **Grade** → `source-credibility-grading`
-   Assign each piece of evidence a credibility tier and flag conflicts of
-   interest. Output: a graded evidence base.
+## Workflow
 
-4. **Verify** → `cross-verification`
-   Corroborate key claims across ≥2 independent sources; surface contradictions
-   and open questions. Output: verified claims + a "disputed / unknown" list.
+Run in phases. Each stage delegates to a dedicated sub-skill; carry outputs
+forward. Iterate — later findings often send you back to source or test more.
 
-5. **Probe (optional but high-value)** → `hands-on-probing`
-   If an API or open weights are reachable, run small first-hand tests on the
-   scenarios the user cares about to break the black box. Output: first-hand
-   measurements (highest-credibility evidence).
+### Phase A — Frame the decision
+1. **`decision-framing`** → the decision, use-case profile, weighted criteria,
+   and a requirements→capability fit matrix. Everything downstream inherits this.
 
-6. **Synthesize** → `comparison-synthesis`
-   Integrate everything into a structured comparison (model × dimension) and
-   analysis. Output: filled comparison table + narrative analysis.
+### Phase B — Build a trustworthy evidence base
+2. **`evidence-sourcing`** → tiered evidence pool with provenance (source + date + version).
+3. **`source-credibility-grading`** → grade A–D; flag COI / cherry-pick / staleness.
+4. **`cross-verification`** → confirm / dispute / unknown across independent sources.
 
-7. **Author & recommend** → `research-report-authoring`
-   Produce the final layered report: executive summary + detailed findings +
-   explicit recommendation with preconditions + credibility/date annotations +
-   a review/expiry date. Output: the delivered report.
+### Phase C — Deep analysis (the value core — do NOT skip on P0 dimensions)
+5. **`capability-profiling`** → capability shape, benchmark literacy, domain-fit, qualitative evidence.
+6. **`hands-on-probing`** → rigorous first-hand testing on representative tasks (if reachable).
+7. **`failure-mode-analysis`** → adversarial behavior, reward-hacking, hallucination, boundaries.
+8. **`cost-tco-modeling`** → realistic token economics, cost-per-successful-task, cost at scale.
+9. **`operational-readiness`** → latency/throughput/limits/availability/versioning/SLA/vendor stability.
+10. **`risk-compliance-review`** → safety/security/legal/IP/privacy/lock-in/regulatory + mitigations.
 
-## Adapting the workflow
+### Phase D — Synthesize & deliver
+11. **`competitive-positioning`** → trade-off frontier vs alternatives; when-to-choose-which.
+12. **`comparison-synthesis`** → weighted fit scoring + integrated comparison table.
+13. **`research-report-authoring`** → layered report + conditional recommendation + pilot plan + expiry.
 
-- **Single quick lookup:** you may compress stages 2–4, but never skip source
-  attribution or the date stamp.
-- **No API/weights access:** skip stage 5, but explicitly note in the report
-  that all conclusions are second-hand and unverified by first-hand testing.
-- **Multi-model comparison:** run stages 2–5 per model, then a single stage 6/7
-  across all of them.
+## Adapting scope
+- **Quick lookup:** compress Phase B–C, but never drop source attribution, date
+  stamps, or the fact/inference split.
+- **No API/weights access:** skip stage 6; explicitly flag that all performance
+  claims are second-hand and unverified by first-hand testing.
+- **Multi-model comparison:** run Phase C per model, then a single Phase D across all.
+- **Prioritize by P0:** invest the deep-analysis pillars where the decision is
+  most sensitive; go lighter on P2 dimensions.
 
 ## Definition of done
-
-The report is complete only when:
-- [ ] Every key claim is attributed and credibility-graded.
-- [ ] Facts are separated from your inferences.
-- [ ] Known unknowns are listed explicitly.
-- [ ] Any vendor-supplied numbers are flagged as such.
-- [ ] There is a clear, conditional recommendation.
-- [ ] The report carries an "information current as of <date>" stamp and a
-      recommended re-check date.
-- [ ] Output language matches the user's request.
+Passes every item in `report-quality-checklist.md`, including: four questions
+answered; recommendation is conditional with a pilot plan; ≥1 first-hand test or
+an explicit note of why none; failure modes and known unknowns documented;
+vendor numbers flagged; TCO modeled on realistic load; every key claim graded
+and dated; output language matches the user's request.
