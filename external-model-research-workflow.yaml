@@ -1,0 +1,146 @@
+version: "1.0"
+workflow:
+  id: external-model-research-report
+  name: External Model Research Report Workflow
+  description: 输入一个模型名并自动生成外部模型调研报告
+  defaults:
+    report_type: tech-selection
+    audience: tech-lead
+    depth: standard
+    output_formats: [md, pdf]
+    language: zh-CN
+
+skills:
+  - id: skill_01_brief
+    name: MR-brief
+    purpose: 明确定调（读者、决策目标、交付约束）
+    input:
+      required: [model_name]
+      optional: [report_type, audience, decision_goal, output_formats, depth, time_window]
+    output:
+      file: output/brief.json
+    gate:
+      - 必须定义决策动作
+      - 必须定义结论表达形式
+      - 必须定义不评估边界
+
+  - id: skill_02_outline
+    name: MR-outline
+    purpose: 生成章节骨架与证据需求
+    depends_on: [skill_01_brief]
+    input:
+      files: [output/brief.json]
+    output:
+      file: output/outline.json
+    gate:
+      - 每章包含核心问题、证据需求、DoD
+
+  - id: skill_03_evidence
+    name: MR-evidence
+    purpose: 证据采集、交叉验证与可信度分级
+    depends_on: [skill_02_outline]
+    input:
+      files: [output/brief.json, output/outline.json]
+    output:
+      files: [output/evidence_base.json, output/references.bib]
+    gate:
+      - 核心claim至少2个独立来源（无法满足需标注）
+      - 关键数字必须有数字+时间+来源
+      - A+/A/B证据占比建议不低于80%
+
+  - id: skill_04_orchestration
+    name: MR-orchestration
+    purpose: 信息处理与编排（证据映射、图表规划、写作包）
+    depends_on: [skill_03_evidence]
+    input:
+      files: [output/outline.json, output/evidence_base.json]
+    output:
+      files:
+        - output/section_mapping.json
+        - output/asset_plan.json
+        - output/writing_pack.json
+    gate:
+      - 每章至少1条主证据
+      - 每个核心判断绑定证据ID
+      - 图表字段可追溯
+
+  - id: skill_05_write_decide
+    name: MR-write-decide
+    purpose: 结构化写作并生成结论与行动建议
+    depends_on: [skill_04_orchestration]
+    input:
+      files:
+        - output/brief.json
+        - output/writing_pack.json
+        - output/asset_plan.json
+        - output/evidence_base.json
+    output:
+      files: [output/draft.md, output/decision.json]
+    gate:
+      - 结论与证据一致
+      - 结论可执行（含动作与验收指标）
+      - 明确适用边界与风险
+
+  - id: skill_06_review
+    name: MR-review
+    purpose: 事实/逻辑/完整性/可用性复核
+    depends_on: [skill_05_write_decide]
+    input:
+      files:
+        - output/draft.md
+        - output/decision.json
+        - output/outline.json
+        - output/evidence_base.json
+    output:
+      files: [output/review_report.json, output/revised_draft.md]
+    gate:
+      - critical问题必须为0
+      - major问题必须清零后才能发布
+
+  - id: skill_07_publish
+    name: MR-publish
+    purpose: 多格式输出与版本归档
+    depends_on: [skill_06_review]
+    input:
+      files:
+        - output/revised_draft.md
+        - output/decision.json
+        - output/asset_plan.json
+        - output/review_report.json
+    output:
+      files:
+        - output/final.md
+        - output/final.pdf
+        - output/executive_summary.md
+        - output/archive.json
+    gate:
+      - 多格式结论一致
+      - 引用与图表链接有效
+      - 归档元数据完整
+
+transitions:
+  - from: skill_01_brief
+    to: skill_02_outline
+  - from: skill_02_outline
+    to: skill_03_evidence
+  - from: skill_03_evidence
+    to: skill_04_orchestration
+  - from: skill_04_orchestration
+    to: skill_05_write_decide
+  - from: skill_05_write_decide
+    to: skill_06_review
+  - from: skill_06_review
+    to: skill_07_publish
+    condition: review_passed
+  - from: skill_06_review
+    to: skill_05_write_decide
+    condition: review_failed_and_fixable_by_rewrite
+  - from: skill_06_review
+    to: skill_03_evidence
+    condition: review_failed_due_to_evidence_gap
+
+final_artifacts:
+  - output/final.md
+  - output/final.pdf
+  - output/executive_summary.md
+  - output/archive.json
