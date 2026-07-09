@@ -1,90 +1,76 @@
-# External Model Research — Agent Skill Suite
+# Model Report Workflow — Agent Skill Suite
 
-A set of composable [Agent Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills)
-that let an AI agent produce a **decision-grade research report** about an
-**external / third-party model** (one it does not own), driven by second-hand
-information plus rigorous first-hand testing.
+这是一套用于**外部模型调研报告自动生成**的 Agent Skills。输入模型名称后，由主编排器按七步流水线输出完整报告：
 
-Each skill is a folder with a `SKILL.md` (YAML frontmatter `name` + `description`,
-then instructions). The agent reads the `description`s to decide when to invoke a
-skill; the orchestrator chains them into a workflow.
-
-## What "decision-grade" means
-
-Report value = **defensible, reproducible evidence that de-risks and accelerates
-a specific decision.** A link-aggregation summary is a failure. Every report must
-answer four questions with evidence:
-
-1. **Can it do the job?** (capability, fit, first-hand proof, failure modes)
-2. **Cost & operability?** (TCO, production readiness)
-3. **What could go wrong?** (technical, business, compliance risk)
-4. **Should we, vs alternatives — and how do we know?** (positioning,
-   recommendation, evidence quality)
-
-The bar is codified in
-[`research-report-authoring/references/report-quality-checklist.md`](research-report-authoring/references/report-quality-checklist.md).
-
-## Architecture
-
-```
-external-model-research   ← orchestrator: enforces the quality bar, chains phases
-│
-├─ Phase A — Frame the decision
-│   └─ decision-framing            decision · workload profile · weighted criteria · fit matrix
-│
-├─ Phase B — Trustworthy evidence base
-│   ├─ evidence-sourcing           tiered sourcing + provenance (source/date/version)
-│   ├─ source-credibility-grading  grade A–D · flag COI / cherry-pick / staleness
-│   └─ cross-verification          corroborate ≥2 sources → confirm / dispute / unknown
-│
-├─ Phase C — Deep analysis (the value core)
-│   ├─ capability-profiling        capability shape · benchmark literacy · domain fit · examples
-│   ├─ hands-on-probing            rigorous, reproducible first-hand testing
-│   ├─ failure-mode-analysis       reward-hacking · hallucination · over-autonomy · boundaries
-│   ├─ cost-tco-modeling           real token economics · cost-per-successful-task · scale
-│   ├─ operational-readiness       latency · limits · availability · versioning · vendor stability
-│   └─ risk-compliance-review      safety · security · legal/IP · privacy · lock-in · regulatory
-│
-└─ Phase D — Synthesize & deliver
-    ├─ competitive-positioning     trade-off frontier vs alternatives · when-to-choose-which
-    ├─ comparison-synthesis        weighted fit scoring + annotated comparison table
-    └─ research-report-authoring   layered report + conditional recommendation + pilot plan + expiry
+```text
+定调 -> 搭大纲 -> 采素材 -> 加工素材 -> 写正文 -> 复核 -> 输出
 ```
 
-Start the agent with **`external-model-research`**; it sequences and delegates to
-the rest and iterates as findings demand. Sub-skills are also usable standalone.
+每个 skill 是一个文件夹，内部包含 `SKILL.md`。Agent 通过 frontmatter 中的 `name` 和 `description` 判断何时调用。
 
-## Design principles baked into every skill
+## 主入口
 
-1. Everything is a claim with a source or a first-hand test — no orphan claims.
-2. Separate **Fact** (verifiable) from **Assessment** (inference).
-3. Name the unknowns — a documented gap is a finding.
-4. Distrust vendor benchmarks (cherry-picking, contamination).
-5. Stamp every claim with model version + date.
-6. Prefer depth over coverage: rigorous on P0 beats shallow on everything.
+从 **`model-report-orchestrator`** 开始。它只做编排：
+- 按正确顺序串联子 skill。
+- 传递中间产物。
+- 执行质量卡口。
+- 在卡口不通过时回退到对应步骤。
 
-## Shared assets (under `research-report-authoring/`)
-- `templates/report-template.md` — the 14-section decision-grade report skeleton.
-- `templates/comparison-table.md` — fit matrix + weighted comparison.
-- `templates/tco-model.md` — cost/TCO scenario model.
-- `references/credibility-rubric.md` — A–D tiers + confidence labels.
-- `references/report-quality-checklist.md` — the definition of done.
+## 七步工作流
+
+```text
+model-report-orchestrator
+│
+├─ Step 1: mr-step1-scope
+│   定调：读者画像 + 报告类型 + 结论形式
+│   输出：report_scope.md
+│
+├─ Step 2: mr-step2-outline
+│   搭大纲：章节结构 + 每章核心问题 + 素材需求 + 图表需求
+│   输出：outline.md
+│
+├─ Step 3: mr-step3-collect
+│   采素材：从官方、论文、榜单、社区、新闻等渠道采集原始信息
+│   输出：raw_data/
+│
+├─ Step 4: mr-step4-process
+│   加工素材：信息归位、表格化、图表化、要点提炼、缺失检测
+│   输出：processed_data/
+│
+├─ Step 5: mr-step5-write
+│   写正文：把内容块组装为连贯 report.md
+│   输出：report.md
+│
+├─ Step 6: mr-step6-review
+│   复核：事实性、完整性、读者视角、逻辑一致性、写作质量检查
+│   输出：review_checklist.md
+│
+└─ Step 7: mr-step7-output
+    输出：Executive Summary、目标格式转换、归档
+    输出：output/ + archive/
+```
+
+## 回退规则
+
+| 问题类型 | 回退步骤 |
+|---|---|
+| 读者画像、报告类型、结论形式不清 | Step 1 |
+| 大纲结构/素材需求不合理 | Step 2 |
+| 原始素材缺失或来源不足 | Step 3 |
+| 素材未加工成可写内容块 | Step 4 |
+| 风格不符、数字无解读、结论模糊 | Step 5 |
+| 复核不通过 | 按 Step 6 的问题类型回退 |
+| 输出格式/摘要/归档不完整 | Step 7 |
 
 ## Skills index
 
-| Skill | Phase | Output |
-|---|---|---|
-| `external-model-research` | orchestrator | the finished decision-grade report |
-| `decision-framing` | A | decision · workload · weighted criteria · fit matrix |
-| `evidence-sourcing` | B | provenance-stamped evidence pool |
-| `source-credibility-grading` | B | graded evidence base |
-| `cross-verification` | B | confirmed/disputed claims + unknowns |
-| `capability-profiling` | C | capability profile + benchmark decode |
-| `hands-on-probing` | C | first-hand measurements (tier A) + transcripts |
-| `failure-mode-analysis` | C | prioritized failure-mode catalog |
-| `cost-tco-modeling` | C | TCO model + cost-per-successful-task |
-| `operational-readiness` | C | production-readiness assessment |
-| `risk-compliance-review` | C | risk register + due-diligence questions |
-| `competitive-positioning` | D | trade-off frontier + when-to-choose guidance |
-| `comparison-synthesis` | D | scored fit matrix + comparison table |
-| `research-report-authoring` | D | delivered report |
+| Skill | 一句话职责 | 输入 | 输出 | 回退 |
+|---|---|---|---|---|
+| `model-report-orchestrator` | 串联七步并执行质量卡口 | 模型名称 + 用户目标 | 完整交付件 | 按问题类型 |
+| `mr-step1-scope` | 确定读者画像、报告类型、结论形式 | 模型名称 + 用户回答 | `report_scope.md` | - |
+| `mr-step2-outline` | 构建报告骨架，标注素材需求 | `report_scope.md` | `outline.md` | Step 1 |
+| `mr-step3-collect` | 按大纲采集原始信息 | `outline.md` + 模型名称 | `raw_data/` | Step 2 |
+| `mr-step4-process` | 原始素材 -> 结构化内容块 | `raw_data/` | `processed_data/` | Step 3 |
+| `mr-step5-write` | 内容块 -> 连贯报告 | `processed_data/` + 大纲 + 企划书 | `report.md` | Step 4 |
+| `mr-step6-review` | 质量检查并决定是否回退 | `report.md` + 企划书 | `review_checklist.md` | 按问题类型 |
+| `mr-step7-output` | 格式转换 + 交付归档 | 复核通过的 `report.md` | `output/` + `archive/` | Step 6 |
