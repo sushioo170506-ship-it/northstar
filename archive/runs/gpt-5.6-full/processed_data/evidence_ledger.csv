@@ -1,0 +1,4 @@
+claim_id,claim_text,source_id,quote_snippet,confidence
+C-001,GPT-5.6为三档产品线,S1,"Sol/Terra/Luna family",0.92
+C-002,第三方可复算仍不足,S16,"lack of unified reruns",0.80
+C-003,安全治理为分层模式,S3,"layered safeguards",0.90

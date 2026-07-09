@@ -1,0 +1,4 @@
+section,evidence_id,claim_id,strength
+section_1,E-001,C-001,strong
+section_3,E-002,C-002,medium
+section_6,E-003,C-003,strong

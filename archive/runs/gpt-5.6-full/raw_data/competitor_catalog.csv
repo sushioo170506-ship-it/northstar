@@ -1,0 +1,6 @@
+model_name,release_window,strengths,weaknesses,pricing,source_id
+GPT-5.5,2026Q2,稳定生态,长链任务偏弱,5/25,S11
+Gemini 3.1 Pro,2026Q2,多模态与上下文,部分代码任务波动,2/12,S12
+Claude Opus 4.8,2026Q2,工程任务稳定,高风险能力受限,10/50,S13
+DeepSeek V4-Pro,2026Q2,成本效率高,高阶安全任务公开数据少,1/5,S14
+Qwen3.7-Max,2026Q2,中文场景强,高难Agent公开复现不足,1.5/6,S15
