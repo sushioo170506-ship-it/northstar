@@ -1,2 +1,6 @@
-metric,official_signal,thirdparty_signal
-Terminal-Bench,提升,待补齐
+metric,value,unit,source,confidence
+SecureBio Virology,53.5,%,S5,B
+SecureBio Molecular Biology,60.0,%,S5,B
+SecureBio Human Pathogen,68.4,%,S5,B
+SecureBio World-Class Bio,68.3,%,S5,B
+ExploitBench token usage ratio,0.33,ratio,S1/S5,B

@@ -1,0 +1,5 @@
+flowchart TD
+A[Need production decision] --> B[Run PoC gate checks]
+B --> C{All gates pass?}
+C -- Yes --> D[Gradual rollout]
+C -- No --> E[Stay on fallback model]

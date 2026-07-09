@@ -1,0 +1,7 @@
+metric,value,source
+SecureBio Virology,53.5,S5
+SecureBio Molecular Biology,60.0,S5
+SecureBio Human Pathogen,68.4,S5
+SecureBio World-Class Bio,68.3,S5
+ExploitBench token usage ratio,~0.33,S1/S5
+Terminal-Bench 2.1,New SOTA (no public score),S1

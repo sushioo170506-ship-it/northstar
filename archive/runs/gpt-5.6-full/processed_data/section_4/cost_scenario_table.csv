@@ -1,0 +1,4 @@
+tier,cost_release_usd,cost_docs_usd,assumption
+Sol,1100,1100,100M input + 20M output
+Terra,550,550,100M input + 20M output
+Luna,220,165,100M input + 20M output
