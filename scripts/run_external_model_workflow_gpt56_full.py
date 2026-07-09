@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -261,6 +262,8 @@ timeline
 def main() -> int:
     repo = Path(__file__).resolve().parents[1]
     run_dir = repo / "archive" / "runs" / "gpt-5.6-full"
+    if run_dir.exists():
+        shutil.rmtree(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
 
     now = datetime.now(timezone.utc)
