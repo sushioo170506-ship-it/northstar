@@ -1,79 +1,50 @@
 # mr-step4-process
 
 name: mr-step4-process
-description: Step 4 — 将原始素材加工成可写作、可复核、可决策的结构化证据包（表格/图表/账本/矩阵）。
+description: Step 4 — 将原始素材加工为可写作、可复核、可决策的证据包。
 
-## 作用
-这是从“收集到的东西”到“能写进报告的东西”的转换层。
+## 定位与作用
+本步骤是“证据加工层”。  
+它把 Step3 的散点素材转为结构化内容块，确保 Step5 可以直接写作而非临时拼接。
 
 ## 输入
 - `archive/raw_data/`
 - `archive/outline.md`
-- `skills/external-model-research/model-report-playbook.md`（模块清单）
+- `skills/external-model-research/model-report-playbook.md`
 
 ## 输出
-写入 `archive/processed_data/`，推荐目录：
+写入 `archive/processed_data/`，重点产物包括：
+- 分章节证据块（`section_*`）
+- 图表规格（`figures/`）
+- 核心表格（`tables/`）
+- 证据索引（`evidence_map.csv`、`evidence_ledger.csv`）
+- 缺口报告（`gaps.md`）
 
-```text
-processed_data/
-├── section_1/
-├── section_2/
-├── section_3/
-├── section_4/
-├── section_5/
-├── section_6/
-├── section_7/
-├── figures/
-├── tables/
-└── gaps.md
-```
-
-## 结构化产物最低要求
-- 每个章节至少包含两类内容块中的一种：
-  - `key_points.md`（3-8条要点）
-  - 结构化表格（csv/md）
-  - 图表规格（mermaid 或绘图脚本）
-- 长篇详实报告硬下限：
-  - 表格 >= 12
-  - 图表规格 >= 4
-  - 含证据映射文件 `processed_data/evidence_map.csv`
-    - 字段：`section,evidence_id,claim_id,strength`
-  - 含 `processed_data/evidence_ledger.csv`
-    - 字段：`claim_id,claim_text,source_id,quote_snippet,confidence`
+## 必备中间产物（长篇）
+- `benchmark_master_table.md`
+- `competitor_matrix.md`
+- `risk_register.md`
+- `decision_scorecard.md`
+- `roadmap_90d.md`
+- `tech_route_3layer.md`
+- `capability_governance_dualtrack.md`
 
 ## 加工动作
-1. **信息归位**：将素材按章节分配到 `section_X/`。
-2. **表格化**：将参数、benchmark、竞品对比转成统一表格。
-3. **提炼要点**：将长段落压缩为 3-5 条可写 bullet points。
-4. **生成图表**：按大纲生成柱状图、雷达图、架构图、时间线等。
-5. **缺失检测**：输出 `gaps.md`，逐章标明 `齐全/待补/缺失`。
+1. 按章节归位素材；
+2. 将关键参数、benchmark、对标信息表格化；
+3. 生成图表规格与要点卡；
+4. 建立 claim->source 证据回链；
+5. 输出缺失分级（P0/P1/P2）。
 
-## 强制中间产物（长篇）
-- `processed_data/tables/benchmark_master_table.md`
-- `processed_data/tables/competitor_matrix.md`
-- `processed_data/tables/risk_register.md`（风险-影响-缓解-责任）
-- `processed_data/tables/decision_scorecard.md`（加权评分输入）
-- `processed_data/tables/roadmap_90d.md`（阶段目标/KPI/退出条件）
-- `processed_data/tables/tech_route_3layer.md`（现象/溯源/本质）
-- `processed_data/tables/capability_governance_dualtrack.md`（能力轨/治理轨）
-
-## 缺失分级规则（新增）
-- P0（严重缺失）：关键章节无核心数据或无可追溯来源 -> 必须回退 Step 3
-- P1（重要缺失）：有数据但对标不完整 -> 可继续但必须在报告显式声明
-- P2（一般缺失）：补充材料不足，不影响主结论 -> 记录即可
+## 差异化说明
+本步骤的核心价值是“把信息变成写作资产”，不是重复采集。  
+所有高层判断都应能在本步骤找到对应证据块与回链记录。
 
 ## 质量卡口
-- 所有素材已按章节归位。
-- 关键参数/分数已表格化。
-- 长篇论文描述已提炼为要点。
-- 大纲标注图表已生成，或标注“因数据不足暂缺”。
-- `gaps.md` 已完成且描述清晰。
-- 若章节素材严重缺失：必须回退 Step 3 补采。
-- `evidence_map.csv` 已生成，结论可追踪到证据。
-- `evidence_ledger.csv` 已生成且 claim/source 可回链。
-- 长篇模式下，强制中间产物全部存在。
-- 若表图数量低于大纲门槛，必须回退补加工。
-- `risk_register` 字段完整（risk/severity/trigger/impact/mitigation/owner/status）。
+- 表格 >= 12、图表规格 >= 4（长篇）；
+- `evidence_map` 与 `evidence_ledger` 字段完整；
+- `risk_register` 至少包含 risk/impact/mitigation/owner；
+- 若出现 P0 缺失，必须回退 Step3 补采。
 
 ## 交接
 将 `archive/processed_data/` 交给 `mr-step5-write`。
