@@ -31,14 +31,14 @@ skills:
   - id: step1
     name: mr-step1-scope
     input:
-      required: [model_name, audience_profile, decision_goal, top_risk]
+      required: [model_name, audience_profile, analysis_goal, usage_scenario, top_risk]
     output:
       file: archive/scope.md
     gate:
       - 三个问题已回答
       - 读者画像具体
       - 报告类型单选明确
-      - 结论形式明确
+      - 结论输出框架明确（定位/能力/场景/边界/启示）
       - 已设置丰富度门槛（来源/竞品/benchmark/表图）
 
   - id: step2
