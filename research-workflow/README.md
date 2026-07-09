@@ -47,7 +47,7 @@ research-workflow/
 
 - [x] 阶段 0：目录骨架 + 模板空壳
 - [x] 节点 1：主编排器 `wcget.mdc`
-- [ ] 节点 2：大纲 Skill
+- [x] 节点 2：大纲 Skill `wcget-outline.mdc`（五步构建法全文）
 - [ ] 节点 3：数据 Skill
 - [ ] 节点 4：评分 Skill
 - [ ] 节点 5：正文 Skill
