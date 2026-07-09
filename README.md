@@ -23,3 +23,8 @@ The goal is to build a reusable AI knowledge and automation system.
 
 - Input: `examples/external-model-research-smoke-input.json`
 - Run: `python3 scripts/run_external_model_workflow_smoke_test.py`
+
+## Full Example Run (GPT-5.6)
+
+- Run: `python3 scripts/run_external_model_workflow_gpt56_full.py`
+- Output: `output/runs/gpt-5.6-full/`
