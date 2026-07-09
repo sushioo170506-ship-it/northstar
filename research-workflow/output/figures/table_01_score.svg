@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="505.44pt" height="306.72pt" viewBox="0 0 505.44 306.72" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-07-09T04:14:41.829107</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 306.72 
+L 505.44 306.72 
+L 505.44 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="line2d_1">
+    <path d="M 59.022 61.891535 
+L 446.418 61.891535 
+" clip-path="url(#p727122077d)" style="fill: none; stroke: #f0f0f0; stroke-width: 0.5; stroke-linecap: square"/>
+   </g>
+   <g id="patch_2">
+    <path d="M 59.022 75.710512 
+L 446.418 75.710512 
+L 446.418 61.891535 
+L 59.022 61.891535 
+z
+" clip-path="url(#p727122077d)" style="fill: #fafbfc; stroke: #fafbfc; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_2">
+    <path d="M 59.022 75.710512 
+L 446.418 75.710512 
+" clip-path="url(#p727122077d)" style="fill: none; stroke: #f0f0f0; stroke-width: 0.5; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_3">
+    <path d="M 59.022 89.529488 
+L 446.418 89.529488 
+" clip-path="url(#p727122077d)" style="fill: none; stroke: #f0f0f0; stroke-width: 0.5; stroke-linecap: square"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 59.022 103.348465 
+L 446.418 103.348465 
+L 446.418 89.529488 
+L 59.022 89.529488 
+z
+" clip-path="url(#p727122077d)" style="fill: #fafbfc; stroke: #fafbfc; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_4">
+    <path d="M 59.022 103.348465 
+L 446.418 103.348465 
+" clip-path="url(#p727122077d)" style="fill: none; stroke: #f0f0f0; stroke-width: 0.5; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_5">
+    <path d="M 59.022 117.167442 
+L 446.418 117.167442 
+" clip-path="url(#p727122077d)" style="fill: none; stroke: #f0f0f0; stroke-width: 0.5; stroke-linecap: square"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 59.022 130.986419 
+L 446.418 130.986419 
+L 446.418 117.167442 
+L 59.022 117.167442 
+z
+" clip-path="url(#p727122077d)" style="fill: #fafbfc; stroke: #fafbfc; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_6">
+    <path d="M 59.022 130.986419 
+L 446.418 130.986419 
+" clip-path="url(#p727122077d)" style="fill: none; stroke: #f0f0f0; stroke-width: 0.5; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_7">
+    <path d="M 59.022 144.805395 
+L 446.418 144.805395 
+" clip-path="url(#p727122077d)" style="fill: none; stroke: #f0f0f0; stroke-width: 0.5; stroke-linecap: square"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 59.022 49.717674 
+L 446.418 49.717674 
+L 446.418 32.608465 
+L 59.022 32.608465 
+z
+" clip-path="url(#p727122077d)" style="fill: #0b1120; stroke: #0b1120; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #ffffff" x="113.654769" y="44.77307" transform="rotate(-0 113.654769 44.77307)">模型</text>
+   </g>
+   <g id="text_2">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #ffffff" x="190.637308" y="44.77307" transform="rotate(-0 190.637308 44.77307)">编码</text>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #ffffff" x="235.336846" y="44.77307" transform="rotate(-0 235.336846 44.77307)">推理</text>
+   </g>
+   <g id="text_4">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #ffffff" x="280.036385" y="44.77307" transform="rotate(-0 280.036385 44.77307)">生态</text>
+   </g>
+   <g id="text_5">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #ffffff" x="327.219231" y="44.77307" transform="rotate(-0 327.219231 44.77307)">可用性</text>
+   </g>
+   <g id="text_6">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #ffffff" x="374.402077" y="44.77307" transform="rotate(-0 374.402077 44.77307)">成本</text>
+   </g>
+   <g id="text_7">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #ffffff" x="421.584923" y="44.77307" transform="rotate(-0 421.584923 44.77307)">综合</text>
+   </g>
+   <g id="line2d_8">
+    <path d="M 59.022 49.717674 
+L 446.418 49.717674 
+" clip-path="url(#p727122077d)" style="fill: none; stroke: #0b1120; stroke-width: 2; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_9">
+    <path d="M 59.022 144.805395 
+L 446.418 144.805395 
+" clip-path="url(#p727122077d)" style="fill: none; stroke: #0b1120; stroke-width: 2; stroke-linecap: square"/>
+   </g>
+   <g id="text_8">
+    <text style="font-weight: 700; font-size: 11.5px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle" x="252.72" y="27.415423" transform="rotate(-0 252.72 27.415423)">表1  七款模型五维评分矩阵（中国团队视角，权重：编码20/推理15/生态20/可用性25/成本20）</text>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: start; fill: #222222" x="62.995292" y="57.888765" transform="rotate(-0 62.995292 57.888765)">Fable/Mythos 5</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="190.637308" y="58.402047" transform="rotate(-0 190.637308 58.402047)">10.0</text>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="235.336846" y="58.402047" transform="rotate(-0 235.336846 58.402047)">10.0</text>
+   </g>
+   <g id="text_12">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="280.036385" y="58.402047" transform="rotate(-0 280.036385 58.402047)">10.0</text>
+   </g>
+   <g id="text_13">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="327.219231" y="58.402047" transform="rotate(-0 327.219231 58.402047)">2.5</text>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="374.402077" y="58.402047" transform="rotate(-0 374.402077 58.402047)">1.0</text>
+   </g>
+   <g id="text_15">
+    <text style="font-weight: 700; font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #553c9a" x="421.584923" y="58.402047" transform="rotate(-0 421.584923 58.402047)">6.1</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: start; fill: #222222" x="62.995292" y="72.221023" transform="rotate(-0 62.995292 72.221023)">GPT-5.5</text>
+   </g>
+   <g id="text_17">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="190.637308" y="72.221023" transform="rotate(-0 190.637308 72.221023)">5.7</text>
+   </g>
+   <g id="text_18">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="235.336846" y="72.221023" transform="rotate(-0 235.336846 72.221023)">6.3</text>
+   </g>
+   <g id="text_19">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="280.036385" y="72.221023" transform="rotate(-0 280.036385 72.221023)">9.5</text>
+   </g>
+   <g id="text_20">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="327.219231" y="72.221023" transform="rotate(-0 327.219231 72.221023)">3.5</text>
+   </g>
+   <g id="text_21">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="374.402077" y="72.221023" transform="rotate(-0 374.402077 72.221023)">2.0</text>
+   </g>
+   <g id="text_22">
+    <text style="font-weight: 700; font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #553c9a" x="421.584923" y="72.221023" transform="rotate(-0 421.584923 72.221023)">5.2</text>
+   </g>
+   <g id="text_23">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: start; fill: #222222" x="62.995292" y="86.04" transform="rotate(-0 62.995292 86.04)">Gemini 3.1 Pro</text>
+   </g>
+   <g id="text_24">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="190.637308" y="86.04" transform="rotate(-0 190.637308 86.04)">4.8</text>
+   </g>
+   <g id="text_25">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="235.336846" y="86.04" transform="rotate(-0 235.336846 86.04)">6.0</text>
+   </g>
+   <g id="text_26">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="280.036385" y="86.04" transform="rotate(-0 280.036385 86.04)">8.5</text>
+   </g>
+   <g id="text_27">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="327.219231" y="86.04" transform="rotate(-0 327.219231 86.04)">3.0</text>
+   </g>
+   <g id="text_28">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="374.402077" y="86.04" transform="rotate(-0 374.402077 86.04)">2.5</text>
+   </g>
+   <g id="text_29">
+    <text style="font-weight: 700; font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #553c9a" x="421.584923" y="86.04" transform="rotate(-0 421.584923 86.04)">4.7</text>
+   </g>
+   <g id="text_30">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: start; fill: #222222" x="62.995292" y="99.368195" transform="rotate(-0 62.995292 99.368195)">DeepSeek V4 Pro</text>
+   </g>
+   <g id="text_31">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="190.637308" y="99.858977" transform="rotate(-0 190.637308 99.858977)">4.4</text>
+   </g>
+   <g id="text_32">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="235.336846" y="99.858977" transform="rotate(-0 235.336846 99.858977)">—</text>
+   </g>
+   <g id="text_33">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="280.036385" y="99.858977" transform="rotate(-0 280.036385 99.858977)">7.0</text>
+   </g>
+   <g id="text_34">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="327.219231" y="99.858977" transform="rotate(-0 327.219231 99.858977)">9.0</text>
+   </g>
+   <g id="text_35">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="374.402077" y="99.858977" transform="rotate(-0 374.402077 99.858977)">8.5</text>
+   </g>
+   <g id="text_36">
+    <text style="font-weight: 700; font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #553c9a" x="421.584923" y="99.858977" transform="rotate(-0 421.584923 99.858977)">7.2</text>
+   </g>
+   <g id="text_37">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: start; fill: #222222" x="62.995292" y="113.677953" transform="rotate(-0 62.995292 113.677953)">Kimi K2.6</text>
+   </g>
+   <g id="text_38">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="190.637308" y="113.677953" transform="rotate(-0 190.637308 113.677953)">5.7</text>
+   </g>
+   <g id="text_39">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="235.336846" y="113.677953" transform="rotate(-0 235.336846 113.677953)">6.8</text>
+   </g>
+   <g id="text_40">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="280.036385" y="113.677953" transform="rotate(-0 280.036385 113.677953)">6.5</text>
+   </g>
+   <g id="text_41">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="327.219231" y="113.677953" transform="rotate(-0 327.219231 113.677953)">9.0</text>
+   </g>
+   <g id="text_42">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="374.402077" y="113.677953" transform="rotate(-0 374.402077 113.677953)">9.5</text>
+   </g>
+   <g id="text_43">
+    <text style="font-weight: 700; font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #553c9a" x="421.584923" y="113.677953" transform="rotate(-0 421.584923 113.677953)">7.6</text>
+   </g>
+   <g id="text_44">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: start; fill: #222222" x="62.995292" y="127.231149" transform="rotate(-0 62.995292 127.231149)">GLM-5.1/5.2</text>
+   </g>
+   <g id="text_45">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="190.637308" y="127.49693" transform="rotate(-0 190.637308 127.49693)">5.7</text>
+   </g>
+   <g id="text_46">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="235.336846" y="127.49693" transform="rotate(-0 235.336846 127.49693)">—</text>
+   </g>
+   <g id="text_47">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="280.036385" y="127.49693" transform="rotate(-0 280.036385 127.49693)">7.0</text>
+   </g>
+   <g id="text_48">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="327.219231" y="127.49693" transform="rotate(-0 327.219231 127.49693)">9.5</text>
+   </g>
+   <g id="text_49">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="374.402077" y="127.49693" transform="rotate(-0 374.402077 127.49693)">9.0</text>
+   </g>
+   <g id="text_50">
+    <text style="font-weight: 700; font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #553c9a" x="421.584923" y="127.49693" transform="rotate(-0 421.584923 127.49693)">7.9</text>
+   </g>
+   <g id="text_51">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: start; fill: #222222" x="62.995292" y="141.027626" transform="rotate(-0 62.995292 141.027626)">Qwen 3.6</text>
+   </g>
+   <g id="text_52">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="190.637308" y="141.315907" transform="rotate(-0 190.637308 141.315907)">4.8</text>
+   </g>
+   <g id="text_53">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="235.336846" y="141.315907" transform="rotate(-0 235.336846 141.315907)">—</text>
+   </g>
+   <g id="text_54">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="280.036385" y="141.315907" transform="rotate(-0 280.036385 141.315907)">7.5</text>
+   </g>
+   <g id="text_55">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="327.219231" y="141.315907" transform="rotate(-0 327.219231 141.315907)">9.0</text>
+   </g>
+   <g id="text_56">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #222222" x="374.402077" y="141.315907" transform="rotate(-0 374.402077 141.315907)">9.0</text>
+   </g>
+   <g id="text_57">
+    <text style="font-weight: 700; font-size: 9px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: middle; fill: #553c9a" x="421.584923" y="141.315907" transform="rotate(-0 421.584923 141.315907)">7.6</text>
+   </g>
+  </g>
+  <g id="text_58">
+   <text style="font-size: 6px; font-family: 'Noto Sans CJK SC', sans-serif; text-anchor: start; fill: #666666" x="5.0544" y="302.248425" transform="rotate(-0 5.0544 302.248425)">数据来源: Anthropic 官方 / DataCamp / SuperCLUE / NextFuture / Lushbinary（2026）</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p727122077d">
+   <rect x="59.022" y="11.88" width="387.396" height="282.96"/>
+  </clipPath>
+ </defs>
+</svg>

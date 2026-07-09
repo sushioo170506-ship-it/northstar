@@ -61,6 +61,26 @@ research-workflow/
 - [x] `wcget-write` 正文（语言宪法 + 数据三要素 + 刺点五段式 + 节奏映射）
 - [x] `wcget-figure` 图表（类型决策树 + 视觉风格 + 表格 SVG + 6–10 张配置）
 - [x] `wcget-build` 报告组装（HTML + PNG，按需 Word[公文/通用] + 飞书文档）
-- [ ] 端到端试跑（Mythos5）
+- [x] 端到端试跑（Mythos5）— 全格式产出，见下
+
+## 端到端试跑产物（Mythos5，2026-07-09）
+
+主题「Mythos5 模型调研报告」按 Step 1→6 完整跑通，所有格式产出：
+
+| 产物 | 说明 |
+|------|------|
+| `output/outline.md` | Step 1 大纲（定刺：对中国团队 Mythos5 是地缘样本非可购 API） |
+| `output/research_data.md` | Step 2 数据（33 数据点+交叉验证）+ Step 3 评分矩阵 |
+| `output/report.md` | Step 4 正文（~3.5K 字，5 段首判断句，0 禁止词） |
+| `output/figures/*.svg` | Step 5：5 图 + 2 表（SWE-Bench 对比/价格象限/雷达/时间线/排名） |
+| `output/report.html` | Step 6：自包含 HTML，7 SVG 全内联 |
+| `output/figures_png/*.png` | Step 6：7 张 PNG（2×） |
+| `output/report.docx` | Step 6：Word 通用研报格式 |
+| `output/report.gongwen.docx` | Step 6：Word 党政机关公文格式（GB/T 9704-2012） |
+| `output/report.feishu.md` | Step 6：飞书可导入 Markdown（原生表格+待跟进块） |
+
+复现：`python3 scripts/make_figures.py && python3 scripts/svg_to_png.py && python3 scripts/build_report.py && python3 scripts/build_feishu.py && python3 scripts/build_docx.py general && python3 scripts/build_docx.py gongwen`
+
+> 依赖：`matplotlib cairosvg python-docx` + `fonts-noto-cjk`（PNG/图表）、`pandoc`/`libreoffice`（可选）。
 
 > 六个子 Skill 均已按知乎原文全文落地；原文引用的外部工具（`nature-*` / `render_tables.py` / `build_html.py` / `svg2png.py`）在 Cursor 环境标注为「可选/可替换」，可由 Agent 用等价 Python 实现。
