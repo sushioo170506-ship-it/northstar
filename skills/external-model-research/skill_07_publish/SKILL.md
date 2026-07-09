@@ -19,6 +19,8 @@ description: Step 7 — 输出最终交付件并完成归档，确保报告可�
 - `report.docx`
 - `executive_summary.md`
 - `decision_brief.md`
+- `conclusion_evidence_reasoning_map.md`
+- `process_outcome_value_map.md`
 - `figures/`
 - `appendix/`
 - `slides/`（如需要）
@@ -27,12 +29,15 @@ description: Step 7 — 输出最终交付件并完成归档，确保报告可�
 1. 生成摘要：一句话结论 + 核心发现 + 禁用边界；
 2. 转换格式：MD/PDF/DOCX（必要时 HTML/PPT）；
 3. 归档中间产物：scope/outline/raw_data/processed_data/report/output；
-4. 导出附录：关键表格包、来源索引、review 快照。
+4. 导出附录：关键表格包、来源索引、review 快照；
+5. 输出“逻辑链条附录”：结论映射表与过程映射表。
 
 ## 发布前检查
 - 主稿章节完整（§1-§7）且引用清单存在；
 - 长篇达到表图门槛（表 >= 12，图 >= 4）；
 - `decision_brief` 包含结论五要素摘要（定位/能力/场景/边界/启示）；
+- `decision_brief` 的每个要素至少含 1 条核心依据（source_id 或证据摘要）；
+- 过程型附录小节均含“成果与价值”结论句；
 - DOCX 与 MD 结构一致（标题层级、表格、关键段落）。
 
 ## 质量卡口
@@ -40,6 +45,7 @@ description: Step 7 — 输出最终交付件并完成归档，确保报告可�
 - 多格式输出无内容丢失；
 - 图表在目标格式中可见；
 - 归档目录完整可追溯；
+- 结论映射表与过程映射表均随包发布，且引用可跳转；
 - 若一致性检查失败，回退修复后再发布。
 
 ## 交接
