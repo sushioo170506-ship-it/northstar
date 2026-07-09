@@ -16,6 +16,12 @@
 6. [mr-step6-review](./skill_06_review/SKILL.md)
 7. [mr-step7-output](./skill_07_publish/SKILL.md)
 
+## Shared Standards
+
+- 评分标准（rubric）：[model-report-rubric.yaml](./model-report-rubric.yaml)
+- 模块清单（playbook）：[model-report-playbook.md](./model-report-playbook.md)
+- 文档风格规范（style guide）：[skills-style-guide.md](./skills-style-guide.md)
+
 ## Recommended Workflow
 
 `scope -> outline -> collect -> process -> write -> review -> output`
@@ -27,10 +33,11 @@
 - `step6 -> step5`（风格/逻辑/可读性问题）
 
 质量底线（长篇）：
-- 来源 >= 12
-- benchmark 指标 >= 8
-- 竞品 >= 3
-- 表格 >= 6
-- 图表规格 >= 3
-- 复核总分 >= 85
+- 来源 >= 25（官方 >= 8，第三方 >= 10）
+- benchmark 指标 >= 25（覆盖维度 >= 8）
+- 竞品 >= 5
+- 表格 >= 12
+- 图表规格 >= 4
+- 参考文献 >= 30
+- 复核总分 >= 90（关键维度 >= 18）
 
