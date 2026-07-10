@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "skills": {
+    "@anisafifi/academic-research-hub": {
+      "version": "0.1.0",
+      "installedAt": 1783665450289,
+      "ownerHandle": "anisafifi"
+    },
+    "@nitishgargiitd/cellcog": {
+      "version": "2.0.15",
+      "installedAt": 1783665455036,
+      "ownerHandle": "nitishgargiitd"
+    },
+    "@nitishgargiitd/data-cog": {
+      "version": "1.0.11",
+      "installedAt": 1783665459987,
+      "ownerHandle": "nitishgargiitd"
+    },
+    "@teamolab/academic-writing": {
+      "version": "1.0.0",
+      "installedAt": 1783665469145,
+      "ownerHandle": "teamolab"
+    },
+    "@kaisersong/kai-report-creator": {
+      "version": "1.23.3",
+      "installedAt": 1783665503227,
+      "ownerHandle": "kaisersong"
+    }
+  }
+}
