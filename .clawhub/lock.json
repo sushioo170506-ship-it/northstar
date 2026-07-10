@@ -16,20 +16,10 @@
       "installedAt": 1783665459987,
       "ownerHandle": "nitishgargiitd"
     },
-    "@dannyshmueli/chart-image": {
-      "version": "2.6.35",
-      "installedAt": 1783665464701,
-      "ownerHandle": "dannyshmueli"
-    },
     "@teamolab/academic-writing": {
       "version": "1.0.0",
       "installedAt": 1783665469145,
       "ownerHandle": "teamolab"
-    },
-    "@youstudyeveryday/academic-citation-manager": {
-      "version": "1.0.0",
-      "installedAt": 1783665473875,
-      "ownerHandle": "youstudyeveryday"
     },
     "@kaisersong/kai-report-creator": {
       "version": "1.23.3",

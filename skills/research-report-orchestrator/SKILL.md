@@ -28,8 +28,7 @@ metadata:
 | 学术检索 | `academic-research-hub` | 需要论文、DOI、BibTeX、PubMed、arXiv 或 Semantic Scholar |
 | 远程数据分析 | `data-cog` + `cellcog` | 存在结构化数据、已配置 `CELLCOG_API_KEY`，且资料允许上传 |
 | 正文风格 | `academic-writing` | 学术、政策、技术或正式研究报告 |
-| 引用规范化 | `academic-citation-manager` | 需要 APA、IEEE、GB/T 7714 等格式 |
-| 静态图表 | `chart-image` | 存在可验证的结构化数值，输出 SVG/PNG |
+| 静态图表 | `research-chart` | 存在可验证的结构化数值，离线输出 SVG |
 | HTML 构建 | `kai-report-creator` | 需要自包含 HTML、主题样式或图片导出 |
 
 不要调用带有 `Security SUSPICIOUS` 标记的第三方 Skill。当前工作流不依赖 `deep-researcher`。
@@ -241,15 +240,14 @@ D 级资料不得支撑关键结论。
 
 ## Step 5：引用规范化
 
-需要标准引用格式时调用 `academic-citation-manager`。
-
 执行：
 
-- 优先用 DOI、ISBN 或原始页面核验元数据；
+- 优先用 DOI、ISBN、`academic-research-hub` 返回的元数据或原始出版页面核验；
 - 统一为用户指定格式；
 - 检查正文引用与参考文献一一对应；
 - 删除未引用条目；
-- 不得因 Crossref 返回结果而跳过与原始出版页面的核对。
+- 不得把模型生成的参考条目视为已核验元数据；
+- 无法可靠完成用户指定的复杂期刊格式时，保留完整元数据并明确标记需要人工排版。
 
 更新 `04-report.md`，将检查结果写入 `05-citation-audit.md`。
 
@@ -267,7 +265,7 @@ D 级资料不得支撑关键结论。
 - 单位、时间范围和样本；
 - 来源注释。
 
-调用 `chart-image` 输出到 `figures/`，优先 SVG。
+调用 `research-chart` 输出到 `figures/`。
 
 禁止：
 
@@ -328,4 +326,3 @@ D 级资料不得支撑关键结论。
 - 尚未解决的限制。
 
 不得输出内部思维过程；可以输出研究计划、证据台账、公式、检索策略和审计结果。
-

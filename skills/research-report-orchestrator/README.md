@@ -23,12 +23,12 @@
 | `academic-research-hub` | 0.1.0 | arXiv、PubMed、Semantic Scholar | Python 依赖，网络 |
 | `cellcog` | 2.0.15 | Data Cog 的 SDK 指引 | `CELLCOG_API_KEY` |
 | `data-cog` | 1.0.11 | 远程数据分析 | `CELLCOG_API_KEY`，数据会上传 |
-| `chart-image` | 2.6.35 | 本地 SVG/PNG 图表 | Node.js，首次使用需安装包内依赖 |
 | `academic-writing` | 1.0.0 | 正式及学术写作规范 | 无 |
-| `academic-citation-manager` | 1.0.0 | 引用格式和 Crossref 元数据 | Python，网络查询 |
 | `kai-report-creator` | 1.23.3 | 单文件 HTML 报告 | 图片导出可选依赖 Playwright |
 
 具体版本记录在仓库根目录 `.clawhub/lock.json`。
+
+本地 `research-chart` Skill 使用 Python 标准库生成 SVG，不需要额外依赖。
 
 ## 可选依赖
 
@@ -40,12 +40,6 @@
 python3 -m venv .venv-research
 source .venv-research/bin/activate
 pip install -r skills/@anisafifi/academic-research-hub/scripts/requirements.txt
-```
-
-本地图表：
-
-```bash
-npm ci --prefix skills/@dannyshmueli/chart-image/scripts
 ```
 
 远程数据分析：
@@ -66,3 +60,6 @@ npx -y clawhub@latest inspect @owner/skill --files
 
 本工作流没有下载 `deep-researcher`：检查结果同时出现 `Moderate CLEAN` 和 `Security SUSPICIOUS`，信号冲突。其有价值的方法已用更保守的方式实现在自有编排器中。
 
+`academic-citation-manager` 也未保留：安装后的语法检查发现其主 Python 文件存在 `SyntaxError`。引用核验由编排器结合学术检索结果和原始出版页面执行。
+
+`chart-image` 未保留：其锁定依赖在 `npm audit` 中报告 6 个高危 Vega/Vega-Lite 漏洞。工作流改用无第三方依赖的本地 `research-chart`。
