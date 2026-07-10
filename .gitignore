@@ -1,0 +1,14 @@
+# Local runtime dependencies
+node_modules/
+.venv*/
+__pycache__/
+*.py[cod]
+
+# Generated research deliverables
+output/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+

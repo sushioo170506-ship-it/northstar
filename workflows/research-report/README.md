@@ -19,6 +19,21 @@
 
 其余参数由 Agent 使用默认值补齐，并在“任务确认卡”中明确列出。
 
+## OpenClaw
+
+仓库已包含可直接由 OpenClaw 发现的 [`research-report-orchestrator`](../../skills/research-report-orchestrator/README.md) Skill，以及固定版本的学术检索、数据分析、写作、引用、图表和 HTML 构建子 Skill。
+
+在 OpenClaw 工作区中调用：
+
+```text
+/research-report-orchestrator
+
+主题：中国新能源汽车出海
+篇幅：deep
+读者：需要制定未来三年市场进入策略的管理团队
+交付：Markdown + 自包含 HTML
+```
+
 ## 三个核心变量
 
 | 变量 | 作用 | 示例 |
