@@ -18,8 +18,11 @@ class WritingSkill(Skill):
     def execute(self, request: SkillRequest) -> SkillResult:
         outline_text = request.inputs["outline"]
         evidence_text = request.inputs["research"]
+        requirements_text = request.inputs["requirements_analysis"]
         issue_tree_text = request.inputs["issue_tree"]
         evidence_ledger_text = request.inputs["evidence_governance"]
+        materials_text = request.inputs["material_integration"]
+        visualizations_text = request.inputs["visualization"]
         prompt = WRITING_PROMPT.format(
             topic=request.config.topic,
             expected_length=request.config.expected_length,
@@ -28,6 +31,8 @@ class WritingSkill(Skill):
             prompt += (
                 f"\n已确认大纲：\n{outline_text}\n议题树：\n{issue_tree_text}"
                 f"\n证据包：\n{evidence_text}\n证据账本：\n{evidence_ledger_text}"
+                f"\n需求简报：\n{requirements_text}\n章节素材：\n{materials_text}"
+                f"\n可视化资产：\n{visualizations_text}"
             )
             content = self.generator.generate(
                 system="你是证据驱动的研究报告作者。", prompt=prompt,
@@ -36,24 +41,32 @@ class WritingSkill(Skill):
             return SkillResult(content, "draft", {"prompt_version": "1.0"})
 
         outline = json.loads(outline_text)
-        evidence = json.loads(evidence_text)
-        evidence_ledger = json.loads(evidence_ledger_text)
-        governed_ids = {
-            source["id"] for source in evidence_ledger.get("sources", [])
-            if source.get("traceable")
-        }
-        source_ids = [
-            source["id"] for source in evidence.get("sources", [])
-            if source["id"] in governed_ids
-        ]
-        citation = f"（资料：{source_ids[0]}）" if source_ids else "（资料缺口：待检索）"
+        materials = json.loads(materials_text)
+        visualizations = json.loads(visualizations_text)
         parts = [f"# {outline['title']}\n"]
-        for section in outline["sections"]:
+        for section_index, section in enumerate(outline["sections"]):
             target = max(100, int(section["target_length"]))
+            section_materials = materials.get("sections", {}).get(
+                section["id"], {}
+            ).get("materials", [])
+            citations = [
+                f"[{item['source_id']}]({item['original_url']})"
+                for item in section_materials if item.get("original_url")
+            ]
+            citation = (
+                "（来源：" + "、".join(citations) + "）"
+                if citations else "（资料缺口：待检索）"
+            )
+            evidence_summary = "；".join(
+                f"{item.get('title')}：{item.get('content', '')[:120]}"
+                for item in section_materials[:3]
+            )
             lead = (
                 f"本节围绕“{section['title']}”分析{request.config.topic}。"
                 f"论述遵循事实、分析与建议分离原则。{citation}"
             )
+            if evidence_summary:
+                lead += f" 已收集素材显示：{evidence_summary}。"
             sentences = [lead]
             counter = 1
             while len("".join(sentences)) < target:
@@ -64,6 +77,21 @@ class WritingSkill(Skill):
                 counter += 1
             section_body = "".join(sentences)[:target]
             parts.append(f"## {section['title']}\n\n{section_body}\n")
+            applicable = [
+                asset for asset in visualizations.get("assets", [])
+                if section["id"] in asset.get("section_ids", [])
+                or (not asset.get("section_ids") and section_index == 0)
+            ]
+            for asset in applicable:
+                if asset["format"] == "mermaid":
+                    rendered = f"```mermaid\n{asset['content']}\n```"
+                else:
+                    rendered = (
+                        "```json\n"
+                        + json.dumps(asset["content"], ensure_ascii=False, indent=2)
+                        + "\n```"
+                    )
+                parts.append(f"### {asset['title']}\n\n{rendered}\n")
         if request.feedback:
             parts.append("## 修订说明\n\n" + "；".join(request.feedback))
         content = "\n".join(parts)

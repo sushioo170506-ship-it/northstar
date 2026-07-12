@@ -20,6 +20,10 @@ def _parser() -> argparse.ArgumentParser:
     create.add_argument("--length", type=int, default=5000)
     create.add_argument("--style", default="专业、客观、证据驱动")
     create.add_argument("--format", default="markdown")
+    create.add_argument("--output-type", default="research_report")
+    create.add_argument("--audience", default="通用专业读者")
+    create.add_argument("--boundary", action="append", default=[])
+    create.add_argument("--prior-thoughts", default="")
     create.add_argument("--sources-json", help="包含 sources 数组的 JSON 文件")
 
     for name in ("run", "status", "final"):
@@ -58,6 +62,10 @@ def main(argv: list[str] | None = None) -> int:
                     "expected_length": args.length,
                     "style": args.style,
                     "output_format": args.format,
+                    "output_type": args.output_type,
+                    "audience": args.audience,
+                    "content_boundaries": args.boundary,
+                    "prior_thoughts": args.prior_thoughts,
                     "extra": extra,
                 }
             )

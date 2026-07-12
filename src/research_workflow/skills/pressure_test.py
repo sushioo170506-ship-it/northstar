@@ -16,15 +16,21 @@ class PressureTestSkill(Skill):
 
     def execute(self, request: SkillRequest) -> SkillResult:
         draft = request.inputs["writing"]
+        requirements_text = request.inputs["requirements_analysis"]
         outline_text = request.inputs["outline"]
+        research_text = request.inputs["research"]
         evidence_text = request.inputs["evidence_governance"]
         issue_tree_text = request.inputs["issue_tree"]
+        materials_text = request.inputs["material_integration"]
+        visualizations_text = request.inputs["visualization"]
         if self.generator:
             prompt = (
                 "独立审计初稿，不要把审查意见折叠进正文。执行逻辑、证据、最强反方论证、"
                 "完整性四项审计，输出 JSON 弱点报告和定稿前修复清单。\n"
                 f"初稿：{draft}\n大纲：{outline_text}\n证据账本：{evidence_text}\n"
-                f"议题树：{issue_tree_text}"
+                f"议题树：{issue_tree_text}\n需求：{requirements_text}\n"
+                f"调研：{research_text}\n素材映射：{materials_text}\n"
+                f"可视化：{visualizations_text}"
             )
             content = self.generator.generate(
                 system="你是持怀疑态度的独立报告压力测试员。",
@@ -33,8 +39,11 @@ class PressureTestSkill(Skill):
             return SkillResult(content, "pressure_test", {"prompt_version": "1.0"})
 
         outline = json.loads(outline_text)
+        research = json.loads(research_text)
         evidence = json.loads(evidence_text)
         issue_tree = json.loads(issue_tree_text)
+        materials = json.loads(materials_text)
+        visualizations = json.loads(visualizations_text)
         logic_issues: list[dict[str, str]] = []
         evidence_gaps: list[dict[str, str]] = []
         completeness_issues: list[dict[str, str]] = []
@@ -74,6 +83,43 @@ class PressureTestSkill(Skill):
                     "location": "证据账本",
                     "message": "部分来源不可完整追溯",
                     "repair": "补充来源标题、原文或 URL",
+                }
+            )
+        missing_categories = research.get("retrieval_summary", {}).get(
+            "missing_categories", []
+        )
+        if missing_categories:
+            evidence_gaps.append(
+                {
+                    "severity": "high",
+                    "location": "调研来源",
+                    "message": "缺少来源类别：" + "、".join(missing_categories),
+                    "repair": "从官方、学术和主流社交媒体补齐三类来源",
+                }
+            )
+        if evidence.get("metrics", {}).get("original_link_coverage", 0.0) < 1.0:
+            evidence_gaps.append(
+                {
+                    "severity": "high",
+                    "location": "证据账本",
+                    "message": "部分素材缺少原始来源链接",
+                    "repair": "补充每项事实和数据的原始 URL",
+                }
+            )
+        if materials.get("metrics", {}).get("mount_coverage", 0.0) < 1.0:
+            completeness_issues.append(
+                {
+                    "severity": "high",
+                    "location": "章节素材",
+                    "message": "存在未挂载到大纲章节的素材",
+                }
+            )
+        if not visualizations.get("assets"):
+            completeness_issues.append(
+                {
+                    "severity": "medium",
+                    "location": "可视化",
+                    "message": "未生成任何可视化成果",
                 }
             )
         for section in outline.get("sections", []):

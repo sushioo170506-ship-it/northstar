@@ -21,6 +21,7 @@ DIMENSIONS = (
 
 class QualityGateSkill(Skill):
     name = "quality_gate"
+    REQUIRED_SOURCE_CATEGORIES = {"official", "academic", "social_media"}
 
     def __init__(
         self, generator: TextGenerator | None = None, pass_score: float = 24.0
@@ -30,6 +31,7 @@ class QualityGateSkill(Skill):
 
     def execute(self, request: SkillRequest) -> SkillResult:
         final_report = request.inputs["review"]
+        requirements = json.loads(request.inputs["requirements_analysis"])
         evidence_text = request.inputs["evidence_governance"]
         pressure_text = request.inputs["pressure_test"]
         evidence = json.loads(evidence_text)
@@ -52,7 +54,21 @@ class QualityGateSkill(Skill):
                 if item not in red_lines:
                     red_lines.append(item)
             source_count = evidence.get("metrics", {}).get("source_count", 0)
-            passed = not red_lines and source_count > 0 and total >= self.pass_score
+            metrics = evidence.get("metrics", {})
+            categories = set(metrics.get("source_categories", []))
+            link_coverage = metrics.get("original_link_coverage", 0.0)
+            all_links_present = all(
+                source.get("original_url") in final_report
+                for source in evidence.get("sources", []) if source.get("original_url")
+            )
+            passed = (
+                not red_lines
+                and source_count > 0
+                and self.REQUIRED_SOURCE_CATEGORIES <= categories
+                and link_coverage == 1.0
+                and all_links_present
+                and total >= self.pass_score
+            )
             generated.update(
                 {
                     "passed": passed,
@@ -79,6 +95,11 @@ class QualityGateSkill(Skill):
         pressure = json.loads(pressure_text)
         source_count = evidence.get("metrics", {}).get("source_count", 0)
         traceability = evidence.get("metrics", {}).get("traceability_ratio", 0.0)
+        link_coverage = evidence.get("metrics", {}).get("original_link_coverage", 0.0)
+        categories = set(evidence.get("metrics", {}).get("source_categories", []))
+        category_coverage = len(self.REQUIRED_SOURCE_CATEGORIES & categories) / len(
+            self.REQUIRED_SOURCE_CATEGORIES
+        )
         logic_issues = pressure.get("logic_audit", {}).get("issues", [])
         completeness = pressure.get("completeness_audit", {}).get("issues", [])
         evidence_gaps = pressure.get("evidence_audit", {}).get("gaps", [])
@@ -87,7 +108,10 @@ class QualityGateSkill(Skill):
             if item not in red_lines:
                 red_lines.append(item)
 
-        d1 = 3.0 if source_count == 0 else max(1.0, round(5.0 * traceability, 1))
+        d1 = (
+            0.0 if source_count == 0
+            else round(5.0 * min(traceability, link_coverage, category_coverage), 1)
+        )
         d2 = max(0.0, 5.0 - len(logic_issues))
         d3 = 4.5 if ("资料缺口" in final_report or "待检索" in final_report) else 4.0
         d4 = max(0.0, 5.0 - len(completeness))
@@ -96,12 +120,43 @@ class QualityGateSkill(Skill):
         d7 = 3.5
         scores = dict(zip(DIMENSIONS, (d1, d2, d3, d4, d5, d6, d7), strict=True))
         total = round(sum(scores.values()), 1)
-        passed = source_count > 0 and not red_lines and total >= self.pass_score
+        missing_categories = sorted(self.REQUIRED_SOURCE_CATEGORIES - categories)
+        missing_report_links = [
+            source["id"] for source in evidence.get("sources", [])
+            if not source.get("original_url") or source["original_url"] not in final_report
+        ]
+        minimum_length = int(requirements["deliverable"]["expected_length"] * 0.75)
+        length_compliant = len(final_report) >= minimum_length
+        boundary_violations = []
+        for boundary in requirements.get("content_boundaries", []):
+            for prefix in ("不得包含:", "不得包含：", "禁止:", "禁止："):
+                if boundary.startswith(prefix):
+                    forbidden = boundary[len(prefix):].strip()
+                    if forbidden and forbidden in final_report:
+                        boundary_violations.append(forbidden)
+        passed = (
+            source_count > 0
+            and not missing_categories
+            and link_coverage == 1.0
+            and not missing_report_links
+            and not boundary_violations
+            and length_compliant
+            and not red_lines
+            and total >= self.pass_score
+        )
         problems = []
         if evidence_gaps:
             problems.append("存在证据缺口，需在决策使用时披露")
         if source_count == 0:
             problems.append("没有可追溯来源，不能发布决策报告")
+        if missing_categories:
+            problems.append("缺少来源类别：" + "、".join(missing_categories))
+        if missing_report_links:
+            problems.append("终稿缺少原始链接：" + "、".join(missing_report_links))
+        if boundary_violations:
+            problems.append("违反内容边界：" + "、".join(boundary_violations))
+        if not length_compliant:
+            problems.append(f"报告篇幅低于最低要求 {minimum_length}")
         if completeness:
             problems.append("存在未覆盖的大纲章节")
         if red_lines:
@@ -117,6 +172,16 @@ class QualityGateSkill(Skill):
             "dimensions": scores,
             "problems": problems,
             "required_actions": pressure.get("repair_actions", []),
+            "requirements_checks": {
+                "audience": requirements.get("audience"),
+                "style": requirements.get("style"),
+                "minimum_length": minimum_length,
+                "actual_length": len(final_report),
+                "length_compliant": length_compliant,
+                "boundary_violations": boundary_violations,
+                "missing_source_categories": missing_categories,
+                "missing_report_links": missing_report_links,
+            },
             "decision": "allow_release" if passed else "block_release",
             "feedback_applied": list(request.feedback),
         }

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 
 from ..contracts import Skill, TextGenerator
@@ -17,9 +16,8 @@ class OutlineSkill(Skill):
         self.generator = generator
 
     def execute(self, request: SkillRequest) -> SkillResult:
-        evidence = request.inputs["research"]
+        requirements_text = request.inputs["requirements_analysis"]
         issue_tree_text = request.inputs["issue_tree"]
-        evidence_ledger = request.inputs["evidence_governance"]
         prompt = OUTLINE_PROMPT.format(
             topic=request.config.topic,
             expected_length=request.config.expected_length,
@@ -27,8 +25,7 @@ class OutlineSkill(Skill):
         )
         if self.generator:
             prompt += (
-                f"\n证据包：\n{evidence}\n议题树：\n{issue_tree_text}"
-                f"\n证据治理账本：\n{evidence_ledger}"
+                f"\n需求简报：\n{requirements_text}\n议题树：\n{issue_tree_text}"
             )
             content = self.generator.generate(
                 system="你是研究报告架构师。", prompt=prompt, max_tokens=3000
@@ -36,6 +33,7 @@ class OutlineSkill(Skill):
             return SkillResult(content, "outline", {"prompt_version": "1.0"})
 
         issue_tree = json.loads(issue_tree_text)
+        requirements = json.loads(requirements_text)
         issue_titles = [
             item.get("question", item.get("id", "关键议题"))
             for item in issue_tree.get("issues", [])
@@ -61,9 +59,11 @@ class OutlineSkill(Skill):
             "sections": sections,
             "total_target_length": sum(item["target_length"] for item in sections),
             "feedback_applied": list(request.feedback),
-            "evidence_checksum_hint": hashlib.sha256(evidence.encode("utf-8")).hexdigest(),
-            "evidence_ledger_checksum_hint": hashlib.sha256(
-                evidence_ledger.encode("utf-8")
-            ).hexdigest(),
+            "requirements_alignment": {
+                "audience": requirements["audience"],
+                "style": requirements["style"],
+                "output_type": requirements["deliverable"]["type"],
+                "boundaries": requirements["content_boundaries"],
+            },
         }
         return SkillResult(json.dumps(payload, ensure_ascii=False, indent=2), "outline")

@@ -33,6 +33,10 @@ class ReportConfig:
     style: str = "专业、客观、证据驱动"
     output_format: str = "markdown"
     language: str = "zh-CN"
+    output_type: str = "research_report"
+    audience: str = "通用专业读者"
+    content_boundaries: tuple[str, ...] = ()
+    prior_thoughts: str = ""
     extra: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
@@ -55,10 +59,28 @@ class ReportConfig:
         if output_format not in SUPPORTED_FORMATS:
             raise ValueError(f"output_format 必须是 {sorted(SUPPORTED_FORMATS)} 之一")
         language = str(raw.get("language", "zh-CN")).strip() or "zh-CN"
+        output_type = " ".join(
+            str(raw.get("output_type", "research_report")).split()
+        ) or "research_report"
+        audience = " ".join(
+            str(raw.get("audience", "通用专业读者")).split()
+        ) or "通用专业读者"
+        raw_boundaries = raw.get("content_boundaries", ())
+        if isinstance(raw_boundaries, str):
+            raw_boundaries = [raw_boundaries]
+        if not isinstance(raw_boundaries, (list, tuple)):
+            raise ValueError("content_boundaries 必须是字符串数组")
+        content_boundaries = tuple(
+            " ".join(str(item).split()) for item in raw_boundaries if str(item).strip()
+        )
+        prior_thoughts = str(raw.get("prior_thoughts", "")).strip()
         extra = raw.get("extra", {})
         if not isinstance(extra, dict):
             raise ValueError("extra 必须是对象")
-        return cls(topic, expected_length, style, output_format, language, extra)
+        return cls(
+            topic, expected_length, style, output_format, language,
+            output_type, audience, content_boundaries, prior_thoughts, extra,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

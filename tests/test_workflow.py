@@ -24,6 +24,41 @@ CHECKPOINTS = (
 )
 
 
+def compliant_sources(prefix: str = "S"):
+    return [
+        {
+            "id": f"{prefix}-OFFICIAL",
+            "title": "官方政策原文",
+            "content": "官方数据显示相关指标为 42%。",
+            "url": "https://official.example/policy",
+            "published_at": "2026-07-01",
+            "category": "official",
+            "source_type": "primary",
+            "issue_ids": ["ISSUE-01"],
+        },
+        {
+            "id": f"{prefix}-ACADEMIC",
+            "title": "同行评审研究",
+            "content": "学术研究样本量为 1200。",
+            "url": "https://academic.example/paper",
+            "published_at": "2026-06-01",
+            "category": "academic",
+            "source_type": "independent",
+            "issue_ids": ["ISSUE-02"],
+        },
+        {
+            "id": f"{prefix}-SOCIAL",
+            "title": "主流社交平台公开讨论",
+            "content": "公开讨论中有 35% 的样本关注实施风险。",
+            "url": "https://social.example/post",
+            "published_at": "2026-07-10",
+            "category": "social_media",
+            "source_type": "stakeholder",
+            "issue_ids": ["ISSUE-03"],
+        },
+    ]
+
+
 def complete(orchestrator: ResearchReportOrchestrator, workflow_id: str):
     for checkpoint in CHECKPOINTS:
         outcome = orchestrator.run(workflow_id)
@@ -47,17 +82,11 @@ class WorkflowTests(unittest.TestCase):
             "expected_length": 1200,
             "style": "专业、客观",
             "output_format": "markdown",
-            "extra": {
-                "sources": [
-                    {
-                        "id": "S1",
-                        "title": "政策原文",
-                        "content": "治理需要风险分级。",
-                        "published_at": "2026-07-12",
-                        "issue_ids": ["ISSUE-01"],
-                    }
-                ]
-            },
+            "output_type": "决策研究报告",
+            "audience": "企业管理层",
+            "content_boundaries": ["不得包含：未经来源支持的确定性结论"],
+            "prior_thoughts": "需要平衡创新收益与治理风险。",
+            "extra": {"sources": compliant_sources()},
         }
         config.update(overrides)
         return self.workflow.create(config)
@@ -102,7 +131,15 @@ class WorkflowTests(unittest.TestCase):
         ledger = json.loads(
             reloaded.state.node_artifact(workflow_id, "evidence_governance")["content"]
         )
-        self.assertEqual(ledger["issue_coverage"]["ISSUE-01"], ["S1"])
+        self.assertEqual(ledger["issue_coverage"]["ISSUE-01"], ["S-OFFICIAL"])
+        brief = json.loads(
+            reloaded.state.node_artifact(workflow_id, "requirements_analysis")["content"]
+        )
+        self.assertEqual(brief["audience"], "企业管理层")
+        materials = reloaded.state.node_artifact(workflow_id, "material_integration")
+        self.assertEqual(json.loads(materials["content"])["metrics"]["mount_coverage"], 1.0)
+        visuals = reloaded.state.node_artifact(workflow_id, "visualization")
+        self.assertGreaterEqual(json.loads(visuals["content"])["metrics"]["asset_count"], 2)
 
     def test_modification_only_reruns_descendants(self) -> None:
         workflow_id = self.create()
@@ -154,15 +191,7 @@ class WorkflowTests(unittest.TestCase):
                     "topic": "格式测试",
                     "expected_length": 500,
                     "output_format": output_format,
-                    "extra": {
-                        "sources": [
-                            {
-                                "id": "S1",
-                                "title": "格式测试来源",
-                                "content": "可追溯材料",
-                            }
-                        ]
-                    },
+                    "extra": {"sources": compliant_sources(f"FORMAT-{output_format}")},
                 }
             )
             complete(child, workflow_id)
@@ -173,6 +202,20 @@ class WorkflowTests(unittest.TestCase):
                 self.assertEqual(json.loads(report)["title"], "格式测试")
             else:
                 self.assertNotIn("# ", report)
+
+    def test_revision_router_returns_to_precise_stage(self) -> None:
+        workflow_id = self.create()
+        complete(self.workflow, workflow_id)
+        target, affected = self.workflow.request_revision(
+            workflow_id, "请调整图表和架构图的表达"
+        )
+        self.assertEqual(target, "visualization")
+        self.assertIn("writing", affected)
+        self.assertIn("quality_gate", affected)
+        self.assertNotIn("material_integration", affected)
+        snapshot = self.workflow.state.snapshot(workflow_id)
+        operations = [row["operation"] for row in snapshot["operations"]]
+        self.assertIn("route_revision", operations)
 
     def test_long_context_is_chunked_losslessly_and_retrievable(self) -> None:
         workflow_id = self.create(expected_length=105_000)
@@ -229,15 +272,7 @@ class WorkflowTests(unittest.TestCase):
             self.workflow.update_sources(workflow_id, [], "错误地清空来源")
         affected = self.workflow.update_sources(
             workflow_id,
-            [
-                {
-                    "id": "S-REPLACEMENT",
-                    "title": "可核验官方材料",
-                    "content": "更新后的可追溯证据",
-                    "published_at": "2026-07-12",
-                    "source_type": "primary",
-                }
-            ],
+            compliant_sources("REPLACEMENT"),
             "移除编造来源并替换为官方材料",
         )
         self.assertIn("quality_gate", affected)
@@ -289,6 +324,14 @@ class WorkflowTests(unittest.TestCase):
             config=ReportConfig.from_dict({"topic": "模型门控测试"}),
             inputs={
                 "review": "# 报告\n风险、建议与资料缺口",
+                "requirements_analysis": json.dumps(
+                    {
+                        "deliverable": {"expected_length": 500},
+                        "audience": "测试受众",
+                        "style": "专业",
+                        "content_boundaries": [],
+                    }
+                ),
                 "evidence_governance": json.dumps(
                     {"metrics": {"source_count": 0}, "red_lines": []}
                 ),
@@ -327,15 +370,7 @@ class WorkflowTests(unittest.TestCase):
                     "topic": f"可靠性样例 {index}",
                     "expected_length": 500,
                     "output_format": "markdown",
-                    "extra": {
-                        "sources": [
-                            {
-                                "id": f"S-{index}",
-                                "title": "批量测试来源",
-                                "content": "可追溯材料",
-                            }
-                        ]
-                    },
+                    "extra": {"sources": compliant_sources(f"BATCH-{index}")},
                 }
             )
             if complete(child, workflow_id).status == WorkflowStatus.COMPLETED:

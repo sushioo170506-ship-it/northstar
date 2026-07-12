@@ -42,6 +42,8 @@ class EvidenceGovernanceSkill(Skill):
         for index, source in enumerate(research.get("sources", [])):
             source_id = str(source.get("id", f"S{index + 1}"))
             source_type = str(source.get("source_type", "unknown"))
+            category = str(source.get("category", "unknown"))
+            original_url = source.get("url")
             stakeholder = bool(source.get("stakeholder", source_type == "stakeholder"))
             independent = source.get("independent_verification", [])
             if isinstance(independent, str):
@@ -85,6 +87,8 @@ class EvidenceGovernanceSkill(Skill):
                 {
                     "id": source_id,
                     "title": source.get("title", ""),
+                    "category": category,
+                    "original_url": original_url,
                     "source_type": source_type,
                     "published_at": published_at,
                     "traceable": traceable,
@@ -96,6 +100,10 @@ class EvidenceGovernanceSkill(Skill):
             )
         total = len(governed)
         traceable_count = sum(item["traceable"] for item in governed)
+        linked_count = sum(bool(item["original_url"]) for item in governed)
+        categories = sorted(
+            {item["category"] for item in governed if item["category"] != "unknown"}
+        )
         independently_supported = sum(
             bool(item["independent_verification"]) for item in governed if item["critical"]
         )
@@ -106,6 +114,9 @@ class EvidenceGovernanceSkill(Skill):
             "metrics": {
                 "source_count": total,
                 "traceability_ratio": traceable_count / total if total else 0.0,
+                "original_link_coverage": linked_count / total if total else 0.0,
+                "source_categories": categories,
+                "source_category_count": len(categories),
                 "critical_source_count": critical_count,
                 "critical_independent_coverage": (
                     independently_supported / critical_count if critical_count else None
@@ -122,6 +133,8 @@ class EvidenceGovernanceSkill(Skill):
                 "source_count": total,
                 "red_line_count": len(red_lines),
                 "traceability_ratio": payload["metrics"]["traceability_ratio"],
+                "original_link_coverage": payload["metrics"]["original_link_coverage"],
+                "source_category_count": len(categories),
             },
         )
 

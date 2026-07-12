@@ -18,11 +18,14 @@ from .skills import (
     EvidenceGovernanceSkill,
     FormattingSkill,
     IssueTreeSkill,
+    MaterialIntegrationSkill,
     OutlineSkill,
     PressureTestSkill,
     QualityGateSkill,
     ResearchSkill,
+    RequirementsAnalysisSkill,
     ReviewSkill,
+    VisualizationSkill,
     WritingSkill,
 )
 from .storage import SQLiteStateStore, SQLiteVectorStore
@@ -39,36 +42,68 @@ class NodeSpec:
 
 
 NODES = (
-    NodeSpec("research", (), "research"),
-    NodeSpec("issue_tree", ("research",), "issue_tree", ("research",)),
+    NodeSpec("requirements_analysis", (), "requirements_analysis"),
+    NodeSpec(
+        "issue_tree",
+        ("requirements_analysis",),
+        "issue_tree",
+        ("requirements_analysis",),
+    ),
     NodeSpec("issue_tree_confirmation", ("issue_tree",), checkpoint=True),
     NodeSpec(
+        "outline",
+        ("requirements_analysis", "issue_tree", "issue_tree_confirmation"),
+        "outline",
+        ("requirements_analysis", "issue_tree"),
+    ),
+    NodeSpec("outline_confirmation", ("outline",), checkpoint=True),
+    NodeSpec(
+        "research",
+        ("requirements_analysis", "issue_tree", "outline", "outline_confirmation"),
+        "research",
+        ("requirements_analysis", "issue_tree", "outline"),
+    ),
+    NodeSpec(
         "evidence_governance",
-        ("research", "issue_tree", "issue_tree_confirmation"),
+        ("research", "issue_tree", "outline"),
         "evidence_governance",
         ("research", "issue_tree"),
     ),
     NodeSpec(
-        "outline",
-        ("research", "issue_tree", "evidence_governance"),
-        "outline",
-        ("research", "issue_tree", "evidence_governance"),
+        "material_integration",
+        ("outline", "research", "evidence_governance"),
+        "material_integration",
+        ("outline", "research", "evidence_governance"),
     ),
-    NodeSpec("outline_confirmation", ("outline",), checkpoint=True),
+    NodeSpec(
+        "visualization",
+        ("issue_tree", "material_integration"),
+        "visualization",
+        ("issue_tree", "material_integration"),
+    ),
     NodeSpec(
         "writing",
         (
-            "research", "issue_tree", "evidence_governance", "outline",
-            "outline_confirmation",
+            "requirements_analysis", "issue_tree", "outline", "research",
+            "evidence_governance", "material_integration", "visualization",
         ),
         "writing",
-        ("research", "issue_tree", "evidence_governance", "outline"),
+        (
+            "requirements_analysis", "issue_tree", "outline", "research",
+            "evidence_governance", "material_integration", "visualization",
+        ),
     ),
     NodeSpec(
         "pressure_test",
-        ("issue_tree", "evidence_governance", "outline", "writing"),
+        (
+            "requirements_analysis", "issue_tree", "outline", "research",
+            "evidence_governance", "material_integration", "visualization", "writing",
+        ),
         "pressure_test",
-        ("issue_tree", "evidence_governance", "outline", "writing"),
+        (
+            "requirements_analysis", "issue_tree", "outline", "research",
+            "evidence_governance", "material_integration", "visualization", "writing",
+        ),
     ),
     NodeSpec("draft_confirmation", ("writing", "pressure_test"), checkpoint=True),
     NodeSpec(
@@ -78,17 +113,21 @@ NODES = (
     NodeSpec(
         "review",
         (
-            "research", "evidence_governance", "outline", "pressure_test",
-            "formatting", "pre_review_confirmation",
+            "requirements_analysis", "research", "evidence_governance", "outline",
+            "material_integration", "visualization", "pressure_test", "formatting",
+            "pre_review_confirmation",
         ),
         "review",
-        ("research", "evidence_governance", "outline", "pressure_test", "formatting"),
+        (
+            "requirements_analysis", "research", "evidence_governance", "outline",
+            "material_integration", "visualization", "pressure_test", "formatting",
+        ),
     ),
     NodeSpec(
         "quality_gate",
-        ("evidence_governance", "pressure_test", "review"),
+        ("requirements_analysis", "evidence_governance", "pressure_test", "review"),
         "quality_gate",
-        ("evidence_governance", "pressure_test", "review"),
+        ("requirements_analysis", "evidence_governance", "pressure_test", "review"),
         quality_gate=True,
     ),
 )
@@ -98,7 +137,8 @@ NODE_MAP = {node.id: node for node in NODES}
 def default_registry() -> SkillRegistry:
     registry = SkillRegistry()
     for skill in (
-        ResearchSkill(), IssueTreeSkill(), EvidenceGovernanceSkill(), OutlineSkill(),
+        RequirementsAnalysisSkill(), IssueTreeSkill(), OutlineSkill(), ResearchSkill(),
+        EvidenceGovernanceSkill(), MaterialIntegrationSkill(), VisualizationSkill(),
         WritingSkill(), PressureTestSkill(), FormattingSkill(), ReviewSkill(),
         QualityGateSkill(),
     ):
@@ -301,9 +341,43 @@ class ResearchReportOrchestrator:
             workflow_id,
             "update_sources",
             {"source_count": len(sources), "reason": reason},
-            "research",
+            "requirements_analysis",
         )
-        return self.modify(workflow_id, "research", reason)
+        return self.modify(workflow_id, "requirements_analysis", reason)
+
+    def request_revision(self, workflow_id: str, feedback: str) -> tuple[str, set[str]]:
+        normalized = feedback.strip().lower()
+        if not normalized:
+            raise ValueError("修改意见不能为空")
+        routes = (
+            (
+                "requirements_analysis",
+                ("主题", "受众", "边界", "前置思考", "需求", "产出形态", "audience", "scope"),
+            ),
+            ("outline", ("大纲", "框架", "章节", "结构", "outline")),
+            (
+                "research",
+                ("来源", "链接", "事实", "数据", "材料", "调研", "引用", "source", "citation"),
+            ),
+            (
+                "visualization",
+                ("图表", "可视化", "流程图", "架构图", "chart", "diagram"),
+            ),
+            ("formatting", ("格式", "排版", "html", "json", "markdown")),
+            ("writing", ("篇幅", "文风", "措辞", "论证", "内容", "语气", "style")),
+        )
+        target = "writing"
+        for candidate, keywords in routes:
+            if any(keyword in normalized for keyword in keywords):
+                target = candidate
+                break
+        self.state.record_operation(
+            workflow_id,
+            "route_revision",
+            {"feedback": feedback, "target_node": target},
+            target,
+        )
+        return target, self.modify(workflow_id, target, feedback)
 
     @staticmethod
     def affected_nodes(target_node: str) -> set[str]:

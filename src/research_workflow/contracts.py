@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from typing import Any
 
 from .models import SkillRequest, SkillResult
 
@@ -39,6 +40,16 @@ class FunctionGenerator(TextGenerator):
 
     def generate(self, *, system: str, prompt: str, max_tokens: int) -> str:
         return self.function(system, prompt, max_tokens)
+
+
+class SourceRetriever(ABC):
+    """External search boundary for official, academic and social sources."""
+
+    @abstractmethod
+    def retrieve(
+        self, *, topic: str, questions: tuple[str, ...], categories: tuple[str, ...]
+    ) -> list[dict[str, Any]]:
+        """Return normalized source candidates with original URLs."""
 
 
 class SkillRegistry:
