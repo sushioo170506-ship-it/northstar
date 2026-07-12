@@ -47,6 +47,13 @@ class OutlineSkill(Skill):
                 "target_length": round(request.config.expected_length * weights[index]),
                 "purpose": f"围绕“{request.config.topic}”阐明{title}",
                 "evidence_requirements": ["evidence_pack"],
+                "chapter_claim": f"待数据验证：{title}存在可被量化或案例证伪的核心判断",
+                "reader_challenge": f"这一节凭什么支持关于“{title}”的结论？",
+                "anchor_requirements": [
+                    {"type": "data", "need": "数值+时间+来源+口径"},
+                    {"type": "comparison", "need": "至少两个同口径对象或时间点"},
+                ],
+                "entry_summary_budget": 100,
                 "linked_issue": (
                     issue_tree["issues"][index - 1]["id"]
                     if 0 < index <= len(issue_tree.get("issues", [])) else None
@@ -65,5 +72,36 @@ class OutlineSkill(Skill):
                 "output_type": requirements["deliverable"]["type"],
                 "boundaries": requirements["content_boundaries"],
             },
+            "narrative_gates": {
+                "opening": {
+                    "type": "cognitive_conflict",
+                    "budget": 25,
+                    "require_numeric_anchor": True,
+                },
+                "section_entries": "每节首段必须给章节判断和最强锚点",
+                "closing": "回扣核心判断并给出证伪边界，不使用空泛展望",
+            },
+            "rhythm": {
+                "front_30_percent": "核心判断与最强证据",
+                "middle_40_percent": "评分、对比、冲突与假说检验",
+                "back_30_percent": "行动含义、边界与闭环",
+            },
+            "competitive_hypotheses": issue_tree.get("competitive_hypotheses", []),
         }
         return SkillResult(json.dumps(payload, ensure_ascii=False, indent=2), "outline")
+
+    def validate(self, result: SkillResult) -> None:
+        super().validate(result)
+        payload = json.loads(result.content)
+        sections = payload.get("sections", [])
+        if not sections:
+            raise ValueError("outline 必须包含章节")
+        for section in sections:
+            if not section.get("chapter_claim") or not section.get(
+                "anchor_requirements"
+            ):
+                raise ValueError("每个章节必须包含判断和数据锚点需求")
+        if not payload.get("narrative_gates") or not payload.get(
+            "competitive_hypotheses"
+        ):
+            raise ValueError("outline 必须包含传播门和竞争性假说")

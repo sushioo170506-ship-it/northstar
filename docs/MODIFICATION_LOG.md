@@ -95,6 +95,29 @@
 - quality-gate 根据 issue_ids 重算素材挂载率，并硬性检查可视化和正文篇幅上下限。
 - orchestrator 新增加权关键词 `request_revision` 精确退回规则，处理混合修改意图。
 
+### capability-sweep 1.0.0
+
+- 新增每轮内置 Skill 和外部集成目录全量遍历。
+- 未配置/禁用能力必须结构化记录状态和原因，禁止静默跳过。
+
+### data-processing 1.0.0
+
+- 新增 claim ledger、数字提取、A+/A/B/C/D 分级、冲突与三角验证。
+- 新增仅在 5–10 候选、4–6 锚定维度齐全时执行的数据评分；否则 not_applicable。
+
+### publish 1.0.0
+
+- 新增质量门后的独立发布节点和 publish manifest。
+- 未配置渲染器时明确披露 Mermaid/Vega/Pandoc/PNG 限制，不伪报产物。
+
+### 2026-07-12 开源能力目录
+
+- 纳入 Crawl4AI、GPT Researcher、Docling、Semantic Scholar Skill、Orchestra Research
+  Skills、K-Dense Scientific Skills、Mermaid、Vega-Lite、Pandoc 和两个 OpenClaw Deep
+  Research 集成的元数据与适配边界。
+- 未复制第三方源码；星数和许可证快照见 `docs/OPEN_SOURCE_SKILL_CATALOG.md`。
+- official 类别兼容迁移为 industry，与 academic、social_media 构成三支柱。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

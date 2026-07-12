@@ -18,12 +18,14 @@ class MaterialIntegrationSkill(Skill):
         outline_text = request.inputs["outline"]
         research_text = request.inputs["research"]
         ledger_text = request.inputs["evidence_governance"]
+        processed_text = request.inputs["data_processing"]
         if self.generator:
             content = self.generator.generate(
                 system="你是研究素材编辑，所有材料必须挂载到确定章节且保留原始链接。",
                 prompt=(
                     f"大纲：{outline_text}\n调研材料：{research_text}\n"
-                    f"证据账本：{ledger_text}\n输出严格 JSON 章节素材包。"
+                    f"证据账本：{ledger_text}\n处理后数据：{processed_text}"
+                    "\n输出严格 JSON 章节素材包。"
                 ),
                 max_tokens=5000,
             )
@@ -32,6 +34,11 @@ class MaterialIntegrationSkill(Skill):
         outline = json.loads(outline_text)
         research = json.loads(research_text)
         ledger = json.loads(ledger_text)
+        processed = json.loads(processed_text)
+        source_claims: dict[str, list[dict]] = {}
+        for claim in processed.get("claims", []):
+            for source_id in claim.get("source_ids", []):
+                source_claims.setdefault(source_id, []).append(claim)
         governed = {source["id"]: source for source in ledger.get("sources", [])}
         sections = {
             section["id"]: {
@@ -67,6 +74,12 @@ class MaterialIntegrationSkill(Skill):
                 "original_url": source.get("url"),
                 "content": source.get("content", ""),
                 "usage": "作为本章节事实、数据或背景依据",
+                "claim_ids": [
+                    claim["id"] for claim in source_claims.get(source.get("id"), [])
+                ],
+                "evidence_grades": sorted(
+                    {claim["grade"] for claim in source_claims.get(source.get("id"), [])}
+                ),
             }
             for target in targets:
                 sections[target]["materials"].append(material)

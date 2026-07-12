@@ -18,11 +18,13 @@ class VisualizationSkill(Skill):
     def execute(self, request: SkillRequest) -> SkillResult:
         issue_tree_text = request.inputs["issue_tree"]
         materials_text = request.inputs["material_integration"]
+        processed_text = request.inputs["data_processing"]
         if self.generator:
             content = self.generator.generate(
                 system="你是信息可视化设计师，仅依据提供材料生成 Mermaid 或 Vega-Lite 规范。",
                 prompt=(
                     f"议题树：{issue_tree_text}\n章节素材：{materials_text}\n"
+                    f"处理后数据：{processed_text}\n"
                     "为流程、架构或量化信息生成可渲染 JSON 资产清单。"
                 ),
                 max_tokens=5000,
@@ -31,6 +33,7 @@ class VisualizationSkill(Skill):
 
         issue_tree = json.loads(issue_tree_text)
         materials = json.loads(materials_text)
+        processed = json.loads(processed_text)
         assets = []
         flow_lines = ["flowchart TD", '  ROOT["研究主题"]']
         for issue in issue_tree.get("issues", []):
@@ -111,6 +114,103 @@ class VisualizationSkill(Skill):
                     },
                 }
             )
+        assets.extend(
+            [
+                {
+                    "id": "VIS-EVIDENCE-GRADES",
+                    "type": "statistical_chart",
+                    "format": "vega-lite",
+                    "title": "高可信证据占比决定结论强度",
+                    "section_ids": [],
+                    "content": {
+                        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+                        "data": {
+                            "values": [
+                                {"grade": grade, "count": count}
+                                for grade, count in processed.get(
+                                    "evidence_grades", {}
+                                ).items()
+                            ]
+                        },
+                        "mark": "bar",
+                        "encoding": {
+                            "x": {"field": "grade", "type": "ordinal"},
+                            "y": {"field": "count", "type": "quantitative"},
+                        },
+                    },
+                },
+                {
+                    "id": "VIS-ISSUE-CLAIM-COVERAGE",
+                    "type": "statistical_chart",
+                    "format": "vega-lite",
+                    "title": "议题证据覆盖暴露研究盲区",
+                    "section_ids": [],
+                    "content": {
+                        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+                        "data": {
+                            "values": [
+                                {
+                                    "issue": issue.get("id"),
+                                    "claims": sum(
+                                        issue.get("id") in claim.get("issue_ids", [])
+                                        for claim in processed.get("claims", [])
+                                    ),
+                                }
+                                for issue in issue_tree.get("issues", [])
+                            ]
+                        },
+                        "mark": "bar",
+                        "encoding": {
+                            "x": {"field": "issue", "type": "nominal"},
+                            "y": {"field": "claims", "type": "quantitative"},
+                        },
+                    },
+                },
+                {
+                    "id": "VIS-SOURCE-TIMELINE",
+                    "type": "timeline",
+                    "format": "vega-lite",
+                    "title": "证据时间分布决定结论时效性",
+                    "section_ids": [],
+                    "content": {
+                        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+                        "data": {
+                            "values": [
+                                {
+                                    "date": point.get("published_at"),
+                                    "source": point.get("source_id"),
+                                }
+                                for point in processed.get("data_points", [])
+                                if point.get("published_at")
+                            ]
+                        },
+                        "mark": "tick",
+                        "encoding": {
+                            "x": {"field": "date", "type": "temporal"},
+                            "color": {"field": "source", "type": "nominal"},
+                        },
+                    },
+                },
+                {
+                    "id": "VIS-COMPARATIVE-SCORING",
+                    "type": "comparison",
+                    "format": "vega-lite",
+                    "title": "评分仅在数据锚点充分时成立",
+                    "section_ids": [],
+                    "content": {
+                        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+                        "data": {
+                            "values": processed.get("scoring", {}).get("results", [])
+                        },
+                        "mark": "bar",
+                        "encoding": {
+                            "x": {"field": "candidate", "type": "nominal"},
+                            "y": {"field": "weighted_score", "type": "quantitative"},
+                        },
+                    },
+                },
+            ]
+        )
         payload = {
             "assets": assets,
             "metrics": {

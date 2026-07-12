@@ -22,7 +22,7 @@ DIMENSIONS = (
 
 class QualityGateSkill(Skill):
     name = "quality_gate"
-    REQUIRED_SOURCE_CATEGORIES = {"official", "academic", "social_media"}
+    REQUIRED_SOURCE_CATEGORIES = {"industry", "academic", "social_media"}
 
     def __init__(
         self, generator: TextGenerator | None = None, pass_score: float = 24.0
@@ -32,14 +32,26 @@ class QualityGateSkill(Skill):
 
     def execute(self, request: SkillRequest) -> SkillResult:
         final_report = request.inputs["review"]
+        capability = json.loads(request.inputs["capability_sweep"])
         requirements = json.loads(request.inputs["requirements_analysis"])
         evidence_text = request.inputs["evidence_governance"]
+        processed = json.loads(request.inputs["data_processing"])
         materials = json.loads(request.inputs["material_integration"])
         visualizations = json.loads(request.inputs["visualization"])
         pressure_text = request.inputs["pressure_test"]
         evidence = json.loads(evidence_text)
+        evidence_grades = processed.get("evidence_grades", {})
+        graded_total = sum(evidence_grades.values())
+        high_grade_ratio = (
+            sum(evidence_grades.get(grade, 0) for grade in ("A+", "A", "B"))
+            / graded_total if graded_total else 0.0
+        )
+        minimum_high_grade_ratio = float(
+            request.config.extra.get("minimum_high_grade_ratio", 0.8)
+        )
         requirements_policy = self._requirements_policy(
-            final_report, requirements, evidence, materials, visualizations
+            final_report, requirements, evidence, processed, materials,
+            visualizations, capability,
         )
         if self.generator:
             prompt = (
@@ -74,6 +86,7 @@ class QualityGateSkill(Skill):
                 and link_coverage == 1.0
                 and all_links_present
                 and requirements_policy["compliant"]
+                and high_grade_ratio >= minimum_high_grade_ratio
                 and total >= self.pass_score
             )
             generated.update(
@@ -117,7 +130,12 @@ class QualityGateSkill(Skill):
 
         d1 = (
             0.0 if source_count == 0
-            else round(5.0 * min(traceability, link_coverage, category_coverage), 1)
+            else round(
+                5.0 * min(
+                    traceability, link_coverage, category_coverage, high_grade_ratio
+                ),
+                1,
+            )
         )
         d2 = max(0.0, 5.0 - len(logic_issues))
         d3 = 4.5 if ("资料缺口" in final_report or "待检索" in final_report) else 4.0
@@ -142,6 +160,7 @@ class QualityGateSkill(Skill):
             and not boundary_violations
             and length_compliant
             and requirements_policy["compliant"]
+            and high_grade_ratio >= minimum_high_grade_ratio
             and not red_lines
             and total >= self.pass_score
         )
@@ -164,6 +183,17 @@ class QualityGateSkill(Skill):
             problems.append("存在未映射到对应议题章节的素材")
         if requirements_policy["visual_asset_count"] < 1:
             problems.append("没有可视化成果")
+        if requirements_policy["conflicted_claim_count"]:
+            problems.append("存在未解决的冲突论断")
+        if not requirements_policy["critical_claims_verified"]:
+            problems.append("关键论断未达到双重独立来源验证")
+        if not requirements_policy["capability_catalog_traversed"]:
+            problems.append("Skill/集成能力目录未完整遍历")
+        if high_grade_ratio < minimum_high_grade_ratio:
+            problems.append(
+                f"A+/A/B 级证据占比 {high_grade_ratio:.1%} 低于"
+                f" {minimum_high_grade_ratio:.1%}"
+            )
         if completeness:
             problems.append("存在未覆盖的大纲章节")
         if red_lines:
@@ -194,6 +224,18 @@ class QualityGateSkill(Skill):
                     "material_mount_coverage"
                 ],
                 "visual_asset_count": requirements_policy["visual_asset_count"],
+                "claim_issue_coverage": requirements_policy["claim_issue_coverage"],
+                "high_grade_ratio": high_grade_ratio,
+                "minimum_high_grade_ratio": minimum_high_grade_ratio,
+                "critical_claims_verified": requirements_policy[
+                    "critical_claims_verified"
+                ],
+                "conflicted_claim_count": requirements_policy[
+                    "conflicted_claim_count"
+                ],
+                "capability_catalog_traversed": requirements_policy[
+                    "capability_catalog_traversed"
+                ],
             },
             "decision": "allow_release" if passed else "block_release",
             "feedback_applied": list(request.feedback),
@@ -240,8 +282,10 @@ class QualityGateSkill(Skill):
         final_report: str,
         requirements: dict,
         evidence: dict,
+        processed: dict,
         materials: dict,
         visualizations: dict,
+        capability: dict,
     ) -> dict:
         categories = set(evidence.get("metrics", {}).get("source_categories", []))
         missing_categories = sorted(self.REQUIRED_SOURCE_CATEGORIES - categories)
@@ -280,6 +324,23 @@ class QualityGateSkill(Skill):
             len(correctly_mounted) / len(source_issue_ids) if source_issue_ids else 0.0
         )
         visual_asset_count = len(visualizations.get("assets", []))
+        claims = processed.get("claims", [])
+        claim_issue_coverage = (
+            sum(bool(claim.get("issue_ids")) for claim in claims) / len(claims)
+            if claims else 0.0
+        )
+        triangulation = processed.get("triangulation", {})
+        critical_claims_verified = triangulation.get(
+            "critical_claim_count", 0
+        ) == triangulation.get("critical_verified_count", 0)
+        conflicted_claim_count = triangulation.get("conflicted_claim_count", 0)
+        capability_metrics = capability.get("metrics", {})
+        capability_catalog_traversed = capability_metrics.get(
+            "external_catalog_count"
+        ) == capability_metrics.get("external_traversed_count")
+        minimum_visual_assets = int(
+            requirements.get("minimum_visual_assets", 6)
+        )
         return {
             "missing_source_categories": missing_categories,
             "missing_report_links": missing_report_links,
@@ -290,12 +351,21 @@ class QualityGateSkill(Skill):
             "boundary_violations": boundary_violations,
             "material_mount_coverage": material_mount_coverage,
             "visual_asset_count": visual_asset_count,
+            "minimum_visual_assets": minimum_visual_assets,
+            "claim_issue_coverage": claim_issue_coverage,
+            "critical_claims_verified": critical_claims_verified,
+            "conflicted_claim_count": conflicted_claim_count,
+            "capability_catalog_traversed": capability_catalog_traversed,
             "compliant": (
                 not missing_categories
                 and not missing_report_links
                 and length_compliant
                 and not boundary_violations
                 and material_mount_coverage == 1.0
-                and visual_asset_count >= 1
+                and visual_asset_count >= minimum_visual_assets
+                and claim_issue_coverage == 1.0
+                and critical_claims_verified
+                and conflicted_claim_count == 0
+                and capability_catalog_traversed
             ),
         }

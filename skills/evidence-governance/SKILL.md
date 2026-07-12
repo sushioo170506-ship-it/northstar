@@ -19,5 +19,25 @@ version: 1.0.0
 - 关键论断仅依赖 stakeholder 来源且无 `independent_verification`。
 
 无法验证不会自动等同于虚假；非关键缺失信息作为问题披露。质量门消费红线并阻断发布。
-即使没有红线，缺少 official、academic、social_media 任一类别或原始 URL 覆盖不足 100%，
+即使没有红线，缺少 industry、academic、social_media 任一类别或原始 URL 覆盖不足 100%，
 质量门仍会阻断。
+
+## WHEN / 边界
+
+- WHEN：research 完成；不得自行联网补来源。
+- 只治理 source provenance，不提炼论断、不评分、不写正文；论断级工作属于 data-processing。
+
+## 治理规则
+
+1. 校验主体、标题、URL、发布时间、类别、issue_ids。
+2. 标记 primary/independent/stakeholder/community 和利益关系。
+3. 建立 issue_coverage 与 original_link_coverage。
+4. 对关键来源检查独立验证；冲突只登记，不强行选择。
+5. 红线：fabricated；关键来源不可追溯；关键判断仅由单一利益方支撑。
+
+## 错误处理
+
+- URL/时间缺失：保留来源并降级，不自动补写。
+- 来源类别错误：归一化失败则标 unknown，质量门阻断。
+- 明示 fabricated：保存审计证据后触发红线。
+- 模型分析仅为辅助字段，不能覆盖确定性指标和红线。

@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from research_workflow.contracts import FunctionGenerator
+from research_workflow.integrations import BUILTIN_SKILL_ORDER, DEFAULT_INTEGRATIONS
 from research_workflow.models import (
     NodeStatus,
     ReportConfig,
@@ -53,7 +54,7 @@ def compliant_sources(prefix: str = "S"):
             "url": "https://social.example/post",
             "published_at": "2026-07-10",
             "category": "social_media",
-            "source_type": "stakeholder",
+            "source_type": "community",
             "issue_ids": ["ISSUE-03"],
         },
     ]
@@ -179,8 +180,22 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(
             reloaded.state.node(workflow_id, "quality_gate")["status"], NodeStatus.COMPLETED
         )
+        for skill_name in BUILTIN_SKILL_ORDER:
+            self.assertEqual(
+                reloaded.state.node(workflow_id, skill_name)["status"],
+                NodeStatus.COMPLETED,
+                skill_name,
+            )
+        capability = json.loads(
+            reloaded.state.node_artifact(workflow_id, "capability_sweep")["content"]
+        )
+        self.assertEqual(
+            capability["metrics"]["external_traversed_count"], len(DEFAULT_INTEGRATIONS)
+        )
         gate = reloaded.state.node_artifact(workflow_id, "quality_gate")
         self.assertTrue(json.loads(gate["content"])["passed"])
+        published = reloaded.state.node_artifact(workflow_id, "publish")
+        self.assertEqual(published["artifact_type"], "published_report")
         ledger = json.loads(
             reloaded.state.node_artifact(workflow_id, "evidence_governance")["content"]
         )
@@ -196,8 +211,13 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(brief["audience"], "企业管理层")
         materials = reloaded.state.node_artifact(workflow_id, "material_integration")
         self.assertEqual(json.loads(materials["content"])["metrics"]["mount_coverage"], 1.0)
+        processed = json.loads(
+            reloaded.state.node_artifact(workflow_id, "data_processing")["content"]
+        )
+        self.assertEqual(processed["triangulation"]["claim_count"], 3)
+        self.assertEqual(processed["scoring"]["status"], "not_applicable")
         visuals = reloaded.state.node_artifact(workflow_id, "visualization")
-        self.assertGreaterEqual(json.loads(visuals["content"])["metrics"]["asset_count"], 2)
+        self.assertGreaterEqual(json.loads(visuals["content"])["metrics"]["asset_count"], 6)
 
     def test_modification_only_reruns_descendants(self) -> None:
         workflow_id = self.create()
@@ -211,6 +231,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("pressure_test", affected)
         self.assertIn("review", affected)
         self.assertIn("quality_gate", affected)
+        self.assertIn("publish", affected)
         self.assertEqual(
             self.workflow.state.node(workflow_id, "writing")["status"],
             NodeStatus.INVALIDATED,
@@ -387,6 +408,14 @@ class WorkflowTests(unittest.TestCase):
             config=ReportConfig.from_dict({"topic": "模型门控测试"}),
             inputs={
                 "review": "# 报告\n风险、建议与资料缺口",
+                "capability_sweep": json.dumps(
+                    {
+                        "metrics": {
+                            "external_catalog_count": 1,
+                            "external_traversed_count": 1,
+                        }
+                    }
+                ),
                 "requirements_analysis": json.dumps(
                     {
                         "deliverable": {"expected_length": 500},
@@ -397,6 +426,17 @@ class WorkflowTests(unittest.TestCase):
                 ),
                 "evidence_governance": json.dumps(
                     {"metrics": {"source_count": 0}, "red_lines": []}
+                ),
+                "data_processing": json.dumps(
+                    {
+                        "claims": [],
+                        "evidence_grades": {},
+                        "triangulation": {
+                            "critical_claim_count": 0,
+                            "critical_verified_count": 0,
+                            "conflicted_claim_count": 0,
+                        },
+                    }
                 ),
                 "material_integration": json.dumps(
                     {"sections": {}, "metrics": {"mount_coverage": 0.0}}

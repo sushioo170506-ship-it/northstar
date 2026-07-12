@@ -15,12 +15,15 @@ from .models import (
     WorkflowStatus,
 )
 from .skills import (
+    CapabilitySweepSkill,
+    DataProcessingSkill,
     EvidenceGovernanceSkill,
     FormattingSkill,
     IssueTreeSkill,
     MaterialIntegrationSkill,
     OutlineSkill,
     PressureTestSkill,
+    PublishSkill,
     QualityGateSkill,
     ResearchSkill,
     RequirementsAnalysisSkill,
@@ -42,7 +45,12 @@ class NodeSpec:
 
 
 NODES = (
-    NodeSpec("requirements_analysis", (), "requirements_analysis"),
+    NodeSpec("capability_sweep", (), "capability_sweep"),
+    NodeSpec(
+        "requirements_analysis",
+        ("capability_sweep",),
+        "requirements_analysis",
+    ),
     NodeSpec(
         "issue_tree",
         ("requirements_analysis",),
@@ -70,39 +78,49 @@ NODES = (
         ("research", "issue_tree"),
     ),
     NodeSpec(
+        "data_processing",
+        ("research", "evidence_governance", "issue_tree", "outline"),
+        "data_processing",
+        ("research", "evidence_governance", "issue_tree", "outline"),
+    ),
+    NodeSpec(
         "material_integration",
-        ("outline", "research", "evidence_governance"),
+        ("outline", "research", "evidence_governance", "data_processing"),
         "material_integration",
-        ("outline", "research", "evidence_governance"),
+        ("outline", "research", "evidence_governance", "data_processing"),
     ),
     NodeSpec(
         "visualization",
-        ("issue_tree", "material_integration"),
+        ("issue_tree", "material_integration", "data_processing"),
         "visualization",
-        ("issue_tree", "material_integration"),
+        ("issue_tree", "material_integration", "data_processing"),
     ),
     NodeSpec(
         "writing",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_governance", "material_integration", "visualization",
+            "evidence_governance", "data_processing", "material_integration",
+            "visualization",
         ),
         "writing",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_governance", "material_integration", "visualization",
+            "evidence_governance", "data_processing", "material_integration",
+            "visualization",
         ),
     ),
     NodeSpec(
         "pressure_test",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_governance", "material_integration", "visualization", "writing",
+            "evidence_governance", "data_processing", "material_integration",
+            "visualization", "writing",
         ),
         "pressure_test",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_governance", "material_integration", "visualization", "writing",
+            "evidence_governance", "data_processing", "material_integration",
+            "visualization", "writing",
         ),
     ),
     NodeSpec("draft_confirmation", ("writing", "pressure_test"), checkpoint=True),
@@ -114,27 +132,37 @@ NODES = (
         "review",
         (
             "requirements_analysis", "research", "evidence_governance", "outline",
-            "material_integration", "visualization", "pressure_test", "formatting",
+            "data_processing", "material_integration", "visualization",
+            "pressure_test", "formatting",
             "pre_review_confirmation",
         ),
         "review",
         (
             "requirements_analysis", "research", "evidence_governance", "outline",
-            "material_integration", "visualization", "pressure_test", "formatting",
+            "data_processing", "material_integration", "visualization",
+            "pressure_test", "formatting",
         ),
     ),
     NodeSpec(
         "quality_gate",
         (
-            "requirements_analysis", "evidence_governance", "material_integration",
-            "visualization", "pressure_test", "review",
+            "capability_sweep", "requirements_analysis", "evidence_governance",
+            "data_processing", "material_integration", "visualization",
+            "pressure_test", "review",
         ),
         "quality_gate",
         (
-            "requirements_analysis", "evidence_governance", "material_integration",
-            "visualization", "pressure_test", "review",
+            "capability_sweep", "requirements_analysis", "evidence_governance",
+            "data_processing", "material_integration", "visualization",
+            "pressure_test", "review",
         ),
         quality_gate=True,
+    ),
+    NodeSpec(
+        "publish",
+        ("capability_sweep", "visualization", "review", "quality_gate"),
+        "publish",
+        ("capability_sweep", "visualization", "review", "quality_gate"),
     ),
 )
 NODE_MAP = {node.id: node for node in NODES}
@@ -143,10 +171,11 @@ NODE_MAP = {node.id: node for node in NODES}
 def default_registry() -> SkillRegistry:
     registry = SkillRegistry()
     for skill in (
-        RequirementsAnalysisSkill(), IssueTreeSkill(), OutlineSkill(), ResearchSkill(),
-        EvidenceGovernanceSkill(), MaterialIntegrationSkill(), VisualizationSkill(),
+        CapabilitySweepSkill(), RequirementsAnalysisSkill(), IssueTreeSkill(),
+        OutlineSkill(), ResearchSkill(), EvidenceGovernanceSkill(),
+        DataProcessingSkill(), MaterialIntegrationSkill(), VisualizationSkill(),
         WritingSkill(), PressureTestSkill(), FormattingSkill(), ReviewSkill(),
-        QualityGateSkill(),
+        QualityGateSkill(), PublishSkill(),
     ):
         registry.register(skill)
     return registry
@@ -219,7 +248,7 @@ class ResearchReportOrchestrator:
                 inputs=self._input_artifact_ids(workflow_id, spec),
                 output_artifact_id=artifact_id,
             )
-        final = self.state.node_artifact(workflow_id, "review", internal=True)
+        final = self.state.node_artifact(workflow_id, "publish", internal=True)
         self.state.set_workflow_status(workflow_id, WorkflowStatus.COMPLETED)
         return RunOutcome(
             workflow_id, WorkflowStatus.COMPLETED,
@@ -388,6 +417,13 @@ class ResearchReportOrchestrator:
                 (("证据治理", 4), ("可追溯", 3), ("利益相关方", 3), ("证据红线", 3)),
             ),
             (
+                "data_processing",
+                (
+                    ("数据处理", 4), ("评分模型", 4), ("交叉验证", 3),
+                    ("论断账本", 4), ("claim ledger", 4),
+                ),
+            ),
+            (
                 "material_integration",
                 (("素材挂载", 4), ("素材整合", 4), ("章节素材", 3)),
             ),
@@ -412,7 +448,11 @@ class ResearchReportOrchestrator:
             ),
             (
                 "quality_gate",
-                (("质量门", 4), ("评分", 2), ("发布阻断", 4)),
+                (("质量门", 4), ("发布阻断", 4), ("质量分", 3)),
+            ),
+            (
+                "publish",
+                (("png导出", 4), ("svg导出", 4), ("报告发布", 4), ("发布包", 3)),
             ),
             (
                 "writing",
@@ -454,7 +494,7 @@ class ResearchReportOrchestrator:
     def final_report(self, workflow_id: str) -> str:
         if self.state.workflow_status(workflow_id) != WorkflowStatus.COMPLETED:
             raise ValueError("工作流尚未生成终稿")
-        artifact = self.state.node_artifact(workflow_id, "review")
+        artifact = self.state.node_artifact(workflow_id, "publish")
         if not artifact:
             raise ValueError("工作流尚未生成终稿")
         return artifact["content"]

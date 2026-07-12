@@ -21,6 +21,7 @@ class WritingSkill(Skill):
         requirements_text = request.inputs["requirements_analysis"]
         issue_tree_text = request.inputs["issue_tree"]
         evidence_ledger_text = request.inputs["evidence_governance"]
+        processed_text = request.inputs["data_processing"]
         materials_text = request.inputs["material_integration"]
         visualizations_text = request.inputs["visualization"]
         prompt = WRITING_PROMPT.format(
@@ -31,6 +32,7 @@ class WritingSkill(Skill):
             prompt += (
                 f"\n已确认大纲：\n{outline_text}\n议题树：\n{issue_tree_text}"
                 f"\n证据包：\n{evidence_text}\n证据账本：\n{evidence_ledger_text}"
+                f"\n数据处理与评分：\n{processed_text}"
                 f"\n需求简报：\n{requirements_text}\n章节素材：\n{materials_text}"
                 f"\n可视化资产：\n{visualizations_text}"
             )
@@ -43,6 +45,7 @@ class WritingSkill(Skill):
         outline = json.loads(outline_text)
         materials = json.loads(materials_text)
         visualizations = json.loads(visualizations_text)
+        processed = json.loads(processed_text)
         parts = [f"# {outline['title']}\n"]
         for section_index, section in enumerate(outline["sections"]):
             target = max(100, int(section["target_length"]))
@@ -58,7 +61,8 @@ class WritingSkill(Skill):
                 if citations else "（资料缺口：待检索）"
             )
             evidence_summary = "；".join(
-                f"{item.get('title')}：{item.get('content', '')[:120]}"
+                f"{item.get('title')}[{','.join(item.get('evidence_grades', [])) or '未分级'}]："
+                f"{item.get('content', '')[:120]}"
                 for item in section_materials[:3]
             )
             lead = (
@@ -97,5 +101,10 @@ class WritingSkill(Skill):
         content = "\n".join(parts)
         return SkillResult(
             content, "draft",
-            {"character_count": len(content), "section_count": len(outline["sections"])},
+            {
+                "character_count": len(content),
+                "section_count": len(outline["sections"]),
+                "claim_count": len(processed.get("claims", [])),
+                "scoring_status": processed.get("scoring", {}).get("status"),
+            },
         )

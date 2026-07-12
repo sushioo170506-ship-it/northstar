@@ -43,7 +43,7 @@ class FunctionGenerator(TextGenerator):
 
 
 class SourceRetriever(ABC):
-    """External search boundary for official, academic and social sources."""
+    """External search boundary for industry, academic and real-world sources."""
 
     @abstractmethod
     def retrieve(

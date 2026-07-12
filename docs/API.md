@@ -32,13 +32,15 @@ report = orchestrator.final_report(workflow_id)
 `run` 返回 `RunOutcome(workflow_id, status, waiting_at, final_artifact_id)`。确认节点依次为
 `issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation`、
 `pre_review_confirmation`。允许修改的产物节点：
-`requirements_analysis`、`issue_tree`、`outline`、`research`、`evidence_governance`、
-`material_integration`、`visualization`、`writing`、`pressure_test`、`formatting`、
-`review`、`quality_gate`。
+`capability_sweep`、`requirements_analysis`、`issue_tree`、`outline`、`research`、
+`evidence_governance`、`data_processing`、`material_integration`、`visualization`、`writing`、
+`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`。
 
-质量门缺少官方/学术/主流社媒任一类别、原始链接覆盖不足、触发红线、需求不合规或总分低于 24/35 时，`run` 抛出
+质量门缺少产业/学术/实景任一支柱、原始链接/claim/素材/图表不足、触发红线、需求不合规
+或总分低于 24/35 时，`run` 抛出
 `QualityGateRejected`，但评分产物已持久化。
 修改上游问题并重新确认后，可按 DAG 选择性重跑；工作流完成前 `final_report` 拒绝返回内容。
+工作流完成后 `final_report` 读取 `publish` 的 `published_report`，而不是未过门的 review 候选稿。
 
 ## Skill 接口
 
@@ -62,13 +64,13 @@ class SkillResult:
 Skill 实现 `name`、`version`、`execute(request)`，经 `SkillRegistry.register()` 注入。远程部署
 时可实现一个 RPC Proxy Skill：序列化同一请求，调用独立服务并反序列化同一结果。
 
-调研适配器实现 `SourceRetriever.retrieve(topic, questions, categories)`，其中 categories 固定
-请求 official、academic、social_media。每个返回项至少应含 id、title、category、url、
+调研适配器实现 `SourceRetriever.retrieve(topic, questions, categories)`；research 会分别以
+industry、academic、social_media 单类别调用三次。每个返回项至少应含 id、title、category、url、
 published_at、content、issue_ids；内置模式没有检索器时仅整理用户 sources。
 
 ```json
 {"sources": [
-  {"id": "S1", "title": "官方原文", "category": "official",
+  {"id": "S1", "title": "官方/产业原文", "category": "industry",
    "url": "https://example.org/official", "published_at": "2026-07-01",
    "content": "...", "issue_ids": ["ISSUE-01"]}
 ]}

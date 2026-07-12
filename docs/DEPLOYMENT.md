@@ -18,8 +18,9 @@ API。目录包含用户研究资料，必须启用磁盘加密、最小权限�
 ## 模型与外部检索
 
 默认实现离线可运行，不会假装已访问互联网。生产环境通过 `TextGenerator` 注入模型调用，
-通过 `extra.sources` 或 `SourceRetriever` 注入检索结果。发布至少需要 official、academic、
-social_media 三类来源，且每项必须有原始 URL。密钥由部署平台的 Secret 注入，
+通过 `extra.sources` 或 `SourceRetriever` 注入检索结果。发布至少需要 industry、academic、
+social_media 三类来源，且每项必须有原始 URL。可选 Crawl4AI、GPT Researcher、Docling、
+Semantic Scholar、Mermaid、Vega-Lite 和 Pandoc 适配边界见开源目录。密钥由部署平台的 Secret 注入，
 不得写入配置、操作日志或产物元数据。
 
 ## 多实例

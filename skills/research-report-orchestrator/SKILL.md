@@ -7,6 +7,12 @@ version: 1.0.0
 
 # Research Report Orchestrator
 
+## 角色定位与禁止越界
+
+本 Skill 是确定性编排器，不是研究、评分、写作或制图方法论容器。它只负责：读取持久化状态、
+按 DAG 调用子 Skill、传递不可变产物、暂停人工确认、执行发布卡口。不得在编排器内补写正文、
+伪造来源、替代子 Skill 打分，或为了“遍历”重复调用同一能力。
+
 ## 触发条件
 
 当用户要求生成、恢复、修改或审核研究报告时调用。输入必须包含 `topic`，可选
@@ -31,26 +37,45 @@ outcome = workflow.run(workflow_id)
 
 ## 时序与确认
 
-1. `requirements_analysis`
-2. `issue_tree`
-3. `issue_tree_confirmation`（主题与多层级问题确认）
-4. `outline`
-5. `outline_confirmation`（最终大纲确认）
-6. `research`（确认大纲后调研）
-7. `evidence_governance`
+1. `capability_sweep`：遍历全部内置 Skill 和外部集成目录
+2. `requirements_analysis`
+3. `issue_tree` → `issue_tree_confirmation`
+4. `outline` → `outline_confirmation`
+5. `research`：产业、学术、实景/社媒三 pass
+6. `evidence_governance`
+7. `data_processing`：claim ledger、交叉验证、可信度、条件评分
 8. `material_integration`
-9. `visualization`
+9. `visualization`：6–10 项可视化规范
 10. `writing`
-11. `pressure_test`
-12. `draft_confirmation`（强制人工确认）
-13. `formatting`
-14. `pre_review_confirmation`（强制人工确认）
-15. `review`
-16. `quality_gate`（三类来源、链接、D1–D7 与红线发布阻断）
+11. `pressure_test` → `draft_confirmation`
+12. `formatting` → `pre_review_confirmation`
+13. `review`
+14. `quality_gate`
+15. `publish`
 
 `run()` 在确认点返回 `waiting_confirmation`。调用
 `confirm(workflow_id, checkpoint_id, comment)` 后再次 `run()`。不得跳过确认。
 质量门拒绝时抛出 `QualityGateRejected`，保留评分产物，且终稿不可读取。
+
+## 遍历规则
+
+- 15 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
+- 外部集成先由 capability_sweep 全量遍历；已配置者交给对应节点调用，未配置者记录
+  `reviewed_not_configured` 和原因。禁止静默跳过。
+- 条件能力仍必须执行其包装 Skill：不适用时输出结构化 `not_applicable`，不得伪造结果。
+- “调用全部”不等于“执行全部第三方程序”；无凭证、无许可证或不适用组件不得运行。
+
+## 阶段质量卡口
+
+| 阶段 | 卡口 | 失败退回 |
+|---|---|---|
+| 议题树 | 3–7 个必要、可证伪、可行动问题 | issue_tree |
+| 大纲 | 核心判断、章节结论、锚点、证伪条件齐全 | outline |
+| 调研 | industry/academic/social_media 三 pass 均有记录 | research |
+| 数据处理 | 论断可追溯、冲突显式、主观评分禁止 | data_processing |
+| 可视化 | 6–10 项；结论式标题；至少比较/结构/时间类 | visualization |
+| 正文 | 数字含数值+时间+来源；段落判断驱动 | writing |
+| 发布 | 红线、链接、claim、挂载、边界、D1–D7 全通过 | 最早受影响节点 |
 
 ## 参数和产物传递
 
@@ -71,7 +96,7 @@ outcome = workflow.run(workflow_id)
 - 调用前：所有依赖必须为 `completed`，每个输入产物通过 SHA-256 校验。
 - 调用后：内容和产物类型不得为空，结果写入关系库与向量库后才提交节点完成状态。
 - 异常：节点为 `failed` 并持久化错误；重新运行只重试失败节点。
-- 终稿：仅当 `review` 和 `quality_gate` 完成且工作流状态为 `completed` 时可读取。
+- 终稿：仅当 `publish` 完成且工作流状态为 `completed` 时可读取。
 
 ## 内置调度 Prompt
 
@@ -83,8 +108,9 @@ outcome = workflow.run(workflow_id)
    pre_review_confirmation 停止并等待人工确认；
 4. 修改 {target_node} 时，仅失效该节点及其 DAG 后代，保留其他有效产物；
 5. 每次调用前按 workflow_id、依赖节点、主题检索上下文，并校验产物 checksum；
-6. quality_gate 触发证据红线或低于阈值时必须阻断发布；
-7. 失败时记录错误，恢复后从失败节点继续，禁止重复已完成节点。
+6. capability_sweep 必须遍历所有内置 Skill 与外部集成目录，跳过必须有理由；
+7. quality_gate 触发证据红线或低于阈值时必须阻断 publish；
+8. 失败时记录错误，恢复后从失败节点继续，禁止重复已完成节点。
 统一参数：{config_json}
 ```
 

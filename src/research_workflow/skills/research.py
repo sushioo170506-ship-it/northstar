@@ -13,7 +13,7 @@ from ..prompts import RESEARCH_PROMPT
 class ResearchSkill(Skill):
     name = "research"
 
-    REQUIRED_CATEGORIES = ("official", "academic", "social_media")
+    REQUIRED_CATEGORIES = ("industry", "academic", "social_media")
 
     def __init__(
         self,
@@ -32,14 +32,19 @@ class ResearchSkill(Skill):
             if item.get("included", True)
         )
         raw_sources = list(request.config.extra.get("sources", []))
+        retrieval_errors: dict[str, str] = {}
         if self.retriever:
-            raw_sources.extend(
-                self.retriever.retrieve(
-                    topic=request.config.topic,
-                    questions=questions,
-                    categories=self.REQUIRED_CATEGORIES,
-                )
-            )
+            for category in self.REQUIRED_CATEGORIES:
+                try:
+                    raw_sources.extend(
+                        self.retriever.retrieve(
+                            topic=request.config.topic,
+                            questions=questions,
+                            categories=(category,),
+                        )
+                    )
+                except Exception as exc:
+                    retrieval_errors[category] = str(exc)
         sources = self._normalize_sources(raw_sources)
         prompt = RESEARCH_PROMPT.format(topic=request.config.topic)
         model_analysis = None
@@ -65,6 +70,20 @@ class ResearchSkill(Skill):
             category for category in self.REQUIRED_CATEGORIES
             if category not in present_categories
         ]
+        pass_status = {
+            category: {
+                "status": (
+                    "error" if category in retrieval_errors
+                    else "completed" if category in present_categories
+                    else "missing"
+                ),
+                "source_count": sum(
+                    source["category"] == category for source in sources
+                ),
+                "error": retrieval_errors.get(category),
+            }
+            for category in self.REQUIRED_CATEGORIES
+        }
         payload = {
             "topic": request.config.topic,
             "research_questions": [
@@ -81,6 +100,7 @@ class ResearchSkill(Skill):
                 "present_categories": present_categories,
                 "missing_categories": missing_categories,
                 "external_retriever_used": self.retriever is not None,
+                "passes": pass_status,
             },
             "evidence_gaps": (
                 [f"缺少来源类别：{category}" for category in missing_categories]
@@ -103,7 +123,8 @@ class ResearchSkill(Skill):
     @classmethod
     def _normalize_sources(cls, raw_sources: list[Any]) -> list[dict[str, Any]]:
         aliases = {
-            "government": "official", "primary": "official", "official": "official",
+            "government": "industry", "primary": "industry", "official": "industry",
+            "commercial": "industry", "industry": "industry",
             "paper": "academic", "journal": "academic", "academic": "academic",
             "social": "social_media", "social_media": "social_media",
             "mainstream_social": "social_media",

@@ -32,10 +32,11 @@ ResearchReportOrchestrator
   |-- DAG 调度、状态机、确认门、影响分析
   |-- SkillRegistry -------------------------------+
   |                                                |
-  |   requirements_analysis -> issue_tree -> [主题与议题树确认]
-  |      -> outline -> [大纲确认] -> research -> evidence_governance
-  |      -> material_integration -> visualization -> writing -> pressure_test -> [初稿确认]
-  |      -> formatting -> [终审前确认] -> review -> quality_gate
+  |   capability_sweep -> requirements_analysis -> issue_tree -> [主题与议题树确认]
+  |      -> outline -> [大纲确认] -> research(产业/学术/实景)
+  |      -> evidence_governance -> data_processing -> material_integration
+  |      -> visualization -> writing -> pressure_test -> [初稿确认]
+  |      -> formatting -> [终审前确认] -> review -> quality_gate -> publish
   |
   |-- SQLiteStateStore  -> state.db
   |      配置、节点状态、产物分片、确认、用户操作
@@ -87,6 +88,8 @@ requirements_analysis 开始失效全部后代，用于修复证据红线；topi
 ```text
 create
   |
+capability_sweep
+  |
 requirements_analysis
   |
 issue_tree
@@ -100,6 +103,8 @@ outline
 research
   |
 evidence_governance
+  |
+data_processing
   |
 material_integration
   |
@@ -118,6 +123,8 @@ formatting
 review
   |
 quality_gate -- 红线或低于 24/35 则阻断
+  |
+publish
   |
 completed -> final_report
 ```
@@ -148,7 +155,15 @@ completed -> invalidated -> running（用户修改后）
 
 ### 2.3 节点详细说明
 
-#### 2.3.1 requirements_analysis：需求拆解与意图识别
+#### 2.3.1 capability_sweep：技能与外部能力遍历
+
+- 触发：每个工作流第一个节点，禁止跳过。
+- 逻辑：完整列出 15 个内置 Skill；遍历开源/外部集成目录，记录许可证、星数快照、
+  configured/disabled/reviewed_not_configured 和原因。
+- 输出：`capability_manifest`。内置清单缺项或外部目录未遍历完整时失败。
+- 边界：盘点不等于执行；无许可证、无认证或不适用的第三方能力不得强行运行。
+
+#### 2.3.2 requirements_analysis：需求拆解与意图识别
 
 - 触发：工作流创建后首先执行。
 - 输入：topic、output_type、style、audience、expected_length、output_format、language、
@@ -156,82 +171,98 @@ completed -> invalidated -> running（用户修改后）
 - 逻辑：完整提取九类需求维度，标记默认值和缺失资料，不从隐式会话猜测。
 - 输出：`requirements_brief`，供全部业务节点作为统一需求基线。
 
-#### 2.3.2 issue_tree 与 issue_tree_confirmation
+#### 2.3.3 issue_tree 与 issue_tree_confirmation
 
 - 输入：requirements_brief。
 - 逻辑：生成 3–7 个一级问题及二级问题；逐项记录必要性、写作价值、证据需求和保留状态，
   无价值问题进入 excluded_issues。
 - 输出：`issue_tree`。人工确认同时确认最终主题和多层级问题，未确认不得搭建大纲。
 
-#### 2.3.3 outline 与 outline_confirmation
+#### 2.3.4 outline 与 outline_confirmation
 
 - 输入：已确认议题树、需求简报、篇幅和文风。
 - 逻辑：将每个有效问题映射到章节，分配稳定 ID、目标篇幅、核心目的和证据要求，记录受众、
   文风、产出形态和内容边界对齐信息。
 - 输出：`outline`。用户确认后形成最终大纲，后续调研只能依据该版本执行。
 
-#### 2.3.4 research：按最终大纲调研
+#### 2.3.5 research：按最终大纲调研
 
 - 输入：需求简报、议题树、已确认大纲、用户来源和可选 SourceRetriever。
-- 逻辑：按问题和章节收集并去重来源，标准化 official、academic、social_media 类别，保留
+- 逻辑：分别执行产业、学术、实景/社媒三个检索 pass，标准化 industry、academic、
+  social_media 类别（official/primary 兼容归入 industry），保留
   title、content、published_at、original URL、issue_ids；不会伪造联网结果。
 - 输出：`evidence_pack` 与 retrieval_summary。缺少任一必需类别时明确记录 evidence gap。
 
-#### 2.3.5 evidence_governance：证据治理
+#### 2.3.6 evidence_governance：证据治理
 
 - 输入：调研包和议题树。
 - 逻辑：计算可追溯率、原始链接覆盖率、来源类别覆盖、议题证据映射、利益相关方独立验证，
   检测编造、关键来源不可追溯、单一利益相关方支撑三类红线。
 - 输出：`evidence_ledger`。无法验证不会直接等同虚假，但三类来源或链接不足会在质量门阻断。
 
-#### 2.3.6 material_integration：素材整合
+#### 2.3.7 data_processing：论断账本、交叉验证与评分
+
+- 输入：调研包、证据账本、议题树和大纲。
+- 逻辑：生成 claim ledger，提取数字及时间上下文，按 A+/A/B/C/D 分级，登记冲突和关键
+  论断双重独立验证状态。
+- 条件评分：只有配置 5–10 个候选、4–6 个维度、权重、实测值和 10/5 分锚点时才计算；
+  否则输出 not_applicable，禁止主观排名。
+- 输出：`processed_research_data`，供素材、图表、正文和质量门共同消费。
+
+#### 2.3.8 material_integration：素材整合
 
 - 输入：最终大纲、调研包、证据账本。
 - 逻辑：按 issue_ids 和 outline.linked_issue 把每项材料挂载到对应章节；综合章节引用全部
   来源；保留 source_id、类别、URL、内容和用途。
 - 输出：`section_materials` 和 mount_coverage，覆盖率不足会进入压力测试。
 
-#### 2.3.7 visualization：可视化处理
+#### 2.3.9 visualization：可视化处理
 
 - 输入：多层级议题树和章节素材。
 - 逻辑：生成 Mermaid 研究问题逻辑图、Vega-Lite 来源类别图；存在量化素材时增加量化证据图。
-- 输出：`visualization_assets`，每项含稳定 ID、类型、格式、适用章节和可渲染 content。
+- 输出：`visualization_assets`，默认 6–10 项，至少包含比较、结构和时间类规范。
 
-#### 2.3.8 writing：完整报告生成
+#### 2.3.10 writing：完整报告生成
 
 - 输入：需求、议题树、大纲、调研、证据账本、章节素材、可视化。
 - 逻辑：按章节和目标篇幅写作，区分事实/分析/建议；事实章节附 `[source_id](original_url)`；
   可视化以 Mermaid/Vega-Lite 代码块嵌入；资料不足必须显式披露。
 - 输出：`draft`。模型路径当前仍是单次 generate，生产适配器应改为章节级调用。
 
-#### 2.3.9 pressure_test 与 draft_confirmation
+#### 2.3.11 pressure_test 与 draft_confirmation
 
 - 逻辑：独立执行逻辑、证据、反方论证、完整性审计，并额外检查三类来源、URL、素材挂载和
   可视化，不把审查意见混入正文。
 - 输出：`pressure_test` 和 repair_actions。用户确认初稿时可同时审阅弱点报告。
 
-#### 2.3.10 formatting 与 pre_review_confirmation
+#### 2.3.12 formatting 与 pre_review_confirmation
 
 - 输入：初稿、style、output_format。
 - 逻辑：转换 Markdown、HTML、JSON 或 text，不新增事实。排版后的候选稿必须经审核前确认。
 - 输出：`formatted_draft`。
 
-#### 2.3.11 review：真实性与需求合规复核
+#### 2.3.13 review：真实性与需求合规复核
 
 - 输入：需求、调研、证据、大纲、素材、可视化、压力测试和格式化报告。
 - 逻辑：检查三类来源、每项原始 URL 是否出现在对应报告、篇幅、格式、素材挂载率、可视化、
   受众/文风声明和“禁止/不得包含”边界。
 - 输出：`final_report` 候选及 review_checks_passed、issues、checks。
 
-#### 2.3.12 quality_gate：D1–D7 发布质量门
+#### 2.3.14 quality_gate：D1–D7 发布质量门
 
-- 输入：需求简报、证据账本、压力测试和候选终稿。
-- 逻辑：评分满分 35、默认通过线 24；缺少三类来源、链接覆盖不足 100%、终稿漏链、素材
-  未正确映射到对应议题章节、无可视化、篇幅不足/超限、边界违规、红线或低分任一条件都会
-  `block_release`。挂载率由质量门根据 issue_ids 重新计算，不采信上游自报值。
-- 通过：工作流 completed，终稿可读取。
+- 输入：能力清单、需求简报、证据账本、processed data、素材、可视化、压力测试和候选终稿。
+- 逻辑：评分满分 35、默认通过线 24；能力目录未遍历、三支柱/高等级证据/claim/链接不足、
+  素材错挂、可视化少于 6 项、篇幅/边界违规、红线或低分任一条件都会 block_release。
+- 通过：允许进入 publish。
 - 拒绝：评分产物保留，节点和工作流 failed，抛出 QualityGateRejected；修订路由或
   update_sources 将流程退回最早受影响节点后重跑。
+
+#### 2.3.15 publish：报告交付
+
+- 输入：已通过质量门的 review、visualization 和 capability_manifest。
+- 输出：`published_report` 和 publish_manifest。
+- 规则：正文不再改写；明确格式、字数、图数、渲染器、self-contained、PNG 状态和限制。
+- 无真实 Mermaid/Vega/Pandoc 渲染器时不得声称 SVG/PNG 已完成；Markdown 可诚实降级。
 
 ## 3. 功能模块与交互规则
 
@@ -267,7 +298,7 @@ SkillResult:
 Skill 必须是显式输入到不可变输出的转换器。远程服务可以实现 Proxy Skill，通过 RPC 传输相同
 结构；编排器无需了解供应商、模型或部署方式。
 
-编排器会把最多 16 个相关向量分片放入 `SkillRequest.context`。当前十二个内置离线 Skill
+编排器会把最多 16 个相关向量分片放入 `SkillRequest.context`。当前十五个内置 Skill
 均只消费 `inputs` 精确依赖，尚未读取 context；该字段目前供自定义/远程 Skill 使用。
 
 ### 3.3 TextGenerator
@@ -352,15 +383,17 @@ CLI 是薄适配层，不保存会话状态；所有恢复均依赖显式 workfl
 | requirements_analysis | 全部后续节点和确认 |
 | issue_tree | 议题树及全部后代；保留需求简报 |
 | outline | outline 及全部后代；保留需求和已确认议题树 |
-| research | 调研、证据、素材、可视化及全部写作/复核后代 |
-| evidence_governance | 证据治理及下游；保留需求、议题树、大纲和原始调研 |
+| research | 调研、证据、数据处理、素材、可视化及全部写作/复核后代 |
+| evidence_governance | 证据治理、数据处理及下游；保留需求、议题树、大纲和原始调研 |
+| data_processing | claim/评分、素材、可视化及写作/复核后代 |
 | material_integration | 素材整合、可视化及写作/复核后代 |
 | visualization | 可视化及写作/复核后代，不重跑素材整合 |
-| writing | writing、pressure_test、初稿确认、formatting、终审前确认、review、quality_gate |
-| pressure_test | pressure_test、初稿确认、review、quality_gate；不重跑 writing |
-| formatting | formatting、终审前确认、review、quality_gate |
-| review | review、quality_gate |
-| quality_gate | 仅 quality_gate |
+| writing | writing、pressure_test、初稿确认、formatting、终审前确认、review、quality_gate、publish |
+| pressure_test | pressure_test、初稿确认、review、quality_gate、publish；不重跑 writing |
+| formatting | formatting、终审前确认、review、quality_gate、publish |
+| review | review、quality_gate、publish |
+| quality_gate | quality_gate、publish |
+| publish | 仅重新发布 |
 
 修改确认节点本身不允许；用户应修改产生业务产物的节点。
 

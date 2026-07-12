@@ -46,7 +46,7 @@ class ReviewSkill(Skill):
             issues.append("证据治理发现红线，必须由质量门阻断发布")
         issues.extend(pressure_test.get("repair_actions", []))
         categories = set(evidence_ledger.get("metrics", {}).get("source_categories", []))
-        required_categories = {"official", "academic", "social_media"}
+        required_categories = {"industry", "academic", "social_media"}
         missing_categories = sorted(required_categories - categories)
         if missing_categories:
             issues.append("缺少必需来源类别：" + "、".join(missing_categories))

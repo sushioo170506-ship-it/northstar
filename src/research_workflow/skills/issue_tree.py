@@ -61,6 +61,12 @@ class IssueTreeSkill(Skill):
         payload = {
             "main_question": request.config.topic,
             "confirmed_topic_candidate": request.config.topic,
+            "provisional_thesis": {
+                "statement": f"待证据检验：{request.config.topic}的核心差异不只来自硬参数",
+                "why_debatable": "反对者可能认为单一性能指标足以解释竞争结果",
+                "falsification_condition": "若统一实测显示硬参数可独立解释真实场景结果，则该判断不成立",
+                "actionability": f"帮助{requirements['audience']}决定后续重点采集哪些证据",
+            },
             "issues": issues,
             "coverage": {
                 "issue_count": len(issues),
@@ -68,6 +74,26 @@ class IssueTreeSkill(Skill):
                 "all_included_issues_have_value": all(item["included"] for item in issues),
             },
             "excluded_issues": [],
+            "competitive_hypotheses": [
+                {
+                    "id": "H1",
+                    "consensus": "领先主要由单一硬参数决定",
+                    "counter_hypothesis": "真实差距主要来自生态、数据或场景成熟度",
+                    "test": "比较硬参数排名与真实场景结果是否一致",
+                },
+                {
+                    "id": "H2",
+                    "consensus": "技术路线决定最终胜负",
+                    "counter_hypothesis": "同一路线下的数据和工程闭环造成更大差异",
+                    "test": "控制路线后比较数据规模、部署与用户反馈",
+                },
+                {
+                    "id": "H3",
+                    "consensus": "最新版本必然全面优于旧版本",
+                    "counter_hypothesis": "局部能力或生产可靠性可能回退",
+                    "test": "检查同口径版本回归和社区失败案例",
+                },
+            ],
             "feedback_applied": list(request.feedback),
         }
         return SkillResult(
