@@ -1,5 +1,5 @@
 ---
-name: format-style
+name: formatting
 description: 统一术语、标题、段落和输出格式，不改变报告事实含义。
 license: MIT
 version: 1.0.0

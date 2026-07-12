@@ -1,5 +1,5 @@
 ---
-name: requirements-analysis
+name: requirements_analysis
 description: 完整提取报告产出形态、主题、文风、受众、篇幅、格式、边界、资料和前置思考。
 license: MIT
 version: 1.0.0

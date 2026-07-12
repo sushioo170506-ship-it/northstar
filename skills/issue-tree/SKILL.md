@@ -1,5 +1,5 @@
 ---
-name: issue-tree
+name: issue_tree
 description: 将研究主题拆成 3-7 个可由证据回答的子问题，并在人工确认后进入证据治理。
 license: MIT
 version: 1.0.0

@@ -1,5 +1,5 @@
 ---
-name: quality-gate
+name: quality_gate
 description: 按 D1-D7 评分并根据证据红线作出允许或阻断发布的最终决定。
 license: MIT
 version: 1.0.0

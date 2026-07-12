@@ -1,5 +1,5 @@
 ---
-name: capability-sweep
+name: capability_sweep
 description: 工作流 Step 0 — 全量遍历内置 Skill 与外部集成目录，记录适用性、配置和跳过原因。
 license: MIT
 version: 1.0.0

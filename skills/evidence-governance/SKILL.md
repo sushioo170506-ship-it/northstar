@@ -1,5 +1,5 @@
 ---
-name: evidence-governance
+name: evidence_governance
 description: 审核来源可追溯性、利益相关性、独立验证和关键证据红线。
 license: MIT
 version: 1.0.0

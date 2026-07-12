@@ -1,5 +1,5 @@
 ---
-name: quality-review
+name: review
 description: 对格式化报告执行证据、结构、篇幅、语言和格式审核并保守润色。
 license: MIT
 version: 1.0.0

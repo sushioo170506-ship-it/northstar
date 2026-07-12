@@ -1,5 +1,5 @@
 ---
-name: pressure-test
+name: pressure_test
 description: 对初稿独立执行逻辑、证据、反方论证和完整性压力测试。
 license: MIT
 version: 1.0.0

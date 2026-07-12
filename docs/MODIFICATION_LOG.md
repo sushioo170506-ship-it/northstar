@@ -94,6 +94,7 @@
   不能被模型 JSON 覆盖。
 - quality-gate 根据 issue_ids 重算素材挂载率，并硬性检查可视化和正文篇幅上下限。
 - orchestrator 新增加权关键词 `request_revision` 精确退回规则，处理混合修改意图。
+- 所有 SKILL.md frontmatter `name` 与 Python `Skill.name`/DAG node 统一，消除双轨命名。
 
 ### capability-sweep 1.0.0
 

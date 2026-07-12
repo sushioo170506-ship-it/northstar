@@ -1,5 +1,5 @@
 ---
-name: content-writing
+name: writing
 description: 按已确认大纲和证据包分节生成研究报告初稿。
 license: MIT
 version: 1.0.0

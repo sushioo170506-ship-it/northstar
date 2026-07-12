@@ -1,5 +1,5 @@
 ---
-name: material-integration
+name: material_integration
 description: 将治理后的调研素材按最终大纲章节挂载并计算覆盖率。
 license: MIT
 version: 1.0.0

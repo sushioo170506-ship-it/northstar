@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
 
-from research_workflow.contracts import FunctionGenerator
+from research_workflow.contracts import FunctionGenerator, SourceRetriever
 from research_workflow.integrations import BUILTIN_SKILL_ORDER, DEFAULT_INTEGRATIONS
 from research_workflow.models import (
     NodeStatus,
@@ -15,6 +16,8 @@ from research_workflow.models import (
 )
 from research_workflow.orchestrator import QualityGateRejected, ResearchReportOrchestrator
 from research_workflow.skills.quality_gate import DIMENSIONS, QualityGateSkill
+from research_workflow.skills.data_processing import DataProcessingSkill
+from research_workflow.skills.research import ResearchSkill
 
 
 CHECKPOINTS = (
@@ -68,6 +71,25 @@ def complete(orchestrator: ResearchReportOrchestrator, workflow_id: str):
     return orchestrator.run(workflow_id)
 
 
+class RecordingRetriever(SourceRetriever):
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, ...]] = []
+
+    def retrieve(self, *, topic, questions, categories):
+        self.calls.append(categories)
+        category = categories[0]
+        return [
+            {
+                "id": f"R-{category}",
+                "title": category,
+                "category": category,
+                "url": f"https://example.org/{category}",
+                "content": "数据 42",
+                "issue_ids": ["ISSUE-01"],
+            }
+        ]
+
+
 class WorkflowTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
@@ -102,6 +124,116 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(config.output_format, "markdown")
         with self.assertRaises(ValueError):
             self.workflow.create({"topic": "", "expected_length": 100})
+
+    def test_skill_documents_match_builtin_registry(self) -> None:
+        names = set()
+        skills_root = Path(__file__).parents[1] / "skills"
+        for path in skills_root.glob("*/SKILL.md"):
+            if path.parent.name == "research-report-orchestrator":
+                continue
+            match = re.search(
+                r"^name:\s*([A-Za-z0-9_-]+)\s*$",
+                path.read_text(encoding="utf-8"),
+                flags=re.MULTILINE,
+            )
+            self.assertIsNotNone(match, str(path))
+            names.add(match.group(1))
+        self.assertEqual(names, set(BUILTIN_SKILL_ORDER))
+
+    def test_research_traverses_all_three_source_passes(self) -> None:
+        retriever = RecordingRetriever()
+        skill = ResearchSkill(retriever=retriever)
+        request = SkillRequest(
+            workflow_id="three-pass",
+            node_id="research",
+            config=ReportConfig.from_dict({"topic": "三支柱测试"}),
+            inputs={
+                "requirements_analysis": json.dumps({"topic": "三支柱测试"}),
+                "issue_tree": json.dumps(
+                    {
+                        "issues": [
+                            {
+                                "id": "ISSUE-01",
+                                "question": "核心问题",
+                                "included": True,
+                            }
+                        ]
+                    }
+                ),
+                "outline": json.dumps(
+                    {"sections": [{"id": "SEC-01", "title": "章节"}]}
+                ),
+            },
+        )
+        result = skill.execute(request)
+        skill.validate(result)
+        self.assertEqual(
+            retriever.calls,
+            [("industry",), ("academic",), ("social_media",)],
+        )
+        summary = json.loads(result.content)["retrieval_summary"]
+        self.assertTrue(
+            all(item["status"] == "completed" for item in summary["passes"].values())
+        )
+
+    def test_data_processing_uses_anchor_based_scoring(self) -> None:
+        candidates = [f"P{i}" for i in range(5)]
+        dimensions = [
+            {
+                "name": f"D{i}",
+                "weight": 25,
+                "anchor_10": 100,
+                "anchor_5": 50,
+                "values": {candidate: 50 + index * 10 for index, candidate in enumerate(candidates)},
+                "source": "测试锚点",
+            }
+            for i in range(4)
+        ]
+        request = SkillRequest(
+            workflow_id="scoring",
+            node_id="data_processing",
+            config=ReportConfig.from_dict(
+                {
+                    "topic": "评分测试",
+                    "extra": {
+                        "comparison_candidates": candidates,
+                        "scoring_dimensions": dimensions,
+                    },
+                }
+            ),
+            inputs={
+                "research": json.dumps({"sources": compliant_sources()}),
+                "evidence_governance": json.dumps(
+                    {
+                        "sources": [
+                            {
+                                "id": source["id"],
+                                "traceable": True,
+                                "stakeholder": False,
+                            }
+                            for source in compliant_sources()
+                        ]
+                    }
+                ),
+                "issue_tree": json.dumps(
+                    {"issues": [{"id": f"ISSUE-0{i}"} for i in range(1, 4)]}
+                ),
+                "outline": json.dumps(
+                    {
+                        "sections": [
+                            {"id": f"SEC-0{i}", "linked_issue": f"ISSUE-0{i}"}
+                            for i in range(1, 4)
+                        ]
+                    }
+                ),
+            },
+        )
+        result = DataProcessingSkill().execute(request)
+        DataProcessingSkill().validate(result)
+        scoring = json.loads(result.content)["scoring"]
+        self.assertEqual(scoring["status"], "completed")
+        self.assertEqual(scoring["results"][0]["candidate"], "P4")
+        self.assertIn("5 + 5", scoring["results"][0]["details"][0]["calculation"])
 
     def test_missing_source_categories_block_release(self) -> None:
         workflow_id = self.create(extra={"sources": [compliant_sources()[0]]})
@@ -191,6 +323,9 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(
             capability["metrics"]["external_traversed_count"], len(DEFAULT_INTEGRATIONS)
+        )
+        self.assertTrue(
+            all(item["reason"] for item in capability["external_integrations"])
         )
         gate = reloaded.state.node_artifact(workflow_id, "quality_gate")
         self.assertTrue(json.loads(gate["content"])["passed"])
@@ -341,6 +476,7 @@ class WorkflowTests(unittest.TestCase):
         )
         gate_node = self.workflow.state.node(workflow_id, "quality_gate")
         self.assertEqual(gate_node["status"], NodeStatus.FAILED)
+        self.assertIsNone(self.workflow.state.node(workflow_id, "publish"))
         gate = self.workflow.state.artifact(gate_node["output_artifact_id"])
         decision = json.loads(gate["content"])
         self.assertFalse(decision["passed"])

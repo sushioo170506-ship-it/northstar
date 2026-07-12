@@ -1,5 +1,5 @@
 ---
-name: data-processing
+name: data_processing
 description: 工作流数据处理阶段 — 生成论断账本、提取数字、三角验证、证据分级和可选数据锚点评分。
 license: MIT
 version: 1.0.0

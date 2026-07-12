@@ -1,5 +1,5 @@
 ---
-name: topic-research
+name: research
 description: 大纲确认后按产业×学术×实景三 pass 采集、去重并登记可追溯来源。
 license: MIT
 version: 1.0.0

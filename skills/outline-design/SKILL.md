@@ -1,5 +1,5 @@
 ---
-name: outline-design
+name: outline
 description: 调研前以“定刺→拆骨→填肉→设门→埋钩”设计可争论、可证伪的大纲。
 license: MIT
 version: 1.0.0
