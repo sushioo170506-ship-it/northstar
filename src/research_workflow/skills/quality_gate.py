@@ -365,7 +365,7 @@ class QualityGateSkill(Skill):
         expected_length = int(requirements["deliverable"]["expected_length"])
         minimum_length = int(expected_length * 0.75)
         maximum_length = max(int(expected_length * 1.25), expected_length + 2_000)
-        prose = re.sub(r"```.*?```", "", final_report, flags=re.DOTALL)
+        prose = re.sub(r"```.*?```", "", cited_draft, flags=re.DOTALL)
         prose = re.sub(r"<[^>]+>", "", prose)
         prose = re.split(
             r"(?m)^##\s+(?:统一)?参考资料\s*$", prose, maxsplit=1

@@ -955,7 +955,11 @@ class WorkflowTests(unittest.TestCase):
         self.assertGreater(len(report), 100_000)
         artifact = self.workflow.state.node_artifact(workflow_id, "writing")
         self.assertGreater(artifact["chunk_count"], 6)
-        self.assertEqual(len(artifact["content"]), len(report))
+        cited = self.workflow.state.node_artifact(
+            workflow_id, "citation_management"
+        )
+        self.assertGreater(len(cited["content"]), len(artifact["content"]))
+        self.assertIn("## 参考资料", report)
         matches = self.workflow.context.query(
             workflow_id, "风险 局限 潜在偏差", node_ids={"writing"}, limit=5
         )
