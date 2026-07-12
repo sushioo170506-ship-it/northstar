@@ -23,6 +23,9 @@ social_media 三类来源，且每项必须有原始 URL。可选 Crawl4AI、GPT
 Semantic Scholar、Mermaid、Vega-Lite 和 Pandoc 适配边界见开源目录。密钥由部署平台的 Secret 注入，
 不得写入配置、操作日志或产物元数据。
 
+飞书/HTML可使用内置文本格式路径；Word/PDF必须部署 DocumentRenderer。推荐把Typst、Pandoc或
+经审查的Word适配器作为独立进程，返回真实payload/URI和`rendered=true`元数据。
+
 ## 多实例
 
 内置 SQLite 适合单写者，不支持跨主机协调。水平扩展时实现同等 StateStore/VectorStore

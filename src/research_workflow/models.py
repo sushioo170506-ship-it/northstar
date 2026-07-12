@@ -23,7 +23,9 @@ class WorkflowStatus(StrEnum):
     FAILED = "failed"
 
 
-SUPPORTED_FORMATS = {"markdown", "html", "json", "text"}
+SUPPORTED_FORMATS = {
+    "markdown", "html", "json", "text", "feishu", "docx", "pdf"
+}
 
 
 @dataclass(frozen=True)
@@ -54,7 +56,10 @@ class ReportConfig:
             raise ValueError("expected_length 必须在 500 到 500000 之间")
         style = " ".join(str(raw.get("style", "") or "专业、客观、证据驱动").split())
         output_format = str(raw.get("output_format", "markdown")).strip().lower()
-        aliases = {"md": "markdown", "htm": "html", "txt": "text"}
+        aliases = {
+            "md": "markdown", "htm": "html", "web": "html", "webpage": "html",
+            "网页": "html", "txt": "text", "word": "docx", "飞书": "feishu",
+        }
         output_format = aliases.get(output_format, output_format)
         if output_format not in SUPPORTED_FORMATS:
             raise ValueError(f"output_format 必须是 {sorted(SUPPORTED_FORMATS)} 之一")

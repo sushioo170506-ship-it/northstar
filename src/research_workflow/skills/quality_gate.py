@@ -35,6 +35,7 @@ class QualityGateSkill(Skill):
         capability = json.loads(request.inputs["capability_sweep"])
         skill_research = json.loads(request.inputs["skill_research"])
         requirements = json.loads(request.inputs["requirements_analysis"])
+        outline = json.loads(request.inputs["outline"])
         evidence_text = request.inputs["evidence_governance"]
         processed = json.loads(request.inputs["data_processing"])
         materials = json.loads(request.inputs["material_integration"])
@@ -52,7 +53,7 @@ class QualityGateSkill(Skill):
         )
         requirements_policy = self._requirements_policy(
             final_report, requirements, evidence, processed, materials,
-            visualizations, capability, skill_research,
+            visualizations, capability, skill_research, outline,
         )
         if self.generator:
             prompt = (
@@ -174,6 +175,11 @@ class QualityGateSkill(Skill):
             problems.append("缺少来源类别：" + "、".join(missing_categories))
         if missing_report_links:
             problems.append("终稿缺少原始链接：" + "、".join(missing_report_links))
+        if requirements_policy["missing_inline_source_links"]:
+            problems.append(
+                "来源链接仅集中在文末或未出现在对应章节："
+                + "、".join(requirements_policy["missing_inline_source_links"])
+            )
         if boundary_violations:
             problems.append("违反内容边界：" + "、".join(boundary_violations))
         if not length_compliant:
@@ -223,6 +229,12 @@ class QualityGateSkill(Skill):
                 "boundary_violations": boundary_violations,
                 "missing_source_categories": missing_categories,
                 "missing_report_links": missing_report_links,
+                "missing_inline_source_links": requirements_policy[
+                    "missing_inline_source_links"
+                ],
+                "inline_source_coverage": requirements_policy[
+                    "inline_source_coverage"
+                ],
                 "material_mount_coverage": requirements_policy[
                     "material_mount_coverage"
                 ],
@@ -293,6 +305,7 @@ class QualityGateSkill(Skill):
         visualizations: dict,
         capability: dict,
         skill_research: dict,
+        outline: dict,
     ) -> dict:
         categories = set(evidence.get("metrics", {}).get("source_categories", []))
         missing_categories = sorted(self.REQUIRED_SOURCE_CATEGORIES - categories)
@@ -300,6 +313,34 @@ class QualityGateSkill(Skill):
             source["id"] for source in evidence.get("sources", [])
             if not source.get("original_url") or source["original_url"] not in final_report
         ]
+        section_segments = self._section_segments(final_report, outline)
+        inline_missing = []
+        for source in evidence.get("sources", []):
+            source_id = source.get("id")
+            url = source.get("original_url")
+            target_sections = [
+                section_id
+                for section_id, section in materials.get("sections", {}).items()
+                if section.get("linked_issue")
+                and any(
+                    material.get("source_id") == source_id
+                    for material in section.get("materials", [])
+                )
+            ]
+            if (
+                not url
+                or not target_sections
+                or not any(
+                    url in section_segments.get(section_id, "")
+                    for section_id in target_sections
+                )
+            ):
+                inline_missing.append(str(source_id))
+        source_total = len(evidence.get("sources", []))
+        inline_source_coverage = (
+            (source_total - len(inline_missing)) / source_total
+            if source_total else 0.0
+        )
         expected_length = int(requirements["deliverable"]["expected_length"])
         minimum_length = int(expected_length * 0.75)
         maximum_length = max(int(expected_length * 1.25), expected_length + 2_000)
@@ -362,6 +403,8 @@ class QualityGateSkill(Skill):
         return {
             "missing_source_categories": missing_categories,
             "missing_report_links": missing_report_links,
+            "missing_inline_source_links": inline_missing,
+            "inline_source_coverage": inline_source_coverage,
             "minimum_length": minimum_length,
             "maximum_length": maximum_length,
             "prose_length": prose_length,
@@ -378,6 +421,7 @@ class QualityGateSkill(Skill):
             "compliant": (
                 not missing_categories
                 and not missing_report_links
+                and not inline_missing
                 and length_compliant
                 and not boundary_violations
                 and material_mount_coverage == 1.0
@@ -389,3 +433,22 @@ class QualityGateSkill(Skill):
                 and skill_provenance_complete
             ),
         }
+
+    @staticmethod
+    def _section_segments(final_report: str, outline: dict) -> dict[str, str]:
+        located = []
+        for section in outline.get("sections", []):
+            title = str(section.get("title", ""))
+            position = final_report.find(title)
+            if title and position >= 0:
+                located.append((position, section["id"]))
+        located.sort()
+        segments = {}
+        for index, (position, section_id) in enumerate(located):
+            end = (
+                located[index + 1][0]
+                if index + 1 < len(located)
+                else len(final_report)
+            )
+            segments[section_id] = final_report[position:end]
+        return segments

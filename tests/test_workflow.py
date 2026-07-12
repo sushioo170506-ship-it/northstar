@@ -6,7 +6,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from research_workflow.contracts import FunctionGenerator, SourceRetriever
+from research_workflow.contracts import (
+    DocumentRenderer,
+    FunctionGenerator,
+    SourceRetriever,
+)
 from research_workflow.integrations import BUILTIN_SKILL_ORDER, DEFAULT_INTEGRATIONS
 from research_workflow.models import (
     NodeStatus,
@@ -22,6 +26,8 @@ from research_workflow.orchestrator import (
 )
 from research_workflow.skills.quality_gate import DIMENSIONS, QualityGateSkill
 from research_workflow.skills.data_processing import DataProcessingSkill
+from research_workflow.skills.outline import OutlineSkill
+from research_workflow.skills.publish import PublishSkill
 from research_workflow.skills.research import ResearchSkill
 from research_workflow.skills.skill_research import SkillResearchSkill
 
@@ -94,6 +100,14 @@ class RecordingRetriever(SourceRetriever):
                 "issue_ids": ["ISSUE-01"],
             }
         ]
+
+
+class FakeRenderer(DocumentRenderer):
+    def render(self, *, content, output_format, visualizations):
+        return (
+            f"base64:{output_format}:{len(content)}",
+            {"rendered": True, "media_type": f"application/{output_format}"},
+        )
 
 
 class WorkflowTests(unittest.TestCase):
@@ -215,6 +229,7 @@ class WorkflowTests(unittest.TestCase):
         result = SkillResearchSkill().execute(request)
         SkillResearchSkill().validate(result)
         payload = json.loads(result.content)
+        self.assertIn("| Skill | 来源 | 功能 |", payload["reference_table"])
         candidates = {item["name"]: item for item in payload["candidates"]}
         self.assertEqual(candidates["permissive-skill"]["decision"], "adapt_allowed")
         self.assertEqual(candidates["unknown-skill"]["decision"], "reject")
@@ -307,7 +322,11 @@ class WorkflowTests(unittest.TestCase):
                     }
                 ),
                 "outline": json.dumps(
-                    {"sections": [{"id": "SEC-01", "title": "章节"}]}
+                    {
+                        "sections": [
+                            {"id": "SEC-01", "title": "报告", "linked_issue": "ISSUE-01"}
+                        ]
+                    }
                 ),
             },
         )
@@ -321,6 +340,26 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(
             all(item["status"] == "completed" for item in summary["passes"].values())
         )
+
+    def test_social_and_wechat_platforms_are_normalized(self) -> None:
+        sources = ResearchSkill._normalize_sources(
+            [
+                {
+                    "id": "WX",
+                    "title": "公众号原文",
+                    "category": "social_media",
+                    "url": "https://mp.weixin.qq.com/s/example",
+                },
+                {
+                    "id": "HN",
+                    "title": "开发者讨论",
+                    "category": "social_media",
+                    "url": "https://news.ycombinator.com/item?id=1",
+                },
+            ]
+        )
+        self.assertEqual(sources[0]["platform"], "wechat_official_account")
+        self.assertEqual(sources[1]["platform"], "hacker_news")
 
     def test_data_processing_uses_anchor_based_scoring(self) -> None:
         candidates = [f"P{i}" for i in range(5)]
@@ -380,6 +419,49 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(scoring["status"], "completed")
         self.assertEqual(scoring["results"][0]["candidate"], "P4")
         self.assertIn("5 + 5", scoring["results"][0]["details"][0]["calculation"])
+
+    def test_outline_focuses_risk_on_report_subject(self) -> None:
+        request = SkillRequest(
+            workflow_id="risk-scope",
+            node_id="outline",
+            config=ReportConfig.from_dict(
+                {
+                    "topic": "半导体设备ETF研究",
+                    "expected_length": 1000,
+                    "output_type": "ETF行业研究报告",
+                }
+            ),
+            inputs={
+                "requirements_analysis": json.dumps(
+                    {
+                        "audience": "投资者",
+                        "style": "专业",
+                        "deliverable": {"type": "ETF行业研究报告"},
+                        "content_boundaries": [],
+                    }
+                ),
+                "issue_tree": json.dumps(
+                    {
+                        "issues": [
+                            {
+                                "id": "ISSUE-01",
+                                "question": "ETF估值",
+                                "included": True,
+                            }
+                        ]
+                    }
+                ),
+            },
+        )
+        result = OutlineSkill().execute(request)
+        OutlineSkill().validate(result)
+        outline = json.loads(result.content)
+        self.assertIn("折溢价", outline["risk_scope"])
+        risk_section = next(
+            section for section in outline["sections"]
+            if section["title"] == "风险与局限"
+        )
+        self.assertEqual(risk_section["risk_scope"], outline["risk_scope"])
 
     def test_missing_source_categories_block_release(self) -> None:
         workflow_id = self.create(extra={"sources": [compliant_sources()[0]]})
@@ -503,6 +585,15 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(all(issue["children"] for issue in issue_tree["issues"]))
         self.assertTrue(all(issue["necessity"] for issue in issue_tree["issues"]))
         self.assertNotIn("competitive_hypotheses", issue_tree)
+        outline = json.loads(
+            reloaded.state.node_artifact(workflow_id, "outline")["content"]
+        )
+        self.assertLessEqual(outline["sections"][0]["percentage"], 8)
+        self.assertAlmostEqual(
+            sum(section["percentage"] for section in outline["sections"]),
+            100,
+            delta=0.2,
+        )
         brief = json.loads(
             reloaded.state.node_artifact(workflow_id, "requirements_analysis")["content"]
         )
@@ -561,7 +652,7 @@ class WorkflowTests(unittest.TestCase):
         )
 
     def test_formats_are_valid(self) -> None:
-        for output_format in ("html", "json", "text"):
+        for output_format in ("html", "json", "text", "feishu"):
             child = ResearchReportOrchestrator(self.root / output_format)
             workflow_id = child.create(
                 {
@@ -577,8 +668,58 @@ class WorkflowTests(unittest.TestCase):
                 self.assertTrue(report.startswith("<!doctype html>"))
             elif output_format == "json":
                 self.assertEqual(json.loads(report)["title"], "格式测试")
+            elif output_format == "feishu":
+                self.assertIn("# 格式测试", report)
             else:
                 self.assertNotIn("# ", report)
+
+    def test_docx_and_pdf_require_real_renderer(self) -> None:
+        for output_format in ("docx", "pdf"):
+            request = SkillRequest(
+                workflow_id=f"render-{output_format}",
+                node_id="publish",
+                config=ReportConfig.from_dict(
+                    {"topic": "渲染测试", "output_format": output_format}
+                ),
+                inputs={
+                    "review": "# 渲染测试\n正文",
+                    "quality_gate": json.dumps(
+                        {"passed": True, "total_score": 30}
+                    ),
+                    "visualization": json.dumps({"assets": []}),
+                    "capability_sweep": json.dumps(
+                        {"external_integrations": []}
+                    ),
+                    "skill_research": json.dumps(
+                        {"candidates": [], "adapted_skill_specs": []}
+                    ),
+                },
+            )
+            with self.assertRaises(ValueError):
+                PublishSkill().execute(request)
+            result = PublishSkill(FakeRenderer()).execute(request)
+            self.assertTrue(result.content.startswith(f"base64:{output_format}:"))
+            self.assertTrue(result.metadata["publish_manifest"]["rendered"])
+
+    def test_webpage_word_and_feishu_aliases(self) -> None:
+        self.assertEqual(
+            ReportConfig.from_dict(
+                {"topic": "网页", "output_format": "webpage"}
+            ).output_format,
+            "html",
+        )
+        self.assertEqual(
+            ReportConfig.from_dict(
+                {"topic": "Word", "output_format": "word"}
+            ).output_format,
+            "docx",
+        )
+        self.assertEqual(
+            ReportConfig.from_dict(
+                {"topic": "飞书", "output_format": "飞书"}
+            ).output_format,
+            "feishu",
+        )
 
     def test_revision_router_returns_to_precise_stage(self) -> None:
         workflow_id = self.create()
@@ -726,6 +867,17 @@ class WorkflowTests(unittest.TestCase):
                         "content_boundaries": [],
                     }
                 ),
+                "outline": json.dumps(
+                    {
+                        "sections": [
+                            {
+                                "id": "SEC-01",
+                                "title": "报告",
+                                "linked_issue": "ISSUE-01",
+                            }
+                        ]
+                    }
+                ),
                 "evidence_governance": json.dumps(
                     {"metrics": {"source_count": 0}, "red_lines": []}
                 ),
@@ -769,6 +921,79 @@ class WorkflowTests(unittest.TestCase):
         red_line_result = skill.execute(red_line_request)
         skill.validate(red_line_result)
         self.assertFalse(json.loads(red_line_result.content)["passed"])
+
+    def test_bibliography_only_links_fail_inline_source_policy(self) -> None:
+        sources = [
+            {
+                "id": f"S{i}",
+                "original_url": f"https://example.org/s{i}",
+                "issue_ids": ["ISSUE-01"],
+            }
+            for i in range(3)
+        ]
+        materials = {
+            "sections": {
+                "SEC-01": {
+                    "title": "目标章节",
+                    "linked_issue": "ISSUE-01",
+                    "materials": [
+                        {"source_id": source["id"]} for source in sources
+                    ],
+                }
+            }
+        }
+        final_report = (
+            "# 报告\n## 目标章节\n只有结论，没有内联链接。\n"
+            "## 参考文献\n"
+            + "\n".join(source["original_url"] for source in sources)
+        )
+        policy = QualityGateSkill()._requirements_policy(
+            final_report,
+            {
+                "deliverable": {"expected_length": 500},
+                "content_boundaries": [],
+            },
+            {
+                "sources": sources,
+                "metrics": {
+                    "source_categories": [
+                        "industry", "academic", "social_media"
+                    ]
+                },
+            },
+            {
+                "claims": [
+                    {
+                        "issue_ids": ["ISSUE-01"],
+                    }
+                ],
+                "triangulation": {
+                    "critical_claim_count": 0,
+                    "critical_verified_count": 0,
+                    "conflicted_claim_count": 0,
+                },
+            },
+            materials,
+            {"assets": [{"id": f"V{i}"} for i in range(6)]},
+            {
+                "metrics": {
+                    "external_catalog_count": 1,
+                    "external_traversed_count": 1,
+                }
+            },
+            {"candidates": [], "adapted_skill_specs": []},
+            {
+                "sections": [
+                    {"id": "SEC-01", "title": "目标章节"},
+                    {"id": "SEC-02", "title": "参考文献"},
+                ]
+            },
+        )
+        self.assertEqual(policy["inline_source_coverage"], 0.0)
+        self.assertEqual(
+            set(policy["missing_inline_source_links"]), {"S0", "S1", "S2"}
+        )
+        self.assertFalse(policy["compliant"])
 
     def test_twenty_deterministic_runs_meet_success_threshold(self) -> None:
         successes = 0

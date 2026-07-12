@@ -54,9 +54,21 @@ class FormattingSkill(Skill):
             )
         elif output_format == "text":
             content = re.sub(r"^#{1,6}\s+", "", normalized, flags=re.MULTILINE)
+        elif output_format == "feishu":
+            content = normalized
+        elif output_format in {"docx", "pdf"}:
+            # Canonical Markdown is handed to an injected renderer in publish.
+            content = normalized
         else:
             content = normalized
         return SkillResult(
             content, "formatted_draft",
-            {"format": output_format, "style": request.config.style},
+            {
+                "format": output_format,
+                "style": request.config.style,
+                "requires_renderer": output_format in {"docx", "pdf"},
+                "native_format": output_format in {
+                    "markdown", "html", "json", "text", "feishu"
+                },
+            },
         )

@@ -52,6 +52,16 @@ class SourceRetriever(ABC):
         """Return normalized source candidates with original URLs."""
 
 
+class DocumentRenderer(ABC):
+    """Optional binary/remote renderer for DOCX and PDF publishing."""
+
+    @abstractmethod
+    def render(
+        self, *, content: str, output_format: str, visualizations: dict
+    ) -> tuple[str, dict]:
+        """Return stored text payload (e.g. base64/URI) and render metadata."""
+
+
 class SkillRegistry:
     def __init__(self) -> None:
         self._skills: dict[str, Skill] = {}

@@ -46,6 +46,7 @@ result = WritingSkill(generator=my_generator).execute(request)
 - 只引用 claim.status=supported 且 grade≠D 的内容。
 - 关键论断优先 A+/A；仅 B/C 时显式降级。
 - 每个数字引用 original_url；厂商自评标立场；社区案例标样本限制。
+- 来源链接必须出现在支撑该判断的正文段落或对应章节，文末参考文献不能替代内联引用。
 - scoring=not_applicable 时不得在正文创造排名。
 
 ## 错误与退回
@@ -54,3 +55,10 @@ result = WritingSkill(generator=my_generator).execute(request)
 - claim 冲突：并列口径与边界，退回 data_processing。
 - 篇幅超限：先删背景和重复，不删核心判断、锚点、局限和证伪条件。
 - 初稿完成后必须进入 pressure_test，不可直接 formatting。
+
+## 风险章节聚焦规则
+
+- 模型报告：只讨论模型能力边界、幻觉、鲁棒性、安全、隐私、成本和部署风险。
+- ETF/基金报告：只讨论成份集中、估值回撤、流动性、折溢价、跟踪误差、盈利和政策周期。
+- 产业报告：讨论需求、供给、技术替代、竞争、政策和财务风险。
+- “本文信息可能不完整”只能放在方法局限，不得替代研究对象本身的风险分析。

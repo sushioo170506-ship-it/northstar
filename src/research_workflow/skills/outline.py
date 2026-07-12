@@ -34,12 +34,27 @@ class OutlineSkill(Skill):
 
         issue_tree = json.loads(issue_tree_text)
         requirements = json.loads(requirements_text)
+        topic_context = (
+            request.config.topic + " " + request.config.output_type
+        ).lower()
+        if any(term in topic_context for term in ("etf", "基金", "投资")):
+            risk_scope = (
+                "聚焦指数集中度、估值回撤、流动性、折溢价、跟踪误差、"
+                "成份股盈利和政策周期风险"
+            )
+        elif any(term in topic_context for term in ("模型", "ai", "人工智能")):
+            risk_scope = (
+                "聚焦模型能力边界、幻觉、鲁棒性、安全、隐私、成本和部署风险"
+            )
+        else:
+            risk_scope = f"聚焦{request.config.topic}本身的失效条件和决策风险"
         issue_titles = [
             item.get("question", item.get("id", "关键议题"))
             for item in issue_tree.get("issues", [])
         ]
         titles = ["摘要", *issue_titles, "风险与局限", "结论与建议"]
-        weights = [1 / len(titles)] * len(titles)
+        issue_count = max(1, len(issue_titles))
+        weights = [0.06, *([0.78 / issue_count] * len(issue_titles)), 0.08, 0.08]
         sections = [
             {
                 "id": f"SEC-{index + 1:02d}",
@@ -54,6 +69,7 @@ class OutlineSkill(Skill):
                     {"type": "comparison", "need": "至少两个同口径对象或时间点"},
                 ],
                 "entry_summary_budget": 100,
+                "risk_scope": risk_scope if title == "风险与局限" else None,
                 "linked_issue": (
                     issue_tree["issues"][index - 1]["id"]
                     if 0 < index <= len(issue_tree.get("issues", [])) else None
@@ -61,6 +77,14 @@ class OutlineSkill(Skill):
             }
             for index, title in enumerate(titles)
         ]
+        length_delta = request.config.expected_length - sum(
+            item["target_length"] for item in sections
+        )
+        sections[-1]["target_length"] += length_delta
+        for section in sections:
+            section["percentage"] = round(
+                section["target_length"] / request.config.expected_length * 100, 2
+            )
         payload = {
             "title": request.config.topic,
             "sections": sections,
@@ -86,6 +110,7 @@ class OutlineSkill(Skill):
                 "middle_40_percent": "评分、对比、冲突与证据检验",
                 "back_30_percent": "行动含义、边界与闭环",
             },
+            "risk_scope": risk_scope,
         }
         if issue_tree.get("competitive_hypotheses"):
             payload["competitive_hypotheses"] = issue_tree["competitive_hypotheses"]
@@ -102,5 +127,12 @@ class OutlineSkill(Skill):
                 "anchor_requirements"
             ):
                 raise ValueError("每个章节必须包含判断和数据锚点需求")
+            if not isinstance(section.get("percentage"), (int, float)):
+                raise ValueError("每个章节必须包含篇幅比例 percentage")
+        if abs(sum(section["percentage"] for section in sections) - 100) > 0.2:
+            raise ValueError("章节篇幅比例总和必须约等于 100%")
+        summary = sections[0]
+        if summary["percentage"] > 8:
+            raise ValueError("摘要篇幅不得超过全文 8%")
         if not payload.get("narrative_gates"):
             raise ValueError("outline 必须包含传播门")

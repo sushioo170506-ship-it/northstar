@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import json
 
-from ..contracts import Skill
+from ..contracts import DocumentRenderer, Skill
 from ..models import SkillRequest, SkillResult
 
 
 class PublishSkill(Skill):
     name = "publish"
+
+    def __init__(self, renderer: DocumentRenderer | None = None) -> None:
+        self.renderer = renderer
 
     def execute(self, request: SkillRequest) -> SkillResult:
         report = request.inputs["review"]
@@ -30,7 +33,9 @@ class PublishSkill(Skill):
             "character_count": len(report),
             "visual_asset_count": len(visualizations.get("assets", [])),
             "renderers": renderer_ids,
-            "self_contained": output_format in {"markdown", "json", "text"},
+            "self_contained": output_format in {
+                "markdown", "json", "text", "feishu"
+            },
             "raster_exported": False,
             "third_party_candidates_reviewed": len(
                 skill_research.get("candidates", [])
@@ -40,6 +45,26 @@ class PublishSkill(Skill):
             ),
             "limitations": [],
         }
+        published_content = report
+        if output_format in {"docx", "pdf"}:
+            if self.renderer is None:
+                raise ValueError(
+                    f"{output_format} 输出需要配置 DocumentRenderer"
+                )
+            published_content, render_metadata = self.renderer.render(
+                content=report,
+                output_format=output_format,
+                visualizations=visualizations,
+            )
+            if not render_metadata.get("rendered"):
+                raise ValueError(f"{output_format} 渲染器未返回成功状态")
+            manifest.update(
+                {
+                    "self_contained": True,
+                    "rendered": True,
+                    "render_metadata": render_metadata,
+                }
+            )
         if output_format == "html" and any(
             item["format"] in {"mermaid", "vega-lite"}
             for item in visualizations.get("assets", [])
@@ -53,7 +78,7 @@ class PublishSkill(Skill):
                 "PNG 是条件能力；当前运行未提供可验证的渲染器输出"
             )
         return SkillResult(
-            report,
+            published_content,
             "published_report",
             {"publish_manifest": manifest, "quality_score": quality.get("total_score")},
         )

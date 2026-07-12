@@ -38,6 +38,8 @@ result = OutlineSkill(generator=None).execute(request)
 
 - 核心判断可争论、可证伪、可行动。
 - 每章含 chapter_claim、reader_challenge、anchor_requirements、target_length。
+- 每章同时输出 target_length 和 percentage；比例总和约等于 100%。
+- 摘要只保留核心结论、关键数字和决策含义，默认约 6%，不得超过全文 8%。
 - 用户启用竞争性假说时必须声明检验方法；未启用时不得为满足模板强行生成。
 - narrative_gates 与节奏预算齐全。
 - 仅描述“背景/现状/趋势”的章节不得通过。

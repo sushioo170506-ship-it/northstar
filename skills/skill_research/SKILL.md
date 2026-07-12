@@ -20,7 +20,7 @@ version: 1.0.0
 - INPUT：requirements_brief、可选 live_skill_research、skill_candidates、
   max_adapted_skills。
 - OUTPUT：`skill_research_report`，包含 query、candidates、adapted_skill_specs、
-  live_search_errors、policy、metrics。
+  reference_table、live_search_errors、policy、metrics。
 
 ## 检索渠道
 
@@ -78,6 +78,9 @@ Skill 可覆盖顶层许可证，需再次核验。
 - 安装和审核状态。
 
 缺少任一核心字段不得进入适配清单。
+
+每次输出必须附 Markdown 专业组件表，至少包含 Skill 名称、来源地址、功能定位、Stars、
+许可证和适配结论，供团队学习与人工审批。
 
 ## MUST NOT / 错误处理
 

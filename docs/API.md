@@ -7,7 +7,7 @@
 | `topic` | string | 必填，去除多余空白，1–500 字符 |
 | `expected_length` | integer | 500–500000，默认 5000 |
 | `style` | string | 默认“专业、客观、证据驱动” |
-| `output_format` | string | markdown/html/json/text；支持 md/htm/txt 别名 |
+| `output_format` | string | markdown/html(feat. webpage)/feishu/json/text/docx/pdf；支持 md/htm/webpage/飞书/word/txt 别名 |
 | `language` | string | 默认 zh-CN |
 | `output_type` | string | 具体产出形态，默认 research_report |
 | `audience` | string | 目标受众，默认通用专业读者 |
@@ -74,6 +74,9 @@ class SkillResult:
 
 Skill 实现 `name`、`version`、`execute(request)`，经 `SkillRegistry.register()` 注入。远程部署
 时可实现一个 RPC Proxy Skill：序列化同一请求，调用独立服务并反序列化同一结果。
+
+飞书和网页由内置格式器直接支持。DOCX/PDF 必须向 PublishSkill 注入 DocumentRenderer；
+未配置或未返回 `rendered=true` 时发布失败，不会把Markdown中间稿冒充Word/PDF。
 
 调研适配器实现 `SourceRetriever.retrieve(topic, questions, categories)`；research 会分别以
 industry、academic、social_media 单类别调用三次。每个返回项至少应含 id、title、category、url、

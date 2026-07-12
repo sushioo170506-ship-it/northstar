@@ -14,6 +14,11 @@ class ResearchSkill(Skill):
     name = "research"
 
     REQUIRED_CATEGORIES = ("industry", "academic", "social_media")
+    DEFAULT_SOCIAL_PLATFORMS = (
+        "wechat_official_account", "weibo", "zhihu", "xiaohongshu",
+        "bilibili", "xueqiu", "reddit", "hacker_news", "x",
+        "linkedin", "youtube", "bluesky", "mastodon",
+    )
 
     def __init__(
         self,
@@ -70,6 +75,14 @@ class ResearchSkill(Skill):
             category for category in self.REQUIRED_CATEGORIES
             if category not in present_categories
         ]
+        social_platforms = sorted(
+            {
+                source.get("platform")
+                for source in sources
+                if source.get("category") == "social_media"
+                and source.get("platform")
+            }
+        )
         pass_status = {
             category: {
                 "status": (
@@ -101,6 +114,12 @@ class ResearchSkill(Skill):
                 "missing_categories": missing_categories,
                 "external_retriever_used": self.retriever is not None,
                 "passes": pass_status,
+                "requested_social_platforms": list(
+                    request.config.extra.get(
+                        "social_platforms", self.DEFAULT_SOCIAL_PLATFORMS
+                    )
+                ),
+                "present_social_platforms": social_platforms,
             },
             "evidence_gaps": (
                 [f"缺少来源类别：{category}" for category in missing_categories]
@@ -145,6 +164,12 @@ class ResearchSkill(Skill):
                     normalized.get("category", normalized.get("source_type", "unknown"))
                 ).lower()
                 normalized["category"] = aliases.get(category, category)
+                if normalized["category"] == "social_media":
+                    normalized["platform"] = normalized.get(
+                        "platform"
+                    ) or cls._infer_social_platform(
+                        str(normalized.get("url", ""))
+                    )
             else:
                 continue
             key = str(normalized.get("url") or normalized["id"])
@@ -153,6 +178,28 @@ class ResearchSkill(Skill):
             seen.add(key)
             sources.append(normalized)
         return sources
+
+    @staticmethod
+    def _infer_social_platform(url: str) -> str:
+        hosts = {
+            "mp.weixin.qq.com": "wechat_official_account",
+            "weibo.com": "weibo",
+            "zhihu.com": "zhihu",
+            "xiaohongshu.com": "xiaohongshu",
+            "bilibili.com": "bilibili",
+            "xueqiu.com": "xueqiu",
+            "reddit.com": "reddit",
+            "news.ycombinator.com": "hacker_news",
+            "x.com": "x",
+            "twitter.com": "x",
+            "linkedin.com": "linkedin",
+            "youtube.com": "youtube",
+            "bsky.app": "bluesky",
+        }
+        for host, platform in hosts.items():
+            if host in url:
+                return platform
+        return "other_social"
 
     def validate(self, result: SkillResult) -> None:
         super().validate(result)

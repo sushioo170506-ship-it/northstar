@@ -29,6 +29,14 @@ self_contained、raster_exported、第三方候选审查数、待人工审批改
 - require_png=true 但无渲染产物时，必须披露限制，不得生成空占位图。
 - 配置 Mermaid/Vega/Pandoc 后，适配器输出仍须校验标签平衡、资源完整性和渲染成功率。
 
+## 多格式发布
+
+- 飞书：发布飞书兼容 Markdown/块结构，保留正文内联 URL。
+- 网页：输出 HTML；只有图表资源真实内联后才能标记 self_contained=true。
+- Word：必须注入 DocumentRenderer（如经审查的 Pandoc/Word适配器），保存 DOCX payload/URI。
+- PDF：必须注入 DocumentRenderer（如 Typst/Pandoc适配器），保存 PDF payload/URI。
+- renderer 缺失或未返回 `rendered=true` 时，DOCX/PDF发布失败，不得静默改成Markdown。
+
 ## 错误处理
 
 - quality passed=false：失败，退回 quality_gate 指示的最早节点。

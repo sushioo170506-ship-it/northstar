@@ -138,6 +138,15 @@
 - 仅当 `extra.enable_competitive_hypotheses=true` 时生成和校验竞争性假说。
 - 普通行业研究使用研究问题、情景条件和判断失效条件，不为满足模板强行设置假说。
 
+### 输出、来源和复核规则增强
+
+- 大纲新增 percentage，摘要默认约6%且硬上限8%。
+- 新增 feishu、webpage别名和DOCX/PDF DocumentRenderer契约。
+- social_media扩展微信公众号及国内外平台，并增加platform归一化。
+- 风险章节按模型、ETF/基金、产业主题生成专属risk_scope。
+- quality_gate新增章节级inline_source_coverage，文末链接不能替代正文内联。
+- skill_research新增“名称/来源/功能/Stars/协议/结论”Markdown参考表。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

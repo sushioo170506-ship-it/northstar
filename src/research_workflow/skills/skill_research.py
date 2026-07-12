@@ -91,6 +91,7 @@ class SkillResearchSkill(Skill):
             self._adapt(candidate) for candidate in ranked
             if candidate["decision"] == "adapt_allowed"
         ][:limit]
+        reference_table = self._reference_table(ranked)
         payload = {
             "query": {
                 "topic": requirements["topic"],
@@ -102,6 +103,7 @@ class SkillResearchSkill(Skill):
             },
             "candidates": ranked,
             "adapted_skill_specs": adapted,
+            "reference_table": reference_table,
             "live_search_errors": live_errors,
             "policy": {
                 "permissive_licenses": sorted(PERMISSIVE_LICENSES),
@@ -133,6 +135,23 @@ class SkillResearchSkill(Skill):
             "skill_research_report",
             payload["metrics"],
         )
+
+    @staticmethod
+    def _reference_table(candidates: list[dict[str, Any]]) -> str:
+        lines = [
+            "| Skill | 来源 | 功能 | Stars | 协议 | 结论 |",
+            "|---|---|---|---:|---|---|",
+        ]
+        for candidate in candidates:
+            def clean(value: Any) -> str:
+                return str(value if value is not None else "").replace("|", "\\|")
+
+            lines.append(
+                f"| {clean(candidate['name'])} | {clean(candidate['source_url'])} | "
+                f"{clean(candidate['capability'])} | {clean(candidate.get('stars'))} | "
+                f"{clean(candidate['license'])} | {clean(candidate['decision'])} |"
+            )
+        return "\n".join(lines)
 
     @staticmethod
     def _curated_candidates() -> list[dict[str, Any]]:

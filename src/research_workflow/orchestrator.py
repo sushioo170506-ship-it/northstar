@@ -153,14 +153,14 @@ NODES = (
     NodeSpec(
         "quality_gate",
         (
-            "capability_sweep", "skill_research", "requirements_analysis",
+            "capability_sweep", "skill_research", "requirements_analysis", "outline",
             "evidence_governance",
             "data_processing", "material_integration", "visualization",
             "pressure_test", "review",
         ),
         "quality_gate",
         (
-            "capability_sweep", "skill_research", "requirements_analysis",
+            "capability_sweep", "skill_research", "requirements_analysis", "outline",
             "evidence_governance",
             "data_processing", "material_integration", "visualization",
             "pressure_test", "review",
