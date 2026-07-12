@@ -5,7 +5,7 @@
 审计记录。
 
 ```bash
-python -m pip install -e .
+python3 -m pip install -e .
 research-workflow create --topic "生成式人工智能治理" --length 8000 --format markdown
 ```
 
@@ -24,7 +24,7 @@ research-workflow create --topic "生成式人工智能治理" --length 8000 --f
 运行测试：
 
 ```bash
-python -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -v
 ```
 
 项目采用 [MIT License](LICENSE)。内置实现不会访问互联网或编造检索结果；生产部署可通过

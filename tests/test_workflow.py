@@ -108,6 +108,15 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.workflow.run(workflow_id).status, WorkflowStatus.COMPLETED)
         self.assertEqual(self.workflow.state.node(workflow_id, "research")["attempts"], 1)
         self.assertEqual(self.workflow.state.node(workflow_id, "writing")["attempts"], 2)
+        active = self.workflow.context.query(
+            workflow_id, "风险讨论", node_ids={"writing"}, limit=100
+        )
+        active_artifact_ids = {item.metadata["artifact_id"] for item in active}
+        self.assertEqual(len(active_artifact_ids), 1)
+        self.assertEqual(
+            active_artifact_ids,
+            {self.workflow.state.node_artifact(workflow_id, "writing")["id"]},
+        )
 
     def test_formats_are_valid(self) -> None:
         for output_format in ("html", "json", "text"):
@@ -142,6 +151,21 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertTrue(matches)
         self.assertTrue(all(item.node_id == "writing" for item in matches))
+
+    def test_twenty_deterministic_runs_meet_success_threshold(self) -> None:
+        successes = 0
+        for index in range(20):
+            child = ResearchReportOrchestrator(self.root / f"batch-{index}")
+            workflow_id = child.create(
+                {
+                    "topic": f"可靠性样例 {index}",
+                    "expected_length": 500,
+                    "output_format": "markdown",
+                }
+            )
+            if complete(child, workflow_id).status == WorkflowStatus.COMPLETED:
+                successes += 1
+        self.assertGreaterEqual(successes / 20, 0.95)
 
 
 if __name__ == "__main__":

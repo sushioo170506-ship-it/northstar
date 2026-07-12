@@ -214,6 +214,9 @@ class ResearchReportOrchestrator:
                 self.state.set_node(workflow_id, node_id, NodeStatus.INVALIDATED)
             if spec.checkpoint:
                 checkpoints.add(node_id)
+        self.context.deactivate_nodes(
+            workflow_id, {node_id for node_id in affected if not NODE_MAP[node_id].checkpoint}
+        )
         self.state.clear_confirmations(workflow_id, checkpoints)
         self.state.set_workflow_status(workflow_id, WorkflowStatus.RUNNING)
         return affected

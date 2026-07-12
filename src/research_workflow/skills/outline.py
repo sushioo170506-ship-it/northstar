@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 from ..contracts import Skill, TextGenerator
@@ -46,6 +47,6 @@ class OutlineSkill(Skill):
             "sections": sections,
             "total_target_length": sum(item["target_length"] for item in sections),
             "feedback_applied": list(request.feedback),
-            "evidence_checksum_hint": str(hash(evidence)),
+            "evidence_checksum_hint": hashlib.sha256(evidence.encode("utf-8")).hexdigest(),
         }
         return SkillResult(json.dumps(payload, ensure_ascii=False, indent=2), "outline")

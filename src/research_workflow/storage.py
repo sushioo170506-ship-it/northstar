@@ -292,10 +292,22 @@ class SQLiteVectorStore:
                     id TEXT PRIMARY KEY, workflow_id TEXT NOT NULL, node_id TEXT NOT NULL,
                     artifact_type TEXT NOT NULL, content TEXT NOT NULL,
                     vector_json TEXT NOT NULL, metadata_json TEXT NOT NULL,
-                    created_at TEXT NOT NULL
+                    created_at TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1
                 );
-                CREATE INDEX IF NOT EXISTS idx_context_scope
-                    ON context_vectors(workflow_id,node_id,artifact_type);
+                """
+            )
+            columns = {
+                row["name"] for row in db.execute("PRAGMA table_info(context_vectors)").fetchall()
+            }
+            if "active" not in columns:
+                db.execute(
+                    "ALTER TABLE context_vectors ADD COLUMN active INTEGER NOT NULL DEFAULT 1"
+                )
+            db.execute("DROP INDEX IF EXISTS idx_context_scope")
+            db.execute(
+                """
+                CREATE INDEX idx_context_scope
+                ON context_vectors(workflow_id,node_id,artifact_type,active)
                 """
             )
 
@@ -351,8 +363,31 @@ class SQLiteVectorStore:
                  json.dumps(vector), json.dumps(metadata), now)
             )
         with self._connect() as db:
+            db.execute(
+                "UPDATE context_vectors SET active=0 WHERE workflow_id=? AND node_id=?",
+                (workflow_id, node_id),
+            )
             db.executemany(
-                "INSERT OR REPLACE INTO context_vectors VALUES (?,?,?,?,?,?,?,?)", records
+                """
+                INSERT OR REPLACE INTO context_vectors
+                    (id,workflow_id,node_id,artifact_type,content,vector_json,
+                     metadata_json,created_at,active)
+                VALUES (?,?,?,?,?,?,?,?,1)
+                """,
+                records,
+            )
+
+    def deactivate_nodes(self, workflow_id: str, node_ids: set[str]) -> None:
+        if not node_ids:
+            return
+        placeholders = ",".join("?" for _ in node_ids)
+        with self._connect() as db:
+            db.execute(
+                f"""
+                UPDATE context_vectors SET active=0
+                WHERE workflow_id=? AND node_id IN ({placeholders})
+                """,
+                (workflow_id, *sorted(node_ids)),
             )
 
     def query(
@@ -364,7 +399,7 @@ class SQLiteVectorStore:
         artifact_types: set[str] | None = None,
         limit: int = 12,
     ) -> tuple[ContextItem, ...]:
-        clauses = ["workflow_id=?"]
+        clauses = ["workflow_id=?", "active=1"]
         params: list[Any] = [workflow_id]
         if node_ids:
             placeholders = ",".join("?" for _ in node_ids)

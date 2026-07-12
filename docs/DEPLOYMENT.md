@@ -5,9 +5,9 @@
 要求 Python 3.11+，运行时无第三方依赖。
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install -e .
+python3 -m pip install -e .
 research-workflow --help
 ```
 
@@ -34,7 +34,7 @@ API。目录包含用户研究资料，必须启用磁盘加密、最小权限�
 
 ## 运维检查
 
-- 每次发布运行 `python -m unittest discover -s tests -v`。
+- 每次发布运行 `python3 -m unittest discover -s tests -v`。
 - 定期对产物执行 checksum 全量巡检。
 - 监控 failed/running 超时节点、确认等待时长、索引滞后和数据库大小。
 - 仅在备份验证成功后清理历史不可变产物。
