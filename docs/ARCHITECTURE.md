@@ -4,6 +4,9 @@
 
 - 主编排器：固定 DAG、确认门、依赖分析、状态恢复、Skill 注册。
 - 配置中心：`ReportConfig` 校验并冻结主题、篇幅、风格、格式和扩展参数。
+- Profile中心：Quick/Standard/Deep/Regulatory控制确认点和质量阈值。
+- Provider层：CompositeSourceRetriever组合OpenAlex及组织产业/金融/社媒数据源。
+- Renderer层：DocumentRenderer隔离Pandoc/Typst/Word/PDF二进制发布。
 - 关系存储：SQLite WAL 保存工作流、节点运行、输入/输出 ID、分片产物、确认和用户操作。
 - 向量存储：独立 SQLite WAL 数据库保存 2000 字符分片、200 字符重叠、稀疏哈希向量及
   元数据；查询先按 workflow/node/type 精确过滤，再做相似度排序。

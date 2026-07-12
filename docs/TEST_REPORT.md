@@ -6,7 +6,7 @@
 
 ## 结果
 
-24 个自动化测试全部通过，最近一次耗时 8.051 秒：
+28 个自动化测试全部通过，最近一次耗时 8.721 秒：
 
 | 验收项 | 自动化证据 | 结果 |
 |---|---|---|
@@ -34,6 +34,11 @@
 | 主题风险 | ETF报告risk_scope聚焦折溢价、估值、流动性和跟踪误差 | 通过 |
 | 章节内联来源 | 链接只放文末时inline_source_coverage=0并阻断 | 通过 |
 | Skill专业表 | skill_research输出名称、来源、功能、Stars、协议和结论表 | 通过 |
+| 流程Profile | Quick 1次确认、Standard 2次、Deep/Regulatory 4次；自动跳过有审计 | 通过 |
+| 复合Provider | 单一Provider失败不抹掉其他结果，重复URL自动去重 | 通过 |
+| OpenAlex | 论文、DOI、venue、引用量及倒排摘要规范化 | 通过 |
+| 协作评论 | actor评论可查询且不使工作流产物失效 | 通过 |
+| Pandoc适配器 | 缺少可执行文件时明确失败，不伪造DOCX/PDF | 通过 |
 | 可视化 | 生成比较、结构、时间、等级、评分等至少 6 项资产 | 通过 |
 | 修订路由 | 图表反馈精确退回 visualization，不重跑 material_integration | 通过 |
 | 原始链接 | 官方、学术、社媒三类原始 URL 均出现在终稿 | 通过 |

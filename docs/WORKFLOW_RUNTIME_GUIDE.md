@@ -82,6 +82,18 @@ Skill 不能私自更改配置。来源可通过 `update_sources()` 合法替换
 requirements_analysis 开始失效全部后代，用于修复证据红线；topic、篇幅、风格和格式仍需创建新工作流。已实现与
 尚未验证的边界见 6.4。
 
+### 1.5 流程Profile
+
+| Profile | 确认节点 | 质量分 | 高等级证据 | 最少图表 |
+|---|---:|---:|---:|---:|
+| quick | 1 | 22 | 60% | 3 |
+| standard | 2 | 24 | 75% | 4 |
+| deep | 4 | 24 | 80% | 6 |
+| regulatory | 4 | 30 | 90% | 6 |
+
+未启用的确认节点仍以completed和auto_skip_checkpoint审计事件存在。商业、投资和监管调用方
+应在API权限层限制Profile降级。
+
 ## 2. 完整运行流程
 
 ### 2.1 正常时序
@@ -539,7 +551,7 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 2026-07-12 在 Linux 6.12、Python 3.12.3 上验证：
 
-- 24 个测试全部通过；
+- 28 个测试全部通过；
 - 20 个独立离线确定性工作流全部完成：20/20（测试阈值为 ≥95%）；该样本不代表外部模型、
   检索或生产环境 SLA；
 - 105000 字目标端到端完成，最新基线终稿 118558 字（含来源与可视化规范）；
@@ -564,7 +576,7 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 独立临时测量程序在同一环境创建一个全新 data directory，依次执行 create、四次
 run/confirm 和最终 run，再使用 `time.perf_counter()`、`resource.getrusage()`、文件
-`stat()` 采集结果。它不是 24 个 unittest 的计时，也尚未纳入 CI 基准脚本。基线输入包含
+`stat()` 采集结果。它不是 28 个 unittest 的计时，也尚未纳入 CI 基准脚本。基线输入包含
 产业、学术、实景三类可追溯来源：
 
 | 指标 | 结果 |
