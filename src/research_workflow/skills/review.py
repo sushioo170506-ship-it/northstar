@@ -19,10 +19,16 @@ class ReviewSkill(Skill):
     def execute(self, request: SkillRequest) -> SkillResult:
         formatted = request.inputs["formatting"]
         evidence = json.loads(request.inputs["research"])
+        evidence_ledger = json.loads(request.inputs["evidence_governance"])
+        pressure_test = json.loads(request.inputs["pressure_test"])
         if self.generator:
             content = self.generator.generate(
                 system="你是独立质量审核员，不得引入未经证实的新事实。",
-                prompt=f"{REVIEW_PROMPT}\n待审报告：\n{formatted}",
+                prompt=(
+                    f"{REVIEW_PROMPT}\n待审报告：\n{formatted}"
+                    f"\n证据账本：\n{request.inputs['evidence_governance']}"
+                    f"\n压力测试：\n{request.inputs['pressure_test']}"
+                ),
                 max_tokens=max(2000, request.config.expected_length * 2),
             )
             return SkillResult(content, "final_report", {"prompt_version": "1.0"})
@@ -30,6 +36,9 @@ class ReviewSkill(Skill):
         issues: list[str] = []
         if not evidence.get("sources"):
             issues.append("没有可核验来源，报告中的资料缺口标记不得删除")
+        if evidence_ledger.get("red_lines"):
+            issues.append("证据治理发现红线，必须由质量门阻断发布")
+        issues.extend(pressure_test.get("repair_actions", []))
         if request.config.output_format == "markdown" and not re.search(r"^# ", formatted):
             issues.append("缺少一级标题")
         if len(formatted) < request.config.expected_length * 0.75:

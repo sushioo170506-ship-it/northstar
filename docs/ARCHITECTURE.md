@@ -7,7 +7,8 @@
 - 关系存储：SQLite WAL 保存工作流、节点运行、输入/输出 ID、分片产物、确认和用户操作。
 - 向量存储：独立 SQLite WAL 数据库保存 2000 字符分片、200 字符重叠、稀疏哈希向量及
   元数据；查询先按 workflow/node/type 精确过滤，再做相似度排序。
-- 五个功能 Skill：研究、大纲、写作、排版、审核；均是无共享可变状态的标准转换器。
+- 九个功能 Skill：研究、议题树、证据治理、大纲、写作、压力测试、排版、审核、质量门；
+  均是无共享可变状态的标准转换器。
 
 关系库是执行状态的唯一事实来源；向量库只负责相关上下文召回。完整依赖产物通过产物
 ID 从关系库无损读取，向量召回不替代精确依赖，因此不会因 top-k 丢失必要输入。
@@ -15,14 +16,20 @@ ID 从关系库无损读取，向量召回不替代精确依赖，因此不会�
 ## DAG 与影响范围
 
 ```text
-research -> outline -> [确认大纲] -> writing -> [确认初稿]
-   |          |                         |
-   |          +-------------------------+-> formatting -> [审核前确认] -> review
-   +--------------------------------------------------------------------^
+research -> issue_tree -> [确认议题树] -> evidence_governance -> outline
+  -> [确认大纲] -> writing -> pressure_test -> [确认初稿] -> formatting
+  -> [审核前确认] -> review -> quality_gate -> completed
+
+精确依赖补充：
+evidence_governance <- research + issue_tree
+outline             <- research + issue_tree + evidence_governance
+review              <- research + evidence_governance + outline + pressure_test + formatting
+quality_gate        <- evidence_governance + pressure_test + review
 ```
 
-修改节点时，编排器计算传递后代。例如修改 `writing` 只失效 writing、draft_confirmation、
-formatting、pre_review_confirmation、review；research 和 outline 的产物 ID 保持不变。
+修改节点时，编排器计算传递后代。例如修改 `writing` 只失效 writing、pressure_test、
+draft_confirmation、formatting、pre_review_confirmation、review、quality_gate；research、
+issue_tree、evidence_governance 和 outline 的产物 ID 保持不变。
 旧产物不删除，便于审计或版本比较。
 
 ## 一致性与恢复

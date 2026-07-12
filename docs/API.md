@@ -23,8 +23,14 @@ snapshot = orchestrator.state.snapshot(workflow_id)
 report = orchestrator.final_report(workflow_id)
 ```
 
-`run` 返回 `RunOutcome(workflow_id, status, waiting_at, final_artifact_id)`。允许修改的产物节点：
-`research`、`outline`、`writing`、`formatting`、`review`。
+`run` 返回 `RunOutcome(workflow_id, status, waiting_at, final_artifact_id)`。确认节点依次为
+`issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation`、
+`pre_review_confirmation`。允许修改的产物节点：
+`research`、`issue_tree`、`evidence_governance`、`outline`、`writing`、
+`pressure_test`、`formatting`、`review`、`quality_gate`。
+
+质量门触发红线或总分低于 24/35 时，`run` 抛出 `QualityGateRejected`，但评分产物已持久化。
+修改上游问题并重新确认后，可按 DAG 选择性重跑；工作流完成前 `final_report` 拒绝返回内容。
 
 ## Skill 接口
 

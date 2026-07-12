@@ -1,15 +1,15 @@
 # Northstar Research Workflow
 
-可持久化、可恢复、可选择性重跑的研究报告 Skill 工作流。系统包含一个主编排 Skill 和五个
-低耦合功能 Skill，提供三个人工确认门、关系库与向量库混合上下文、十万字级分片处理及完整
-审计记录。
+可持久化、可恢复、可选择性重跑的研究报告 Skill 工作流。系统包含一个主编排 Skill 和九个
+低耦合功能 Skill，提供四个人工确认门、证据治理、独立压力测试、D1–D7 质量阻断、关系库与
+向量库混合上下文、十万字级分片处理及完整审计记录。
 
 ```bash
 python3 -m pip install -e .
 research-workflow create --topic "生成式人工智能治理" --length 8000 --format markdown
 ```
 
-`run` 会依次停在 `outline_confirmation`、`draft_confirmation` 和
+`run` 会依次停在 `issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation` 和
 `pre_review_confirmation`；确认后用同一 workflow ID 继续。
 
 文档：

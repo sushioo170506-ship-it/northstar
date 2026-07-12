@@ -31,16 +31,22 @@ outcome = workflow.run(workflow_id)
 ## 时序与确认
 
 1. `research`
-2. `outline`
-3. `outline_confirmation`（强制人工确认）
-4. `writing`
-5. `draft_confirmation`（强制人工确认）
-6. `formatting`
-7. `pre_review_confirmation`（强制人工确认）
-8. `review`
+2. `issue_tree`
+3. `issue_tree_confirmation`（强制人工确认）
+4. `evidence_governance`
+5. `outline`
+6. `outline_confirmation`（强制人工确认）
+7. `writing`
+8. `pressure_test`
+9. `draft_confirmation`（强制人工确认）
+10. `formatting`
+11. `pre_review_confirmation`（强制人工确认）
+12. `review`
+13. `quality_gate`（D1–D7 与红线发布阻断）
 
 `run()` 在确认点返回 `waiting_confirmation`。调用
 `confirm(workflow_id, checkpoint_id, comment)` 后再次 `run()`。不得跳过确认。
+质量门拒绝时抛出 `QualityGateRejected`，保留评分产物，且终稿不可读取。
 
 ## 参数和产物传递
 
@@ -61,7 +67,7 @@ outcome = workflow.run(workflow_id)
 - 调用前：所有依赖必须为 `completed`，每个输入产物通过 SHA-256 校验。
 - 调用后：内容和产物类型不得为空，结果写入关系库与向量库后才提交节点完成状态。
 - 异常：节点为 `failed` 并持久化错误；重新运行只重试失败节点。
-- 终稿：仅当 `review` 完成且工作流状态为 `completed` 时可读取。
+- 终稿：仅当 `review` 和 `quality_gate` 完成且工作流状态为 `completed` 时可读取。
 
 ## 内置调度 Prompt
 
@@ -69,10 +75,12 @@ outcome = workflow.run(workflow_id)
 你是研究报告主编排器。必须严格依据 workflow_id={workflow_id} 的持久化状态执行：
 1. 只运行依赖已完成且当前未完成的节点；
 2. 所有 Skill 只接收标准 SkillRequest，不读取隐式会话状态；
-3. 在 outline_confirmation、draft_confirmation、pre_review_confirmation 停止并等待人工确认；
+3. 在 issue_tree_confirmation、outline_confirmation、draft_confirmation、
+   pre_review_confirmation 停止并等待人工确认；
 4. 修改 {target_node} 时，仅失效该节点及其 DAG 后代，保留其他有效产物；
 5. 每次调用前按 workflow_id、依赖节点、主题检索上下文，并校验产物 checksum；
-6. 失败时记录错误，恢复后从失败节点继续，禁止重复已完成节点。
+6. quality_gate 触发证据红线或低于阈值时必须阻断发布；
+7. 失败时记录错误，恢复后从失败节点继续，禁止重复已完成节点。
 统一参数：{config_json}
 ```
 

@@ -10,8 +10,8 @@
 系统将研究报告从主题输入到终稿输出拆分为可审计、可确认、可恢复的标准流程，主要解决：
 
 1. 统一主题、篇幅、风格和输出格式，避免各阶段参数漂移；
-2. 将研究、大纲、写作、排版、审核解耦，使 Skill 可独立调用、替换和升级；
-3. 在大纲、初稿、终审前强制人工确认，避免错误自动扩散；
+2. 将研究、议题树、证据治理、大纲、写作、压力测试、排版、审核和质量门解耦；
+3. 在议题树、大纲、初稿、终审前强制人工确认，避免错误自动扩散；
 4. 修改任意产物时只重跑受影响节点，保留无关的有效结果；
 5. 持久化配置、节点状态、产物、反馈和操作记录，支持进程中断后恢复；
 6. 通过精确产物读取管理十万字级必需上下文，并为自定义 Skill 提供辅助向量检索接口。
@@ -32,8 +32,9 @@ ResearchReportOrchestrator
   |-- DAG 调度、状态机、确认门、影响分析
   |-- SkillRegistry -------------------------------+
   |                                                |
-  |   research -> outline -> [大纲确认] -> writing -> [初稿确认]
-  |                                      -> formatting -> [终审前确认] -> review
+  |   research -> issue_tree -> [议题树确认] -> evidence_governance
+  |      -> outline -> [大纲确认] -> writing -> pressure_test -> [初稿确认]
+  |      -> formatting -> [终审前确认] -> review -> quality_gate
   |
   |-- SQLiteStateStore  -> state.db
   |      配置、节点状态、产物分片、确认、用户操作
@@ -82,11 +83,19 @@ create
   |
 research
   |
+issue_tree
+  |
+[issue_tree_confirmation] -- 未确认则暂停
+  |
+evidence_governance
+  |
 outline
   |
 [outline_confirmation] -- 未确认则暂停
   |
 writing
+  |
+pressure_test
   |
 [draft_confirmation] -- 未确认则暂停
   |
@@ -95,6 +104,8 @@ formatting
 [pre_review_confirmation] -- 未确认则暂停
   |
 review
+  |
+quality_gate -- 红线或低于 24/35 则阻断
   |
 completed -> final_report
 ```
@@ -144,13 +155,41 @@ completed -> invalidated -> running（用户修改后）
   - JSON 字段：`topic`、`research_questions`、`sources`、`evidence_gaps`、
     `feedback_applied`；
   - 元数据：来源数量、是否需要外部检索。
-- 后继：outline；同时作为 writing 和 review 的精确依赖。
+- 后继：issue_tree；同时作为 evidence_governance、outline、writing 和 review 的精确依赖。
 
-#### 2.3.2 outline：大纲架构设计
+#### 2.3.2 issue_tree：议题树
+
+- 触发条件：research 已完成。
+- 输入：`inputs["research"]`、topic、针对 issue_tree 的修改意见。
+- 执行逻辑：
+  1. 生成 3–7 个可由证据回答的子问题；
+  2. 每个子问题包含稳定 ID、初始假设、证据需求和状态；
+  3. validate 强制检查子问题数量；
+  4. MECE 完整性由后续人工确认和模型适配器增强。
+- 输出：`artifact_type="issue_tree"`，JSON 包含 main_question、issues、coverage。
+- 后继：`issue_tree_confirmation`。
+
+#### 2.3.3 issue_tree_confirmation 与 evidence_governance
+
+- 确认触发条件：issue_tree 已完成；未确认时工作流暂停。
+- 证据治理触发条件：research、issue_tree 和确认节点均完成。
+- 输入：完整 evidence_pack 与已确认 issue_tree。
+- 执行逻辑：
+  1. 为来源记录主体、类型、发布时间、可追溯性、利益相关性和独立验证；
+  2. 计算来源可追溯率、关键来源数量和独立覆盖率；
+  3. 将一般缺失信息记为 issue，不把“无法验证”直接等同于“虚假”；
+  4. 检测显式编造来源、无法追溯的关键来源、单一利益相关方关键支撑三类红线。
+- 输出：`artifact_type="evidence_ledger"`，包含 sources、issue_coverage、metrics、issues、
+  red_lines。
+- 后继：outline，并作为 writing、pressure_test、review、quality_gate 的精确依赖。
+
+#### 2.3.4 outline：大纲架构设计
 
 - 触发条件：research 已完成。
 - 输入：
   - `inputs["research"]`：完整 evidence_pack；
+  - `inputs["issue_tree"]`：已确认议题树；
+  - `inputs["evidence_governance"]`：证据治理账本；
   - topic、expected_length、style；
   - 针对 outline 的修改意见。
 - 执行逻辑：
@@ -163,7 +202,7 @@ completed -> invalidated -> running（用户修改后）
     `evidence_checksum_hint`。
 - 后继：必须先进入 `outline_confirmation`。
 
-#### 2.3.3 outline_confirmation：大纲确认
+#### 2.3.5 outline_confirmation：大纲确认
 
 - 触发条件：outline 已完成。
 - 输入：workflow_id、可选人工确认意见。
@@ -174,11 +213,14 @@ completed -> invalidated -> running（用户修改后）
 - 输出：没有业务产物，仅有确认记录和节点状态。
 - 后继：writing。
 
-#### 2.3.4 writing：内容撰写
+#### 2.3.6 writing：内容撰写
 
-- 触发条件：research、outline 和 outline_confirmation 均已完成。
+- 触发条件：research、issue_tree、evidence_governance、outline 和 outline_confirmation
+  均已完成。
 - 输入：
   - `inputs["research"]`；
+  - `inputs["issue_tree"]`；
+  - `inputs["evidence_governance"]`；
   - `inputs["outline"]`；
   - expected_length；
   - 针对 writing 的累计修改意见。
@@ -194,16 +236,25 @@ completed -> invalidated -> running（用户修改后）
   - `artifact_type="draft"`；
   - Markdown 结构初稿；
   - 元数据：字符数、章节数、Skill 版本。
-- 后继：`draft_confirmation`。
+- 后继：`pressure_test`。
 
-#### 2.3.5 draft_confirmation：初稿确认
+#### 2.3.7 pressure_test：独立压力测试
+
+- 触发条件：issue_tree、evidence_governance、outline、writing 均已完成。
+- 输入：初稿、议题树、大纲和证据治理账本。
+- 执行逻辑：独立执行逻辑、证据、最强反方论证、完整性四项审计；不把审查内容混入正文。
+- 输出：`artifact_type="pressure_test"`，包含 overall_confidence、四类 audit、
+  repair_actions、红线和元数据。
+- 后继：`draft_confirmation`。用户确认时可同时审阅初稿和独立弱点报告。
+
+#### 2.3.8 draft_confirmation：初稿确认
 
 - 触发条件：writing 已完成。
 - 输入/输出及确认规则与 outline_confirmation 相同。
 - 业务含义：用户确认报告内容方向后才允许排版，减少在错误内容上的格式化成本。
 - 后继：formatting。
 
-#### 2.3.6 formatting：格式排版与风格统一
+#### 2.3.9 formatting：格式排版与风格统一
 
 - 触发条件：writing、draft_confirmation 已完成。
 - 输入：
@@ -224,18 +275,20 @@ completed -> invalidated -> running（用户修改后）
   - 元数据：格式和风格。
 - 后继：`pre_review_confirmation`。
 
-#### 2.3.7 pre_review_confirmation：终稿审核前确认
+#### 2.3.10 pre_review_confirmation：终稿审核前确认
 
 - 触发条件：formatting 已完成。
 - 业务含义：用户确认排版后的完整候选稿，再执行最终质量审核。
 - 输入/输出及确认规则与其他确认节点相同。
 - 后继：review。
 
-#### 2.3.8 review：质量审核与润色
+#### 2.3.11 review：质量审核与润色
 
-- 触发条件：research、outline、formatting、pre_review_confirmation 均已完成。
+- 触发条件：research、evidence_governance、outline、pressure_test、formatting、
+  pre_review_confirmation 均已完成。
 - 输入：
-  - `inputs["research"]`、`inputs["outline"]`、`inputs["formatting"]`；
+  - `inputs["research"]`、`inputs["evidence_governance"]`、`inputs["outline"]`、
+    `inputs["pressure_test"]`、`inputs["formatting"]`；
   - expected_length、output_format；
   - 针对 review 的修改意见。
 - 执行逻辑：
@@ -250,10 +303,23 @@ completed -> invalidated -> running（用户修改后）
   - `artifact_type="final_report"`；
   - 终稿正文；
   - 元数据：`quality_passed`、`issues`、`checks`。
-- 完成条件：产物保存并建立索引，工作流随后进入 `completed`。
+- 后继：quality_gate。
 
-注意：当前实现即使存在可披露的质量问题，也会生成带问题元数据的终稿，不会自动阻断发布。
-如业务要求“审核不通过不得完成”，应增加可配置质量门。
+#### 2.3.12 quality_gate：D1–D7 发布质量门
+
+- 触发条件：evidence_governance、pressure_test、review 均已完成。
+- 输入：证据账本、独立压力测试和终稿。
+- 执行逻辑：
+  1. 汇总证据红线；
+  2. 对事实准确性、逻辑严密性、事实观点分离、结构完整性、So What、边界感、量级感评分；
+  3. 总分满分 35，默认通过线为 24；
+  4. 任一红线或总分不足时作出 `block_release` 决定。
+- 输出：`artifact_type="quality_gate"`，包含 passed、total_score、D1–D7、red_lines、
+  problems、required_actions 和 decision。
+- 通过：节点和工作流 completed，终稿可读取。
+- 拒绝：评估产物仍被保存，节点和工作流 failed，抛出 `QualityGateRejected`，终稿读取被拒绝。
+
+ReviewSkill 自身仍会生成 issues 元数据；最终发布权由 quality_gate 决定。
 
 ## 3. 功能模块与交互规则
 
@@ -289,7 +355,7 @@ SkillResult:
 Skill 必须是显式输入到不可变输出的转换器。远程服务可以实现 Proxy Skill，通过 RPC 传输相同
 结构；编排器无需了解供应商、模型或部署方式。
 
-编排器会把最多 16 个相关向量分片放入 `SkillRequest.context`。当前五个内置离线 Skill
+编排器会把最多 16 个相关向量分片放入 `SkillRequest.context`。当前九个内置离线 Skill
 均只消费 `inputs` 精确依赖，尚未读取 context；该字段目前供自定义/远程 Skill 使用。
 
 ### 3.3 TextGenerator
@@ -315,7 +381,7 @@ Skill 必须是显式输入到不可变输出的转换器。远程服务可以�
 | `artifacts` | 产物类型、checksum、元数据、分片数 |
 | `artifact_chunks` | 16384 字符无损分片 |
 | `user_operations` | create/confirm/modify 操作审计 |
-| `confirmations` | 三个确认节点的批准和意见 |
+| `confirmations` | 四个确认节点的批准和意见 |
 
 产物读取时按分片序号重组，并重新计算 SHA-256；不一致立即报错。历史产物不物理删除。
 当前没有历史产物列举 API；节点失效后 `output_artifact_id` 会清空，若要读取旧版本须已知
@@ -346,7 +412,7 @@ Skill 尚未消费召回结果，因此十万字测试主要验证的是关系�
 标准化示范模板，当前运行路径没有 import 或执行它。模板描述的约束包括：
 
 - 只运行依赖已完成的节点；
-- 三个确认点必须暂停；
+- 四个确认点必须暂停；
 - 修改时仅失效 DAG 后代；
 - 调用前校验上下文和 checksum；
 - 失败后从失败节点恢复；
@@ -371,10 +437,14 @@ CLI 是薄适配层，不保存会话状态；所有恢复均依赖显式 workfl
 | 修改目标 | 主要失效范围 |
 |---|---|
 | research | 全部后续节点和确认 |
-| outline | outline 及其全部后代；保留 research |
-| writing | writing、初稿确认、formatting、终审前确认、review |
-| formatting | formatting、终审前确认、review |
-| review | 仅 review |
+| issue_tree | 议题树及全部后代；保留 research |
+| evidence_governance | 证据治理及下游；保留 research、issue_tree 和确认 |
+| outline | outline 及其全部后代；保留上游证据成果 |
+| writing | writing、pressure_test、初稿确认、formatting、终审前确认、review、quality_gate |
+| pressure_test | pressure_test、初稿确认、review、quality_gate；不重跑 writing |
+| formatting | formatting、终审前确认、review、quality_gate |
+| review | review、quality_gate |
+| quality_gate | 仅 quality_gate |
 
 修改确认节点本身不允许；用户应修改产生业务产物的节点。
 
@@ -425,6 +495,7 @@ outbox/修复任务保证跨存储一致性，并提供安全的历史清理策�
 | checksum 不一致 | 读取产物时立即抛出 ValueError |
 | 非等待状态确认 | confirm 拒绝并抛出 ValueError |
 | 非法修改目标/空反馈 | modify 拒绝并抛出 ValueError |
+| 质量门红线/低分 | 保存评分产物，节点和工作流 failed，抛出 QualityGateRejected |
 | 终稿尚未完成 | final_report 拒绝读取 |
 
 异常不会被静默吞掉。CLI 对已知业务异常返回 2；未预期的系统异常保留 Python traceback。
@@ -487,7 +558,7 @@ duration_ms, error_type, retryable, trace_id, actor_id
 | 确认长期等待 | waiting_confirmation 超过业务时限 | P2/业务提醒 |
 | 数据库容量 | 持久卷使用率 >70%/85% | P2/P1 |
 | 模型限流 | 429 比例或供应商错误率超阈值 | P2 |
-| 质量不通过 | quality_passed=false | P2/发布阻断候选 |
+| 质量门拒绝 | quality_gate failed 或触发红线 | P1/发布阻断 |
 | 成本异常 | 单工作流 token/费用超过预算 | P2 |
 
 告警应发送到组织现有监控系统，并附 workflow/node/trace ID，不附报告全文。
@@ -575,9 +646,9 @@ SQLite page、WAL checkpoint、操作系统缓存和历史版本影响。
    - 风险：临时网络错误需要人工恢复；外部调用可能长期挂起。
    - 优化：错误分类、节点超时、指数退避、最大次数、死信队列。
 
-3. **质量问题不阻断完成**
-   - 风险：`quality_passed=false` 时工作流仍 completed。
-   - 优化：增加 configurable quality gate，支持阻断、人工豁免和再次修订。
+3. **质量门评分仍是启发式规则**
+   - 风险：已能阻断红线和低分报告，但 D1–D7 离线评分尚未通过真实人工标注集校准。
+   - 优化：建立黄金评测集、双评审一致性指标、分场景阈值和受审计的人工豁免流程。
 
 4. **检索不是实际联网检索**
    - 风险：未提供 sources 时只能标记资料缺口，不能自动满足全面研究要求。

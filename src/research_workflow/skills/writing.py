@@ -18,12 +18,17 @@ class WritingSkill(Skill):
     def execute(self, request: SkillRequest) -> SkillResult:
         outline_text = request.inputs["outline"]
         evidence_text = request.inputs["research"]
+        issue_tree_text = request.inputs["issue_tree"]
+        evidence_ledger_text = request.inputs["evidence_governance"]
         prompt = WRITING_PROMPT.format(
             topic=request.config.topic,
             expected_length=request.config.expected_length,
         )
         if self.generator:
-            prompt += f"\n已确认大纲：\n{outline_text}\n证据包：\n{evidence_text}"
+            prompt += (
+                f"\n已确认大纲：\n{outline_text}\n议题树：\n{issue_tree_text}"
+                f"\n证据包：\n{evidence_text}\n证据账本：\n{evidence_ledger_text}"
+            )
             content = self.generator.generate(
                 system="你是证据驱动的研究报告作者。", prompt=prompt,
                 max_tokens=max(2000, request.config.expected_length * 2),
@@ -32,7 +37,15 @@ class WritingSkill(Skill):
 
         outline = json.loads(outline_text)
         evidence = json.loads(evidence_text)
-        source_ids = [source["id"] for source in evidence.get("sources", [])]
+        evidence_ledger = json.loads(evidence_ledger_text)
+        governed_ids = {
+            source["id"] for source in evidence_ledger.get("sources", [])
+            if source.get("traceable")
+        }
+        source_ids = [
+            source["id"] for source in evidence.get("sources", [])
+            if source["id"] in governed_ids
+        ]
         citation = f"（资料：{source_ids[0]}）" if source_ids else "（资料缺口：待检索）"
         parts = [f"# {outline['title']}\n"]
         for section in outline["sections"]:

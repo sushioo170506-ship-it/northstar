@@ -14,7 +14,17 @@ from .models import (
     SkillRequest,
     WorkflowStatus,
 )
-from .skills import FormattingSkill, OutlineSkill, ResearchSkill, ReviewSkill, WritingSkill
+from .skills import (
+    EvidenceGovernanceSkill,
+    FormattingSkill,
+    IssueTreeSkill,
+    OutlineSkill,
+    PressureTestSkill,
+    QualityGateSkill,
+    ResearchSkill,
+    ReviewSkill,
+    WritingSkill,
+)
 from .storage import SQLiteStateStore, SQLiteVectorStore
 
 
@@ -25,26 +35,61 @@ class NodeSpec:
     skill: str | None = None
     input_nodes: tuple[str, ...] = ()
     checkpoint: bool = False
+    quality_gate: bool = False
 
 
 NODES = (
     NodeSpec("research", (), "research"),
-    NodeSpec("outline", ("research",), "outline", ("research",)),
+    NodeSpec("issue_tree", ("research",), "issue_tree", ("research",)),
+    NodeSpec("issue_tree_confirmation", ("issue_tree",), checkpoint=True),
+    NodeSpec(
+        "evidence_governance",
+        ("research", "issue_tree", "issue_tree_confirmation"),
+        "evidence_governance",
+        ("research", "issue_tree"),
+    ),
+    NodeSpec(
+        "outline",
+        ("research", "issue_tree", "evidence_governance"),
+        "outline",
+        ("research", "issue_tree", "evidence_governance"),
+    ),
     NodeSpec("outline_confirmation", ("outline",), checkpoint=True),
     NodeSpec(
-        "writing", ("research", "outline", "outline_confirmation"), "writing",
-        ("research", "outline"),
+        "writing",
+        (
+            "research", "issue_tree", "evidence_governance", "outline",
+            "outline_confirmation",
+        ),
+        "writing",
+        ("research", "issue_tree", "evidence_governance", "outline"),
     ),
-    NodeSpec("draft_confirmation", ("writing",), checkpoint=True),
+    NodeSpec(
+        "pressure_test",
+        ("issue_tree", "evidence_governance", "outline", "writing"),
+        "pressure_test",
+        ("issue_tree", "evidence_governance", "outline", "writing"),
+    ),
+    NodeSpec("draft_confirmation", ("writing", "pressure_test"), checkpoint=True),
     NodeSpec(
         "formatting", ("writing", "draft_confirmation"), "formatting", ("writing",)
     ),
     NodeSpec("pre_review_confirmation", ("formatting",), checkpoint=True),
     NodeSpec(
         "review",
-        ("research", "outline", "formatting", "pre_review_confirmation"),
+        (
+            "research", "evidence_governance", "outline", "pressure_test",
+            "formatting", "pre_review_confirmation",
+        ),
         "review",
-        ("research", "outline", "formatting"),
+        ("research", "evidence_governance", "outline", "pressure_test", "formatting"),
+    ),
+    NodeSpec(
+        "quality_gate",
+        ("evidence_governance", "pressure_test", "review"),
+        "quality_gate",
+        ("evidence_governance", "pressure_test", "review"),
+        quality_gate=True,
     ),
 )
 NODE_MAP = {node.id: node for node in NODES}
@@ -53,7 +98,9 @@ NODE_MAP = {node.id: node for node in NODES}
 def default_registry() -> SkillRegistry:
     registry = SkillRegistry()
     for skill in (
-        ResearchSkill(), OutlineSkill(), WritingSkill(), FormattingSkill(), ReviewSkill()
+        ResearchSkill(), IssueTreeSkill(), EvidenceGovernanceSkill(), OutlineSkill(),
+        WritingSkill(), PressureTestSkill(), FormattingSkill(), ReviewSkill(),
+        QualityGateSkill(),
     ):
         registry.register(skill)
     return registry
@@ -109,6 +156,18 @@ class ResearchReportOrchestrator:
                 )
                 self.state.set_workflow_status(workflow_id, WorkflowStatus.FAILED)
                 raise
+            if spec.quality_gate:
+                gate_artifact = self.state.artifact(artifact_id)
+                if not gate_artifact["metadata"].get("quality_passed", False):
+                    score = gate_artifact["metadata"].get("total_score", "unknown")
+                    error = f"质量门拒绝发布，总分: {score}"
+                    self.state.set_node(
+                        workflow_id, spec.id, NodeStatus.FAILED,
+                        inputs=self._input_artifact_ids(workflow_id, spec),
+                        output_artifact_id=artifact_id, error=error,
+                    )
+                    self.state.set_workflow_status(workflow_id, WorkflowStatus.FAILED)
+                    raise QualityGateRejected(error)
             self.state.set_node(
                 workflow_id, spec.id, NodeStatus.COMPLETED,
                 inputs=self._input_artifact_ids(workflow_id, spec),
@@ -240,3 +299,7 @@ class ResearchReportOrchestrator:
         if not artifact or self.state.workflow_status(workflow_id) != WorkflowStatus.COMPLETED:
             raise ValueError("工作流尚未生成终稿")
         return artifact["content"]
+
+
+class QualityGateRejected(RuntimeError):
+    """Raised after persisting a quality decision that blocks release."""

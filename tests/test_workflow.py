@@ -6,10 +6,11 @@ import unittest
 from pathlib import Path
 
 from research_workflow.models import NodeStatus, WorkflowStatus
-from research_workflow.orchestrator import ResearchReportOrchestrator
+from research_workflow.orchestrator import QualityGateRejected, ResearchReportOrchestrator
 
 
 CHECKPOINTS = (
+    "issue_tree_confirmation",
     "outline_confirmation",
     "draft_confirmation",
     "pre_review_confirmation",
@@ -62,9 +63,12 @@ class WorkflowTests(unittest.TestCase):
     def test_checkpoints_resume_and_final_output(self) -> None:
         workflow_id = self.create()
         first = self.workflow.run(workflow_id)
-        self.assertEqual(first.waiting_at, "outline_confirmation")
+        self.assertEqual(first.waiting_at, "issue_tree_confirmation")
 
         reloaded = ResearchReportOrchestrator(self.root)
+        reloaded.confirm(workflow_id, "issue_tree_confirmation")
+        issue_tree = reloaded.run(workflow_id)
+        self.assertEqual(issue_tree.waiting_at, "outline_confirmation")
         reloaded.confirm(workflow_id, "outline_confirmation")
         second = reloaded.run(workflow_id)
         self.assertEqual(second.waiting_at, "draft_confirmation")
@@ -77,6 +81,11 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(final.status, WorkflowStatus.COMPLETED)
         self.assertIn("# 生成式人工智能治理研究", reloaded.final_report(workflow_id))
         self.assertEqual(reloaded.state.node(workflow_id, "research")["attempts"], 1)
+        self.assertEqual(
+            reloaded.state.node(workflow_id, "quality_gate")["status"], NodeStatus.COMPLETED
+        )
+        gate = reloaded.state.node_artifact(workflow_id, "quality_gate")
+        self.assertTrue(json.loads(gate["content"])["passed"])
 
     def test_modification_only_reruns_descendants(self) -> None:
         workflow_id = self.create()
@@ -87,7 +96,9 @@ class WorkflowTests(unittest.TestCase):
         affected = self.workflow.modify(workflow_id, "writing", "加强风险讨论")
         self.assertNotIn("research", affected)
         self.assertNotIn("outline", affected)
+        self.assertIn("pressure_test", affected)
         self.assertIn("review", affected)
+        self.assertIn("quality_gate", affected)
         self.assertEqual(
             self.workflow.state.node(workflow_id, "writing")["status"],
             NodeStatus.INVALIDATED,
@@ -151,6 +162,39 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertTrue(matches)
         self.assertTrue(all(item.node_id == "writing" for item in matches))
+
+    def test_evidence_red_line_blocks_release(self) -> None:
+        workflow_id = self.create(
+            extra={
+                "sources": [
+                    {
+                        "id": "BAD-1",
+                        "title": "虚构材料",
+                        "content": "不可用于决策",
+                        "critical": True,
+                        "fabricated": True,
+                    }
+                ]
+            }
+        )
+        for checkpoint in CHECKPOINTS:
+            outcome = self.workflow.run(workflow_id)
+            self.assertEqual(outcome.waiting_at, checkpoint)
+            self.workflow.confirm(workflow_id, checkpoint)
+        with self.assertRaises(QualityGateRejected):
+            self.workflow.run(workflow_id)
+        self.assertEqual(
+            self.workflow.state.workflow_status(workflow_id), WorkflowStatus.FAILED
+        )
+        gate_node = self.workflow.state.node(workflow_id, "quality_gate")
+        self.assertEqual(gate_node["status"], NodeStatus.FAILED)
+        gate = self.workflow.state.artifact(gate_node["output_artifact_id"])
+        decision = json.loads(gate["content"])
+        self.assertFalse(decision["passed"])
+        self.assertEqual(decision["decision"], "block_release")
+        self.assertTrue(decision["red_lines"])
+        with self.assertRaises(ValueError):
+            self.workflow.final_report(workflow_id)
 
     def test_twenty_deterministic_runs_meet_success_threshold(self) -> None:
         successes = 0
