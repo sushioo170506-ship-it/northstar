@@ -539,7 +539,7 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 2026-07-12 在 Linux 6.12、Python 3.12.3 上验证：
 
-- 16 个测试全部通过；
+- 17 个测试全部通过；
 - 20 个独立离线确定性工作流全部完成：20/20（测试阈值为 ≥95%）；该样本不代表外部模型、
   检索或生产环境 SLA；
 - 105000 字目标端到端完成，最新基线终稿 118558 字（含来源与可视化规范）；
@@ -564,20 +564,21 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 独立临时测量程序在同一环境创建一个全新 data directory，依次执行 create、四次
 run/confirm 和最终 run，再使用 `time.perf_counter()`、`resource.getrusage()`、文件
-`stat()` 采集结果。它不是 16 个 unittest 的计时，也尚未纳入 CI 基准脚本。基线输入包含
+`stat()` 采集结果。它不是 17 个 unittest 的计时，也尚未纳入 CI 基准脚本。基线输入包含
 产业、学术、实景三类可追溯来源：
 
 | 指标 | 结果 |
 |---|---:|
 | 目标篇幅 | 105000 字符 |
 | 最终报告 | 118558 字符 |
-| 端到端处理耗时 | 0.8479 秒 |
-| 峰值 RSS | 35508 KiB（约 34.7 MiB） |
-| state.db 文件族（含 WAL/SHM） | 2026400 bytes（约 1.93 MiB） |
-| vectors.db 文件族（含 WAL/SHM） | 2908112 bytes（约 2.77 MiB） |
+| 端到端处理耗时 | 0.8664 秒 |
+| 峰值 RSS | 38408 KiB（约 37.5 MiB） |
+| state.db 文件族（含 WAL/SHM） | 1772920 bytes（约 1.69 MiB） |
+| vectors.db 文件族（含 WAL/SHM） | 2973768 bytes（约 2.84 MiB） |
 | 确认节点 | 4 个，全部按序命中 |
 | 内置 Skill | 16，全部完成 |
 | 外部集成目录 | 11，全部遍历 |
+| skill_research 候选/草案 | 11 / 3 |
 | Claim | 3 |
 | 可视化资产 | 7 |
 | D1–D7 质量分 | 33.0/35，通过 |
