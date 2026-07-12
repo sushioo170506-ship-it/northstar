@@ -14,13 +14,13 @@ version: 1.0.0
 ## 输入与输出
 
 - WHEN：quality_gate=completed 且 passed=true。
-- INPUT：review、quality_gate、visualization、capability_sweep。
+- INPUT：review、quality_gate、visualization、capability_sweep、skill_research。
 - OUTPUT：`published_report`，正文保持不变；metadata.publish_manifest 描述交付状态。
 
 ## 发布清单
 
 必须记录：目标格式、字符数、可视化数量、使用/未配置的 Mermaid/Vega/Pandoc 渲染器、
-self_contained、raster_exported 和 limitations。
+self_contained、raster_exported、第三方候选审查数、待人工审批改造数和 limitations。
 
 ## HTML / SVG / PNG 规则
 

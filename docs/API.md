@@ -32,7 +32,7 @@ report = orchestrator.final_report(workflow_id)
 `run` 返回 `RunOutcome(workflow_id, status, waiting_at, final_artifact_id)`。确认节点依次为
 `issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation`、
 `pre_review_confirmation`。允许修改的产物节点：
-`capability_sweep`、`requirements_analysis`、`issue_tree`、`outline`、`research`、
+`capability_sweep`、`requirements_analysis`、`skill_research`、`issue_tree`、`outline`、`research`、
 `evidence_governance`、`data_processing`、`material_integration`、`visualization`、`writing`、
 `pressure_test`、`formatting`、`review`、`quality_gate`、`publish`。
 
@@ -41,6 +41,11 @@ report = orchestrator.final_report(workflow_id)
 `QualityGateRejected`，但评分产物已持久化。
 修改上游问题并重新确认后，可按 DAG 选择性重跑；工作流完成前 `final_report` 拒绝返回内容。
 工作流完成后 `final_report` 读取 `publish` 的 `published_report`，而不是未过门的 review 候选稿。
+
+`skill_research` 默认使用已核验目录。设置 `extra.live_skill_research=true` 后追加 GitHub
+Search API 实时检索；`extra.skill_candidates` 可注入 OpenClaw Hub 或其他仓库候选，每项必须
+提供 name、source_url、author、license、version、channel。改造结果仅生成
+`pending_human_review` 规范，不会在同一工作流动态执行远程代码。
 
 ## Skill 接口
 

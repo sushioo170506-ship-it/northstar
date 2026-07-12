@@ -19,35 +19,35 @@
 
 ## 自研 Skill 变更
 
-### research-report-orchestrator 1.0.0
+### research_report_orchestrator 1.0.0
 
 - 新增固定 DAG、三个人工确认门、全局配置持久化。
 - 新增节点输入/输出/尝试/错误状态和用户操作审计。
 - 新增传递后代分析、选择性失效、断点恢复和 checksum 校验。
 
-### topic-research 1.0.0
+### research 1.0.0
 
 - 新增主题五维拆解、用户来源标准化、资料缺口标记。
 - 新增可替换 `TextGenerator` 边界；离线模式禁止虚构来源。
 
-### outline-design 1.0.0
+### outline 1.0.0
 
 - 新增章节稳定 ID、篇幅预算、论证目的和证据需求。
 
-### content-writing 1.0.0
+### writing 1.0.0
 
 - 新增按章节增量写作、来源/资料缺口标记和用户反馈应用。
 - 支持 500000 字配置上限，避免依赖单次模型上下文。
 
-### format-style 1.0.0
+### formatting 1.0.0
 
 - 新增 Markdown、HTML、JSON、纯文本输出和格式别名。
 
-### quality-review 1.0.0
+### review 1.0.0
 
 - 新增长度、标题、来源和格式检查；审核元数据与终稿分离。
 
-### issue-tree 1.0.0
+### issue_tree 1.0.0
 
 - 新增 3–7 个可证据回答的子问题、假设和证据需求。
 - 新增强制 `issue_tree_confirmation` 人工确认节点。
@@ -62,17 +62,17 @@
 - 新增逻辑、证据、反方论证、完整性四类独立审计和修复清单。
 - 压力测试作为独立产物，不将自我审查混入初稿。
 
-### quality-gate 1.0.0
+### quality_gate 1.0.0
 
 - 新增 D1–D7 共 35 分评分，默认 24 分通过线。
 - 新增红线和低分发布阻断；拒绝结果持久化并抛出 `QualityGateRejected`。
 
-### requirements-analysis 1.0.0
+### requirements_analysis 1.0.0
 
 - 新增产出形态、主题、文风、受众、篇幅、格式、边界、资料和前置思考九类需求抽取。
 - ReportConfig 新增 output_type、audience、content_boundaries、prior_thoughts。
 
-### material-integration 1.0.0
+### material_integration 1.0.0
 
 - 新增来源到最终大纲章节的 issue_id 映射和素材挂载覆盖率。
 - 每项素材保留来源类别、原始 URL、正文和预期用途。
@@ -84,24 +84,24 @@
 
 ### 既有 Skill 标准流程升级
 
-- issue-tree 改为消费需求简报，增加二级问题、必要性、价值和排除项。
+- issue_tree 改为消费需求简报，增加二级问题、必要性、价值和排除项。
 - outline 移至调研前并绑定最终议题树及需求对齐信息。
 - research 移至大纲确认后，新增 SourceRetriever 和三类来源覆盖摘要。
 - evidence-governance 新增原始链接及来源类别覆盖率。
 - writing 新增章节素材、原始 URL 引用和可视化嵌入。
-- pressure-test/review/quality-gate 新增三类来源、URL、素材、可视化和需求边界检查。
+- pressure_test/review/quality_gate 新增三类来源、URL、素材、可视化和需求边界检查。
 - research/evidence-governance/pressure-test 的模型输出改为辅助分析，确定性来源指标和红线
   不能被模型 JSON 覆盖。
-- quality-gate 根据 issue_ids 重算素材挂载率，并硬性检查可视化和正文篇幅上下限。
+- quality_gate 根据 issue_ids 重算素材挂载率，并硬性检查可视化和正文篇幅上下限。
 - orchestrator 新增加权关键词 `request_revision` 精确退回规则，处理混合修改意图。
 - 所有 SKILL.md frontmatter `name` 与 Python `Skill.name`/DAG node 统一，消除双轨命名。
 
-### capability-sweep 1.0.0
+### capability_sweep 1.0.0
 
 - 新增每轮内置 Skill 和外部集成目录全量遍历。
 - 未配置/禁用能力必须结构化记录状态和原因，禁止静默跳过。
 
-### data-processing 1.0.0
+### data_processing 1.0.0
 
 - 新增 claim ledger、数字提取、A+/A/B/C/D 分级、冲突与三角验证。
 - 新增仅在 5–10 候选、4–6 锚定维度齐全时执行的数据评分；否则 not_applicable。
@@ -118,6 +118,18 @@
   Research 集成的元数据与适配边界。
 - 未复制第三方源码；星数和许可证快照见 `docs/OPEN_SOURCE_SKILL_CATALOG.md`。
 - official 类别兼容迁移为 industry，与 academic、social_media 构成三支柱。
+
+### skill_research 1.0.0
+
+- 新增按用户需求检索 GitHub、OpenClaw Hub 和结构化外部仓库候选的元技能。
+- 新增 MIT/MIT-0/Apache-2.0/BSD 自动允许、GPL 外部进程、NC/专有/未知拒绝策略。
+- 新增标准化二次改造草案，强制包含原作者、来源 URL、版本、许可证和逐项修改日志。
+- 所有动态候选安装状态为 pending_human_review，禁止同一运行内执行远程代码。
+
+### Skill 清单统一
+
+- 目录名、frontmatter name、Python Skill.name 和 DAG node 全部使用 canonical underscore 名称。
+- 维护口径统一为 1 个主编排 Skill + 16 个可执行 Skill = 17 个 SKILL.md。
 
 ## 存储实现
 

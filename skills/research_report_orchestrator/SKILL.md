@@ -1,5 +1,5 @@
 ---
-name: research-report-orchestrator
+name: research_report_orchestrator
 description: 持久化编排研究报告的检索、大纲、撰写、排版和审核流程，支持人工确认与断点续改。
 license: MIT
 version: 1.0.0
@@ -39,19 +39,20 @@ outcome = workflow.run(workflow_id)
 
 1. `capability_sweep`：遍历全部内置 Skill 和外部集成目录
 2. `requirements_analysis`
-3. `issue_tree` → `issue_tree_confirmation`
-4. `outline` → `outline_confirmation`
-5. `research`：产业、学术、实景/社媒三 pass
-6. `evidence_governance`
-7. `data_processing`：claim ledger、交叉验证、可信度、条件评分
-8. `material_integration`
-9. `visualization`：6–10 项可视化规范
-10. `writing`
-11. `pressure_test` → `draft_confirmation`
-12. `formatting` → `pre_review_confirmation`
-13. `review`
-14. `quality_gate`
-15. `publish`
+3. `skill_research`：第三方 Skill 检索、许可筛选、适配草案和溯源
+4. `issue_tree` → `issue_tree_confirmation`
+5. `outline` → `outline_confirmation`
+6. `research`：产业、学术、实景/社媒三 pass
+7. `evidence_governance`
+8. `data_processing`：claim ledger、交叉验证、可信度、条件评分
+9. `material_integration`
+10. `visualization`：6–10 项可视化规范
+11. `writing`
+12. `pressure_test` → `draft_confirmation`
+13. `formatting` → `pre_review_confirmation`
+14. `review`
+15. `quality_gate`
+16. `publish`
 
 `run()` 在确认点返回 `waiting_confirmation`。调用
 `confirm(workflow_id, checkpoint_id, comment)` 后再次 `run()`。不得跳过确认。
@@ -59,7 +60,7 @@ outcome = workflow.run(workflow_id)
 
 ## 遍历规则
 
-- 15 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
+- 16 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
 - 外部集成先由 capability_sweep 全量遍历；已配置者交给对应节点调用，未配置者记录
   `reviewed_not_configured` 和原因。禁止静默跳过。
 - 条件能力仍必须执行其包装 Skill：不适用时输出结构化 `not_applicable`，不得伪造结果。
@@ -69,6 +70,7 @@ outcome = workflow.run(workflow_id)
 
 | 阶段 | 卡口 | 失败退回 |
 |---|---|---|
+| Skill 研究 | 来源、作者、版本、许可证齐全；未知许可拒绝 | skill_research |
 | 议题树 | 3–7 个必要、可证伪、可行动问题 | issue_tree |
 | 大纲 | 核心判断、章节结论、锚点、证伪条件齐全 | outline |
 | 调研 | industry/academic/social_media 三 pass 均有记录 | research |

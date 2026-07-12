@@ -25,7 +25,7 @@ version: 1.0.0
 ## WHEN / 边界
 
 - WHEN：research 完成；不得自行联网补来源。
-- 只治理 source provenance，不提炼论断、不评分、不写正文；论断级工作属于 data-processing。
+- 只治理 source provenance，不提炼论断、不评分、不写正文；论断级工作属于 data_processing。
 
 ## 治理规则
 

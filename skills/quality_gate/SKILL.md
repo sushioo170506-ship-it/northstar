@@ -9,7 +9,7 @@ version: 1.0.0
 
 实现：`research_workflow.skills.quality_gate.QualityGateSkill`。
 
-输入 capability_sweep、requirements_analysis、review、evidence_governance、data_processing、
+输入 capability_sweep、skill_research、requirements_analysis、review、evidence_governance、data_processing、
 material_integration、visualization、pressure_test，输出
 `artifact_type="quality_gate"`，包含：
 
@@ -30,6 +30,7 @@ material_integration、visualization、pressure_test，输出
 ## 唯一硬阻断规则
 
 - 能力目录未完整遍历；
+- 第三方候选或改造草案缺少来源、作者、版本、许可证、渠道或修改记录；
 - 三支柱缺失、链接覆盖<100%、A+/A/B 证据占比<80%；
 - 关键 claim 未获两个独立来源、claim 冲突未解决或未映射议题；
 - 素材严格挂载率<100%、可视化少于 6 项；

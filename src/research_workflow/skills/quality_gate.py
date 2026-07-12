@@ -33,6 +33,7 @@ class QualityGateSkill(Skill):
     def execute(self, request: SkillRequest) -> SkillResult:
         final_report = request.inputs["review"]
         capability = json.loads(request.inputs["capability_sweep"])
+        skill_research = json.loads(request.inputs["skill_research"])
         requirements = json.loads(request.inputs["requirements_analysis"])
         evidence_text = request.inputs["evidence_governance"]
         processed = json.loads(request.inputs["data_processing"])
@@ -51,7 +52,7 @@ class QualityGateSkill(Skill):
         )
         requirements_policy = self._requirements_policy(
             final_report, requirements, evidence, processed, materials,
-            visualizations, capability,
+            visualizations, capability, skill_research,
         )
         if self.generator:
             prompt = (
@@ -189,6 +190,8 @@ class QualityGateSkill(Skill):
             problems.append("关键论断未达到双重独立来源验证")
         if not requirements_policy["capability_catalog_traversed"]:
             problems.append("Skill/集成能力目录未完整遍历")
+        if not requirements_policy["skill_provenance_complete"]:
+            problems.append("第三方 Skill 候选或改造草案缺少合规溯源字段")
         if high_grade_ratio < minimum_high_grade_ratio:
             problems.append(
                 f"A+/A/B 级证据占比 {high_grade_ratio:.1%} 低于"
@@ -235,6 +238,9 @@ class QualityGateSkill(Skill):
                 ],
                 "capability_catalog_traversed": requirements_policy[
                     "capability_catalog_traversed"
+                ],
+                "skill_provenance_complete": requirements_policy[
+                    "skill_provenance_complete"
                 ],
             },
             "decision": "allow_release" if passed else "block_release",
@@ -286,6 +292,7 @@ class QualityGateSkill(Skill):
         materials: dict,
         visualizations: dict,
         capability: dict,
+        skill_research: dict,
     ) -> dict:
         categories = set(evidence.get("metrics", {}).get("source_categories", []))
         missing_categories = sorted(self.REQUIRED_SOURCE_CATEGORIES - categories)
@@ -338,6 +345,17 @@ class QualityGateSkill(Skill):
         capability_catalog_traversed = capability_metrics.get(
             "external_catalog_count"
         ) == capability_metrics.get("external_traversed_count")
+        provenance_fields = {
+            "name", "source_url", "author", "license", "version", "channel"
+        }
+        skill_provenance_complete = all(
+            provenance_fields <= candidate.keys()
+            for candidate in skill_research.get("candidates", [])
+        ) and all(
+            provenance_fields <= adapted.get("attribution", {}).keys()
+            and bool(adapted.get("modifications"))
+            for adapted in skill_research.get("adapted_skill_specs", [])
+        )
         minimum_visual_assets = int(
             requirements.get("minimum_visual_assets", 6)
         )
@@ -356,6 +374,7 @@ class QualityGateSkill(Skill):
             "critical_claims_verified": critical_claims_verified,
             "conflicted_claim_count": conflicted_claim_count,
             "capability_catalog_traversed": capability_catalog_traversed,
+            "skill_provenance_complete": skill_provenance_complete,
             "compliant": (
                 not missing_categories
                 and not missing_report_links
@@ -367,5 +386,6 @@ class QualityGateSkill(Skill):
                 and critical_claims_verified
                 and conflicted_claim_count == 0
                 and capability_catalog_traversed
+                and skill_provenance_complete
             ),
         }

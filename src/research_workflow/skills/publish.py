@@ -16,6 +16,7 @@ class PublishSkill(Skill):
         quality = json.loads(request.inputs["quality_gate"])
         visualizations = json.loads(request.inputs["visualization"])
         capability = json.loads(request.inputs["capability_sweep"])
+        skill_research = json.loads(request.inputs["skill_research"])
         if not quality.get("passed"):
             raise ValueError("质量门未通过，禁止发布")
         output_format = request.config.output_format
@@ -31,6 +32,12 @@ class PublishSkill(Skill):
             "renderers": renderer_ids,
             "self_contained": output_format in {"markdown", "json", "text"},
             "raster_exported": False,
+            "third_party_candidates_reviewed": len(
+                skill_research.get("candidates", [])
+            ),
+            "adapted_skill_specs_pending_review": len(
+                skill_research.get("adapted_skill_specs", [])
+            ),
             "limitations": [],
         }
         if output_format == "html" and any(

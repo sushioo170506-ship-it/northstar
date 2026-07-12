@@ -1,7 +1,8 @@
 # Northstar Research Workflow
 
-可持久化、可恢复、可选择性重跑的研究报告 Skill 工作流。系统包含一个主编排 Skill 和十五个
-低耦合功能 Skill，覆盖能力遍历、需求、议题树、大纲、产业/学术/实景三支柱调研、证据治理、
+可持久化、可恢复、可选择性重跑的研究报告 Skill 工作流。系统维护一个主编排 Skill 和十六个
+名称与 DAG 完全一致的可执行 Skill，覆盖能力遍历、第三方 Skill 研究、需求、议题树、大纲、
+产业/学术/实景三支柱调研、证据治理、
 论断账本与数据锚点评分、素材映射、6–10 项可视化、写作、压力测试、复核、发布阻断和交付。
 
 ```bash
@@ -20,12 +21,13 @@ research-workflow create --topic "生成式人工智能治理" --length 8000 \
 
 - [工作流运行流程、核心功能、运维与风险说明](docs/WORKFLOW_RUNTIME_GUIDE.md)
 - [开源 Skill 与工具筛选目录](docs/OPEN_SOURCE_SKILL_CATALOG.md)
+- [Skill 唯一清单与数量口径](docs/SKILL_INVENTORY.md)
 - [架构与长上下文设计](docs/ARCHITECTURE.md)
 - [API、Skill 接口与调用指南](docs/API.md)
 - [部署手册](docs/DEPLOYMENT.md)
 - [组件筛选与修改日志](docs/MODIFICATION_LOG.md)
 - [测试报告](docs/TEST_REPORT.md)
-- [主编排 Skill 与完整 Prompt](skills/research-report-orchestrator/SKILL.md)
+- [主编排 Skill 与完整 Prompt](skills/research_report_orchestrator/SKILL.md)
 
 运行测试：
 

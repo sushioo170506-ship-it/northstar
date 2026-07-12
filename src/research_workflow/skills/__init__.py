@@ -13,6 +13,7 @@ from .quality_gate import QualityGateSkill
 from .research import ResearchSkill
 from .requirements_analysis import RequirementsAnalysisSkill
 from .review import ReviewSkill
+from .skill_research import SkillResearchSkill
 from .visualization import VisualizationSkill
 from .writing import WritingSkill
 
@@ -20,6 +21,7 @@ __all__ = [
     "CapabilitySweepSkill",
     "ResearchSkill",
     "RequirementsAnalysisSkill",
+    "SkillResearchSkill",
     "IssueTreeSkill",
     "EvidenceGovernanceSkill",
     "DataProcessingSkill",

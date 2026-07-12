@@ -14,10 +14,16 @@ from research_workflow.models import (
     SkillRequest,
     WorkflowStatus,
 )
-from research_workflow.orchestrator import QualityGateRejected, ResearchReportOrchestrator
+from research_workflow.orchestrator import (
+    NODES,
+    QualityGateRejected,
+    ResearchReportOrchestrator,
+    default_registry,
+)
 from research_workflow.skills.quality_gate import DIMENSIONS, QualityGateSkill
 from research_workflow.skills.data_processing import DataProcessingSkill
 from research_workflow.skills.research import ResearchSkill
+from research_workflow.skills.skill_research import SkillResearchSkill
 
 
 CHECKPOINTS = (
@@ -127,18 +133,98 @@ class WorkflowTests(unittest.TestCase):
 
     def test_skill_documents_match_builtin_registry(self) -> None:
         names = set()
+        orchestrator_names = set()
         skills_root = Path(__file__).parents[1] / "skills"
         for path in skills_root.glob("*/SKILL.md"):
-            if path.parent.name == "research-report-orchestrator":
-                continue
             match = re.search(
                 r"^name:\s*([A-Za-z0-9_-]+)\s*$",
                 path.read_text(encoding="utf-8"),
                 flags=re.MULTILINE,
             )
             self.assertIsNotNone(match, str(path))
-            names.add(match.group(1))
+            name = match.group(1)
+            self.assertEqual(path.parent.name, name)
+            if name == "research_report_orchestrator":
+                orchestrator_names.add(name)
+            else:
+                names.add(name)
         self.assertEqual(names, set(BUILTIN_SKILL_ORDER))
+        self.assertEqual(
+            tuple(node.skill for node in NODES if node.skill),
+            BUILTIN_SKILL_ORDER,
+        )
+        self.assertEqual(set(default_registry().names), set(BUILTIN_SKILL_ORDER))
+        self.assertEqual(orchestrator_names, {"research_report_orchestrator"})
+        self.assertEqual(len(names) + len(orchestrator_names), 17)
+        architecture = (
+            Path(__file__).parents[1] / "docs" / "ARCHITECTURE.md"
+        ).read_text(encoding="utf-8")
+        inventory = (
+            Path(__file__).parents[1] / "docs" / "SKILL_INVENTORY.md"
+        ).read_text(encoding="utf-8")
+        for name in BUILTIN_SKILL_ORDER:
+            self.assertIn(name, architecture)
+            self.assertIn(f"`{name}`", inventory)
+
+    def test_skill_research_records_provenance_and_blocks_unknown_license(self) -> None:
+        request = SkillRequest(
+            workflow_id="skill-research",
+            node_id="skill_research",
+            config=ReportConfig.from_dict(
+                {
+                    "topic": "研究报告自动化",
+                    "extra": {
+                        "max_adapted_skills": 20,
+                        "skill_candidates": [
+                            {
+                                "name": "permissive-skill",
+                                "source_url": "https://github.com/example/permissive",
+                                "author": "example",
+                                "license": "MIT",
+                                "version": "v1.2.3",
+                                "channel": "configured_repository",
+                                "description": "report research",
+                                "capability": "report_research",
+                                "original_skill_path": "skills/report/SKILL.md",
+                            },
+                            {
+                                "name": "unknown-skill",
+                                "source_url": "https://github.com/example/unknown",
+                                "author": "example",
+                                "license": "NOASSERTION",
+                                "version": "main",
+                                "channel": "configured_repository",
+                                "description": "unknown",
+                                "capability": "unknown",
+                            },
+                        ],
+                    },
+                }
+            ),
+            inputs={
+                "requirements_analysis": json.dumps(
+                    {
+                        "topic": "研究报告自动化",
+                        "deliverable": {"type": "research_report"},
+                    }
+                )
+            },
+        )
+        result = SkillResearchSkill().execute(request)
+        SkillResearchSkill().validate(result)
+        payload = json.loads(result.content)
+        candidates = {item["name"]: item for item in payload["candidates"]}
+        self.assertEqual(candidates["permissive-skill"]["decision"], "adapt_allowed")
+        self.assertEqual(candidates["unknown-skill"]["decision"], "reject")
+        adapted = next(
+            item for item in payload["adapted_skill_specs"]
+            if item["attribution"]["name"] == "permissive-skill"
+        )
+        self.assertEqual(adapted["attribution"]["author"], "example")
+        self.assertEqual(adapted["attribution"]["license"], "MIT")
+        self.assertEqual(adapted["attribution"]["version"], "v1.2.3")
+        self.assertTrue(adapted["modifications"])
+        self.assertEqual(adapted["installation_status"], "pending_human_review")
 
     def test_research_traverses_all_three_source_passes(self) -> None:
         retriever = RecordingRetriever()
@@ -551,6 +637,9 @@ class WorkflowTests(unittest.TestCase):
                             "external_traversed_count": 1,
                         }
                     }
+                ),
+                "skill_research": json.dumps(
+                    {"candidates": [], "adapted_skill_specs": []}
                 ),
                 "requirements_analysis": json.dumps(
                     {

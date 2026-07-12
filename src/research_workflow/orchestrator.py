@@ -28,6 +28,7 @@ from .skills import (
     ResearchSkill,
     RequirementsAnalysisSkill,
     ReviewSkill,
+    SkillResearchSkill,
     VisualizationSkill,
     WritingSkill,
 )
@@ -52,8 +53,14 @@ NODES = (
         "requirements_analysis",
     ),
     NodeSpec(
-        "issue_tree",
+        "skill_research",
         ("requirements_analysis",),
+        "skill_research",
+        ("requirements_analysis",),
+    ),
+    NodeSpec(
+        "issue_tree",
+        ("requirements_analysis", "skill_research"),
         "issue_tree",
         ("requirements_analysis",),
     ),
@@ -146,13 +153,15 @@ NODES = (
     NodeSpec(
         "quality_gate",
         (
-            "capability_sweep", "requirements_analysis", "evidence_governance",
+            "capability_sweep", "skill_research", "requirements_analysis",
+            "evidence_governance",
             "data_processing", "material_integration", "visualization",
             "pressure_test", "review",
         ),
         "quality_gate",
         (
-            "capability_sweep", "requirements_analysis", "evidence_governance",
+            "capability_sweep", "skill_research", "requirements_analysis",
+            "evidence_governance",
             "data_processing", "material_integration", "visualization",
             "pressure_test", "review",
         ),
@@ -160,9 +169,15 @@ NODES = (
     ),
     NodeSpec(
         "publish",
-        ("capability_sweep", "visualization", "review", "quality_gate"),
+        (
+            "capability_sweep", "skill_research", "visualization", "review",
+            "quality_gate",
+        ),
         "publish",
-        ("capability_sweep", "visualization", "review", "quality_gate"),
+        (
+            "capability_sweep", "skill_research", "visualization", "review",
+            "quality_gate",
+        ),
     ),
 )
 NODE_MAP = {node.id: node for node in NODES}
@@ -171,7 +186,8 @@ NODE_MAP = {node.id: node for node in NODES}
 def default_registry() -> SkillRegistry:
     registry = SkillRegistry()
     for skill in (
-        CapabilitySweepSkill(), RequirementsAnalysisSkill(), IssueTreeSkill(),
+        CapabilitySweepSkill(), RequirementsAnalysisSkill(), SkillResearchSkill(),
+        IssueTreeSkill(),
         OutlineSkill(), ResearchSkill(), EvidenceGovernanceSkill(),
         DataProcessingSkill(), MaterialIntegrationSkill(), VisualizationSkill(),
         WritingSkill(), PressureTestSkill(), FormattingSkill(), ReviewSkill(),
@@ -398,6 +414,13 @@ class ResearchReportOrchestrator:
                 (
                     ("议题树", 4), ("子问题", 3), ("问题拆解", 3),
                     ("mece", 3), ("核心问题", 2),
+                ),
+            ),
+            (
+                "skill_research",
+                (
+                    ("检索技能", 4), ("技能仓库", 4), ("github skill", 4),
+                    ("openclaw", 4), ("第三方技能", 4), ("技能改造", 4),
                 ),
             ),
             (
