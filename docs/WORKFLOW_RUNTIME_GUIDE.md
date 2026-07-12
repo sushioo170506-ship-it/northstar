@@ -539,7 +539,7 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 2026-07-12 在 Linux 6.12、Python 3.12.3 上验证：
 
-- 17 个测试全部通过；
+- 18 个测试全部通过；
 - 20 个独立离线确定性工作流全部完成：20/20（测试阈值为 ≥95%）；该样本不代表外部模型、
   检索或生产环境 SLA；
 - 105000 字目标端到端完成，最新基线终稿 118558 字（含来源与可视化规范）；
@@ -564,7 +564,7 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 独立临时测量程序在同一环境创建一个全新 data directory，依次执行 create、四次
 run/confirm 和最终 run，再使用 `time.perf_counter()`、`resource.getrusage()`、文件
-`stat()` 采集结果。它不是 17 个 unittest 的计时，也尚未纳入 CI 基准脚本。基线输入包含
+`stat()` 采集结果。它不是 18 个 unittest 的计时，也尚未纳入 CI 基准脚本。基线输入包含
 产业、学术、实景三类可追溯来源：
 
 | 指标 | 结果 |
