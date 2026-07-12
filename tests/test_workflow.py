@@ -28,6 +28,8 @@ from research_workflow.orchestrator import (
 )
 from research_workflow.skills.quality_gate import DIMENSIONS, QualityGateSkill
 from research_workflow.skills.data_processing import DataProcessingSkill
+from research_workflow.skills.citation_management import CitationManagementSkill
+from research_workflow.skills.experience_evolution import ExperienceEvolutionSkill
 from research_workflow.skills.outline import OutlineSkill
 from research_workflow.skills.publish import PublishSkill
 from research_workflow.skills.research import ResearchSkill
@@ -176,7 +178,7 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(set(default_registry().names), set(BUILTIN_SKILL_ORDER))
         self.assertEqual(orchestrator_names, {"research_report_orchestrator"})
-        self.assertEqual(len(names) + len(orchestrator_names), 17)
+        self.assertEqual(len(names) + len(orchestrator_names), 19)
         architecture = (
             Path(__file__).parents[1] / "docs" / "ARCHITECTURE.md"
         ).read_text(encoding="utf-8")
@@ -368,6 +370,79 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(sources[0]["platform"], "wechat_official_account")
         self.assertEqual(sources[1]["platform"], "hacker_news")
 
+    def test_social_feedback_is_deduplicated_and_quantified(self) -> None:
+        feedback = ResearchSkill._social_feedback(
+            [
+                {
+                    "id": "P1",
+                    "category": "social_media",
+                    "platform": "reddit",
+                    "url": "https://reddit.com/1",
+                    "content": "Great and stable model, recommend it",
+                },
+                {
+                    "id": "P1-DUP",
+                    "category": "social_media",
+                    "platform": "reddit",
+                    "url": "https://reddit.com/2",
+                    "content": "Great and stable model, recommend it",
+                },
+                {
+                    "id": "N1",
+                    "category": "social_media",
+                    "platform": "wechat_official_account",
+                    "url": "https://mp.weixin.qq.com/s/n1",
+                    "content": "模型很慢而且不稳定，体验差",
+                },
+            ]
+        )
+        self.assertEqual(feedback["metrics"]["raw_count"], 3)
+        self.assertEqual(feedback["metrics"]["deduplicated_count"], 2)
+        self.assertEqual(feedback["metrics"]["duplicate_count"], 1)
+        self.assertEqual(feedback["sentiment_counts"]["positive"], 1)
+        self.assertEqual(feedback["sentiment_counts"]["negative"], 1)
+        self.assertEqual(feedback["metrics"]["satisfaction_ratio"], 0.5)
+
+    def test_citation_management_builds_bidirectional_references(self) -> None:
+        skill = CitationManagementSkill()
+        request = SkillRequest(
+            workflow_id="citation",
+            node_id="citation_management",
+            config=ReportConfig.from_dict(
+                {
+                    "topic": "引用测试",
+                    "extra": {"citation_style": "apa"},
+                }
+            ),
+            inputs={
+                "writing": (
+                    "# 引用测试\n\n结论来自"
+                    "[官方材料](https://example.org/source)。"
+                ),
+                "evidence_governance": json.dumps(
+                    {
+                        "sources": [
+                            {
+                                "id": "S1",
+                                "title": "官方材料",
+                                "author": "机构",
+                                "published_at": "2026-01-01",
+                                "original_url": "https://example.org/source",
+                            }
+                        ]
+                    }
+                ),
+                "material_integration": json.dumps({"sections": {}}),
+            },
+        )
+        result = skill.execute(request)
+        skill.validate(result)
+        self.assertIn('id="cite-S1-1"', result.content)
+        self.assertIn("[[1]](#ref-S1)", result.content)
+        self.assertIn('id="ref-S1"', result.content)
+        self.assertIn("[↩1](#cite-S1-1)", result.content)
+        self.assertEqual(result.metadata["coverage"], 1.0)
+
     def test_composite_provider_isolates_failures_and_deduplicates(self) -> None:
         recording = RecordingRetriever()
         composite = CompositeSourceRetriever([FailingRetriever(), recording, recording])
@@ -416,6 +491,44 @@ class WorkflowTests(unittest.TestCase):
             self.workflow.state.workflow_status(workflow_id),
             WorkflowStatus.RUNNING,
         )
+
+    def test_evolution_stages_and_applies_approved_learning(self) -> None:
+        workflow_id = self.create()
+        self.workflow.add_comment(
+            workflow_id,
+            "outline",
+            "以后每次大纲必须同时标注字数和比例",
+            actor_id="owner",
+        )
+        complete(self.workflow, workflow_id)
+        artifact = self.workflow.state.node_artifact(
+            workflow_id, "experience_evolution"
+        )
+        evolution = json.loads(artifact["content"])
+        proposal = next(
+            item for item in evolution["proposals"]
+            if item["target_skill"] == "outline"
+        )
+        self.assertEqual(proposal["status"], "validated_candidate")
+        skills_root = self.root / "managed-skills"
+        target = skills_root / "outline"
+        target.mkdir(parents=True)
+        skill_file = target / "SKILL.md"
+        skill_file.write_text(
+            "---\nname: outline\n---\n# Outline\n", encoding="utf-8"
+        )
+        updated = self.workflow.apply_approved_learning(
+            workflow_id,
+            proposal["id"],
+            approved_by="owner",
+            skills_root=skills_root,
+        )
+        content = updated.read_text(encoding="utf-8")
+        self.assertIn("MANAGED_LEARNINGS_START", content)
+        self.assertIn(proposal["id"], content)
+        report = self.workflow.quarterly_evolution_report(2026, 3)
+        self.assertIn("自进化效果复盘", report)
+        self.assertIn("已验证候选：1", report)
 
     def test_data_processing_uses_anchor_based_scoring(self) -> None:
         candidates = [f"P{i}" for i in range(5)]
@@ -644,6 +757,8 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("https://official.example/policy", final_report)
         self.assertIn("https://academic.example/paper", final_report)
         self.assertIn("https://social.example/post", final_report)
+        self.assertIn("## 参考资料", final_report)
+        self.assertIn('id="ref-S-OFFICIAL"', final_report)
         self.assertEqual(reloaded.state.node(workflow_id, "research")["attempts"], 1)
         self.assertEqual(
             reloaded.state.node(workflow_id, "quality_gate")["status"], NodeStatus.COMPLETED
@@ -970,6 +1085,7 @@ class WorkflowTests(unittest.TestCase):
                         ]
                     }
                 ),
+                "citation_management": "# 报告\n\n## 参考资料\n",
                 "evidence_governance": json.dumps(
                     {"metrics": {"source_count": 0}, "red_lines": []}
                 ),
@@ -1080,6 +1196,7 @@ class WorkflowTests(unittest.TestCase):
                     {"id": "SEC-02", "title": "参考文献"},
                 ]
             },
+            final_report,
         )
         self.assertEqual(policy["inline_source_coverage"], 0.0)
         self.assertEqual(

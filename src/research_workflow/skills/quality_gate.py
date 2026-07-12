@@ -48,6 +48,7 @@ class QualityGateSkill(Skill):
             )
         )
         outline = json.loads(request.inputs["outline"])
+        cited_draft = request.inputs["citation_management"]
         evidence_text = request.inputs["evidence_governance"]
         processed = json.loads(request.inputs["data_processing"])
         materials = json.loads(request.inputs["material_integration"])
@@ -67,7 +68,7 @@ class QualityGateSkill(Skill):
         )
         requirements_policy = self._requirements_policy(
             final_report, requirements, evidence, processed, materials,
-            visualizations, capability, skill_research, outline,
+            visualizations, capability, skill_research, outline, cited_draft,
         )
         if self.generator:
             prompt = (
@@ -212,6 +213,8 @@ class QualityGateSkill(Skill):
             problems.append("Skill/集成能力目录未完整遍历")
         if not requirements_policy["skill_provenance_complete"]:
             problems.append("第三方 Skill 候选或改造草案缺少合规溯源字段")
+        if not requirements_policy["citation_integrity"]:
+            problems.append("引用锚点、内联引用或文末参考资料不完整")
         if high_grade_ratio < minimum_high_grade_ratio:
             problems.append(
                 f"A+/A/B 级证据占比 {high_grade_ratio:.1%} 低于"
@@ -268,6 +271,9 @@ class QualityGateSkill(Skill):
                 "skill_provenance_complete": requirements_policy[
                     "skill_provenance_complete"
                 ],
+                "citation_integrity": requirements_policy[
+                    "citation_integrity"
+                ],
             },
             "decision": "allow_release" if passed else "block_release",
             "feedback_applied": list(request.feedback),
@@ -320,6 +326,7 @@ class QualityGateSkill(Skill):
         capability: dict,
         skill_research: dict,
         outline: dict,
+        cited_draft: str,
     ) -> dict:
         categories = set(evidence.get("metrics", {}).get("source_categories", []))
         missing_categories = sorted(self.REQUIRED_SOURCE_CATEGORIES - categories)
@@ -360,6 +367,9 @@ class QualityGateSkill(Skill):
         maximum_length = max(int(expected_length * 1.25), expected_length + 2_000)
         prose = re.sub(r"```.*?```", "", final_report, flags=re.DOTALL)
         prose = re.sub(r"<[^>]+>", "", prose)
+        prose = re.split(
+            r"(?m)^##\s+(?:统一)?参考资料\s*$", prose, maxsplit=1
+        )[0]
         prose_length = len(prose)
         length_compliant = minimum_length <= prose_length <= maximum_length
         boundary_violations = []
@@ -411,6 +421,22 @@ class QualityGateSkill(Skill):
             and bool(adapted.get("modifications"))
             for adapted in skill_research.get("adapted_skill_specs", [])
         )
+        citation_integrity = bool(
+            re.search(r"(?m)^##\s+(统一)?参考资料", cited_draft)
+        )
+        for source in evidence.get("sources", []):
+            safe_id = re.sub(
+                r"[^A-Za-z0-9_-]", "-", str(source.get("id"))
+            )
+            url = str(source.get("original_url") or "")
+            if (
+                not url
+                or cited_draft.count(url) < 2
+                or f'id="ref-{safe_id}"' not in cited_draft
+                or f'id="cite-{safe_id}-1"' not in cited_draft
+            ):
+                citation_integrity = False
+                break
         minimum_visual_assets = int(
             requirements.get("minimum_visual_assets", 6)
         )
@@ -432,6 +458,7 @@ class QualityGateSkill(Skill):
             "conflicted_claim_count": conflicted_claim_count,
             "capability_catalog_traversed": capability_catalog_traversed,
             "skill_provenance_complete": skill_provenance_complete,
+            "citation_integrity": citation_integrity,
             "compliant": (
                 not missing_categories
                 and not missing_report_links
@@ -445,6 +472,7 @@ class QualityGateSkill(Skill):
                 and conflicted_claim_count == 0
                 and capability_catalog_traversed
                 and skill_provenance_complete
+                and citation_integrity
             ),
         }
 

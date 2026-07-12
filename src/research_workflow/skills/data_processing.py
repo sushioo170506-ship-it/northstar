@@ -109,6 +109,7 @@ class DataProcessingSkill(Skill):
         payload = {
             "claims": claims,
             "data_points": data_points,
+            "social_feedback": research.get("social_feedback", {}),
             "evidence_grades": dict(sorted(grade_counts.items())),
             "triangulation": {
                 "claim_count": len(claims),

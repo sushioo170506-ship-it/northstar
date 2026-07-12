@@ -102,9 +102,11 @@ BUILTIN_SKILL_ORDER = (
     "material_integration",
     "visualization",
     "writing",
+    "citation_management",
     "pressure_test",
     "formatting",
     "review",
     "quality_gate",
     "publish",
+    "experience_evolution",
 )

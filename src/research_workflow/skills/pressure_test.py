@@ -15,7 +15,9 @@ class PressureTestSkill(Skill):
         self.generator = generator
 
     def execute(self, request: SkillRequest) -> SkillResult:
-        draft = request.inputs["writing"]
+        draft = request.inputs.get(
+            "citation_management", request.inputs.get("writing", "")
+        )
         requirements_text = request.inputs["requirements_analysis"]
         outline_text = request.inputs["outline"]
         research_text = request.inputs["research"]

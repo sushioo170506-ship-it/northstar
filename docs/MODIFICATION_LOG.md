@@ -154,6 +154,18 @@
 - 新增PandocDocumentRenderer，真实渲染DOCX/PDF并返回base64与MIME元数据。
 - 新增节点评论与actor审计接口，评论不自动使产物失效。
 
+### citation_management 1.0.0
+
+- 新增正文内联来源、文末统一参考资料和双向跳转锚点。
+- 支持GB/T 7714、APA、MLA、Chicago和numeric基础格式。
+- quality_gate新增引用完整性硬检查。
+
+### experience_evolution 1.0.0
+
+- 新增用户修改/评论经验提取、分类、频次、置信度和有效性验证。
+- validated_candidate须人工approved_by后才能写入Skill受控区。
+- 新增季度自进化复盘，汇总工作流、提案、已验证候选和平均质量分。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

@@ -9,7 +9,7 @@ version: 1.0.0
 
 独立实现：`research_workflow.skills.formatting.FormattingSkill`。
 
-输入 `inputs["writing"]` 和全局 `style`、`output_format`，输出
+输入 `inputs["citation_management"]` 和全局 `style`、`output_format`，输出
 `artifact_type="formatted_draft"`。内置格式为 `markdown`、`html/webpage`、`feishu`、
 `json`、`text`；`docx/word` 与 `pdf` 输出 canonical Markdown 并交给发布渲染器。
 

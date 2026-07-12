@@ -31,6 +31,10 @@ affected = orchestrator.update_sources(workflow_id, new_sources, "修复证据�
 target, affected = orchestrator.request_revision(workflow_id, "补充图表并调整架构图")
 orchestrator.add_comment(workflow_id, "outline", "关注章节比例", actor_id="reviewer")
 comments = orchestrator.list_comments(workflow_id, "outline")
+path = orchestrator.apply_approved_learning(
+    workflow_id, proposal_id, approved_by="owner", skills_root="skills"
+)
+quarterly = orchestrator.quarterly_evolution_report(2026, 3)
 snapshot = orchestrator.state.snapshot(workflow_id)
 report = orchestrator.final_report(workflow_id)
 ```
@@ -40,7 +44,8 @@ report = orchestrator.final_report(workflow_id)
 `pre_review_confirmation`。允许修改的产物节点：
 `capability_sweep`、`requirements_analysis`、`skill_research`、`issue_tree`、`outline`、`research`、
 `evidence_governance`、`data_processing`、`material_integration`、`visualization`、`writing`、
-`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`。
+`citation_management`、`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`、
+`experience_evolution`。
 
 质量门缺少产业/学术/实景任一支柱、原始链接/claim/素材/图表不足、触发红线、需求不合规
 或总分低于 24/35 时，`run` 抛出
@@ -125,6 +130,9 @@ research-workflow --data-dir ./data revise WORKFLOW_ID "图表需要改为流程
 research-workflow --data-dir ./data comment WORKFLOW_ID outline "关注章节比例" \
   --actor reviewer-1
 research-workflow --data-dir ./data comments WORKFLOW_ID --node outline
+research-workflow --data-dir ./data apply-learning WORKFLOW_ID PROPOSAL_ID \
+  --approved-by owner --skills-root skills
+research-workflow --data-dir ./data evolution-report 2026 3
 research-workflow --data-dir ./data update-sources WORKFLOW_ID sources.json \
   --reason "替换不可追溯来源"
 research-workflow --data-dir ./data status WORKFLOW_ID

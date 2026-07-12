@@ -1,8 +1,10 @@
 """Built-in skills; each module can be imported and executed independently."""
 
 from .capability_sweep import CapabilitySweepSkill
+from .citation_management import CitationManagementSkill
 from .data_processing import DataProcessingSkill
 from .evidence_governance import EvidenceGovernanceSkill
+from .experience_evolution import ExperienceEvolutionSkill
 from .formatting import FormattingSkill
 from .issue_tree import IssueTreeSkill
 from .material_integration import MaterialIntegrationSkill
@@ -19,11 +21,13 @@ from .writing import WritingSkill
 
 __all__ = [
     "CapabilitySweepSkill",
+    "CitationManagementSkill",
     "ResearchSkill",
     "RequirementsAnalysisSkill",
     "SkillResearchSkill",
     "IssueTreeSkill",
     "EvidenceGovernanceSkill",
+    "ExperienceEvolutionSkill",
     "DataProcessingSkill",
     "MaterialIntegrationSkill",
     "VisualizationSkill",

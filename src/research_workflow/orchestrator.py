@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -17,8 +18,10 @@ from .models import (
 from .profiles import WORKFLOW_PROFILES
 from .skills import (
     CapabilitySweepSkill,
+    CitationManagementSkill,
     DataProcessingSkill,
     EvidenceGovernanceSkill,
+    ExperienceEvolutionSkill,
     FormattingSkill,
     IssueTreeSkill,
     MaterialIntegrationSkill,
@@ -118,22 +121,35 @@ NODES = (
         ),
     ),
     NodeSpec(
+        "citation_management",
+        ("writing", "evidence_governance", "material_integration"),
+        "citation_management",
+        ("writing", "evidence_governance", "material_integration"),
+    ),
+    NodeSpec(
         "pressure_test",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
             "evidence_governance", "data_processing", "material_integration",
-            "visualization", "writing",
+            "visualization", "writing", "citation_management",
         ),
         "pressure_test",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
             "evidence_governance", "data_processing", "material_integration",
-            "visualization", "writing",
+            "visualization", "citation_management",
         ),
     ),
-    NodeSpec("draft_confirmation", ("writing", "pressure_test"), checkpoint=True),
     NodeSpec(
-        "formatting", ("writing", "draft_confirmation"), "formatting", ("writing",)
+        "draft_confirmation",
+        ("writing", "citation_management", "pressure_test"),
+        checkpoint=True,
+    ),
+    NodeSpec(
+        "formatting",
+        ("citation_management", "draft_confirmation"),
+        "formatting",
+        ("citation_management",),
     ),
     NodeSpec("pre_review_confirmation", ("formatting",), checkpoint=True),
     NodeSpec(
@@ -157,14 +173,14 @@ NODES = (
             "capability_sweep", "skill_research", "requirements_analysis", "outline",
             "evidence_governance",
             "data_processing", "material_integration", "visualization",
-            "pressure_test", "review",
+            "citation_management", "pressure_test", "review",
         ),
         "quality_gate",
         (
             "capability_sweep", "skill_research", "requirements_analysis", "outline",
             "evidence_governance",
             "data_processing", "material_integration", "visualization",
-            "pressure_test", "review",
+            "citation_management", "pressure_test", "review",
         ),
         quality_gate=True,
     ),
@@ -179,6 +195,12 @@ NODES = (
             "capability_sweep", "skill_research", "visualization", "review",
             "quality_gate",
         ),
+    ),
+    NodeSpec(
+        "experience_evolution",
+        ("skill_research", "quality_gate", "publish"),
+        "experience_evolution",
+        ("skill_research", "quality_gate", "publish"),
     ),
 )
 NODE_MAP = {node.id: node for node in NODES}
@@ -196,8 +218,9 @@ def default_registry(
         OutlineSkill(), ResearchSkill(retriever=source_retriever),
         EvidenceGovernanceSkill(),
         DataProcessingSkill(), MaterialIntegrationSkill(), VisualizationSkill(),
-        WritingSkill(), PressureTestSkill(), FormattingSkill(), ReviewSkill(),
-        QualityGateSkill(), PublishSkill(renderer=document_renderer),
+        WritingSkill(), CitationManagementSkill(), PressureTestSkill(),
+        FormattingSkill(), ReviewSkill(), QualityGateSkill(),
+        PublishSkill(renderer=document_renderer), ExperienceEvolutionSkill(),
     ):
         registry.register(skill)
     return registry
@@ -311,6 +334,10 @@ class ResearchReportOrchestrator:
             node_id: artifact["content"] for node_id, artifact in input_artifacts.items()
             if artifact is not None
         }
+        if spec.id == "experience_evolution":
+            inputs["_user_operations"] = json.dumps(
+                self.state.operations(workflow_id), ensure_ascii=False
+            )
         feedback = self.state.feedback(workflow_id, spec.id)
         context = self.context.query(
             workflow_id,
@@ -553,6 +580,118 @@ class ResearchReportOrchestrator:
         if node_id is not None:
             comments = [item for item in comments if item["node_id"] == node_id]
         return comments
+
+    def apply_approved_learning(
+        self,
+        workflow_id: str,
+        proposal_id: str,
+        *,
+        approved_by: str,
+        skills_root: str | Path,
+    ) -> Path:
+        if not approved_by.strip():
+            raise ValueError("approved_by 不能为空")
+        artifact = self.state.node_artifact(
+            workflow_id, "experience_evolution", internal=True
+        )
+        if not artifact:
+            raise ValueError("工作流尚无自进化产物")
+        payload = json.loads(artifact["content"])
+        proposal = next(
+            (
+                item for item in payload.get("proposals", [])
+                if item["id"] == proposal_id
+            ),
+            None,
+        )
+        if not proposal:
+            raise ValueError(f"学习提案不存在: {proposal_id}")
+        if proposal["status"] != "validated_candidate":
+            raise ValueError("只有 validated_candidate 可写入 Skill 文档")
+        target = proposal["target_skill"]
+        allowed = set(self.registry.names) | {"research_report_orchestrator"}
+        if target not in allowed:
+            raise ValueError(f"提案目标 Skill 不在允许清单: {target}")
+        root = Path(skills_root).resolve()
+        skill_file = (root / target / "SKILL.md").resolve()
+        if root not in skill_file.parents or not skill_file.exists():
+            raise ValueError(f"Skill 文件不存在或越界: {skill_file}")
+        text = skill_file.read_text(encoding="utf-8")
+        if proposal_id in text:
+            return skill_file
+        start = "<!-- MANAGED_LEARNINGS_START -->"
+        end = "<!-- MANAGED_LEARNINGS_END -->"
+        entry = (
+            f"- `{proposal_id}` {proposal['rule']} "
+            f"(confidence={proposal['confidence']}, approved_by={approved_by})"
+        )
+        if start in text and end in text:
+            text = text.replace(end, entry + "\n" + end)
+        else:
+            text = text.rstrip() + (
+                "\n\n## Managed Learnings\n\n"
+                f"{start}\n{entry}\n{end}\n"
+            )
+        skill_file.write_text(text, encoding="utf-8")
+        self.state.record_operation(
+            workflow_id,
+            "apply_learning",
+            {
+                "proposal_id": proposal_id,
+                "target_skill": target,
+                "approved_by": approved_by,
+                "path": str(skill_file),
+            },
+            target if target in NODE_MAP else None,
+        )
+        return skill_file
+
+    def quarterly_evolution_report(self, year: int, quarter: int) -> str:
+        if quarter not in {1, 2, 3, 4}:
+            raise ValueError("quarter 必须为 1-4")
+        period = f"{year}-Q{quarter}"
+        reports = []
+        for artifact in self.state.artifacts_by_node("experience_evolution"):
+            payload = json.loads(artifact["content"])
+            if payload.get("period") == period:
+                reports.append(payload)
+        proposals = [
+            proposal
+            for report in reports
+            for proposal in report.get("proposals", [])
+        ]
+        validated = [
+            item for item in proposals
+            if item["status"] == "validated_candidate"
+        ]
+        lines = [
+            f"# 自进化效果复盘 — {period}",
+            "",
+            f"- 工作流样本：{len(reports)}",
+            f"- 经验提案：{len(proposals)}",
+            f"- 已验证候选：{len(validated)}",
+            f"- 平均质量分：{self._average_quality(reports):.2f}",
+            "",
+            "## 已验证候选",
+            "",
+        ]
+        lines.extend(
+            f"- {item['target_skill']} · {item['rule']} "
+            f"(confidence={item['confidence']})"
+            for item in validated
+        )
+        if not validated:
+            lines.append("- 无")
+        return "\n".join(lines) + "\n"
+
+    @staticmethod
+    def _average_quality(reports: list[dict[str, Any]]) -> float:
+        scores = [
+            report.get("effectiveness", {}).get("quality_score")
+            for report in reports
+        ]
+        numeric = [float(score) for score in scores if score is not None]
+        return sum(numeric) / len(numeric) if numeric else 0.0
 
     @staticmethod
     def affected_nodes(target_node: str) -> set[str]:

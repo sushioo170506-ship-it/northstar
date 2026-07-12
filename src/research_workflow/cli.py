@@ -63,6 +63,16 @@ def _parser() -> argparse.ArgumentParser:
     comments = sub.add_parser("comments")
     comments.add_argument("workflow_id")
     comments.add_argument("--node")
+
+    apply_learning = sub.add_parser("apply-learning")
+    apply_learning.add_argument("workflow_id")
+    apply_learning.add_argument("proposal_id")
+    apply_learning.add_argument("--approved-by", required=True)
+    apply_learning.add_argument("--skills-root", default="skills")
+
+    evolution_report = sub.add_parser("evolution-report")
+    evolution_report.add_argument("year", type=int)
+    evolution_report.add_argument("quarter", type=int)
     return parser
 
 
@@ -124,6 +134,20 @@ def main(argv: list[str] | None = None) -> int:
                 json.dumps(
                     orchestrator.list_comments(args.workflow_id, args.node),
                     ensure_ascii=False,
+                )
+            )
+        elif args.command == "apply-learning":
+            path = orchestrator.apply_approved_learning(
+                args.workflow_id,
+                args.proposal_id,
+                approved_by=args.approved_by,
+                skills_root=args.skills_root,
+            )
+            print(json.dumps({"updated": str(path)}, ensure_ascii=False))
+        elif args.command == "evolution-report":
+            print(
+                orchestrator.quarterly_evolution_report(
+                    args.year, args.quarter
                 )
             )
         elif args.command == "status":

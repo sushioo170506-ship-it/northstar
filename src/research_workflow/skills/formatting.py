@@ -18,7 +18,9 @@ class FormattingSkill(Skill):
         self.generator = generator
 
     def execute(self, request: SkillRequest) -> SkillResult:
-        draft = request.inputs["writing"]
+        draft = request.inputs.get(
+            "citation_management", request.inputs.get("writing", "")
+        )
         prompt = FORMAT_PROMPT.format(
             output_format=request.config.output_format, style=request.config.style
         )

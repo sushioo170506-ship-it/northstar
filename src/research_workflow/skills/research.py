@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import re
 from typing import Any
 
 from ..contracts import Skill, SourceRetriever, TextGenerator
@@ -83,6 +85,7 @@ class ResearchSkill(Skill):
                 and source.get("platform")
             }
         )
+        social_feedback = self._social_feedback(sources)
         pass_status = {
             category: {
                 "status": (
@@ -104,6 +107,7 @@ class ResearchSkill(Skill):
                 for item in issue_tree.get("issues", []) if item.get("included", True)
             ],
             "sources": sources,
+            "social_feedback": social_feedback,
             "outline_sections": [
                 {"id": item.get("id"), "title": item.get("title")}
                 for item in outline.get("sections", [])
@@ -136,6 +140,12 @@ class ResearchSkill(Skill):
                 "source_category_count": len(present_categories),
                 "requires_external_retrieval": bool(missing_categories),
                 "prompt_version": "1.0" if self.generator else None,
+                "social_feedback_count": social_feedback["metrics"][
+                    "deduplicated_count"
+                ],
+                "social_satisfaction": social_feedback["metrics"][
+                    "satisfaction_ratio"
+                ],
             },
         )
 
@@ -200,6 +210,84 @@ class ResearchSkill(Skill):
             if host in url:
                 return platform
         return "other_social"
+
+    @classmethod
+    def _social_feedback(cls, sources: list[dict[str, Any]]) -> dict[str, Any]:
+        positive = {
+            "好", "优秀", "稳定", "满意", "推荐", "提升", "快", "准确",
+            "useful", "good", "great", "excellent", "stable", "recommend",
+        }
+        negative = {
+            "差", "失败", "不稳定", "失望", "错误", "慢", "崩溃", "贵",
+            "bad", "poor", "fail", "unstable", "slow", "error", "expensive",
+        }
+        seen: set[str] = set()
+        items = []
+        raw_count = 0
+        duplicate_count = 0
+        for source in sources:
+            if source.get("category") != "social_media":
+                continue
+            raw_count += 1
+            content = re.sub(r"\s+", " ", str(source.get("content", ""))).strip()
+            normalized = re.sub(r"[^\w\u3400-\u9fff]+", "", content.lower())
+            fingerprint = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+            if fingerprint in seen:
+                duplicate_count += 1
+                continue
+            seen.add(fingerprint)
+            lower = content.lower()
+            positive_hits = sum(token in lower for token in positive)
+            negative_hits = sum(token in lower for token in negative)
+            sentiment = (
+                "positive" if positive_hits > negative_hits
+                else "negative" if negative_hits > positive_hits
+                else "neutral"
+            )
+            items.append(
+                {
+                    "id": source.get("id"),
+                    "platform": source.get("platform", "other_social"),
+                    "author": source.get("author") or source.get("account"),
+                    "published_at": source.get("published_at"),
+                    "url": source.get("url"),
+                    "content": content,
+                    "fingerprint": fingerprint,
+                    "sentiment": sentiment,
+                    "positive_hits": positive_hits,
+                    "negative_hits": negative_hits,
+                    "traceable": bool(source.get("url")),
+                }
+            )
+        counts = {
+            sentiment: sum(item["sentiment"] == sentiment for item in items)
+            for sentiment in ("positive", "negative", "neutral")
+        }
+        polar = counts["positive"] + counts["negative"]
+        return {
+            "items": items,
+            "platforms": sorted({item["platform"] for item in items}),
+            "sentiment_counts": counts,
+            "metrics": {
+                "raw_count": raw_count,
+                "deduplicated_count": len(items),
+                "duplicate_count": duplicate_count,
+                "traceable_count": sum(item["traceable"] for item in items),
+                "traceability_ratio": (
+                    sum(item["traceable"] for item in items) / len(items)
+                    if items else 0.0
+                ),
+                "satisfaction_ratio": (
+                    counts["positive"] / polar if polar else None
+                ),
+            },
+            "method": {
+                "sentiment": "deterministic bilingual lexicon baseline",
+                "limitation": (
+                    "讽刺、转述和领域语境可能误判；满意度只代表有明确极性的去重样本"
+                ),
+            },
+        }
 
     def validate(self, result: SkillResult) -> None:
         super().validate(result)

@@ -312,6 +312,17 @@ class SQLiteStateStore:
             "operations": [dict(row) for row in operations],
         }
 
+    def artifacts_by_node(self, node_id: str) -> list[dict[str, Any]]:
+        with self._connect() as db:
+            rows = db.execute(
+                """
+                SELECT id FROM artifacts
+                WHERE node_id=? ORDER BY created_at
+                """,
+                (node_id,),
+            ).fetchall()
+        return [self.artifact(row["id"]) for row in rows]
+
 
 class SQLiteVectorStore:
     """Small embedded vector database with deterministic sparse embeddings."""

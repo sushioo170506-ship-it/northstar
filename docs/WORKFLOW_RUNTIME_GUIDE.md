@@ -36,8 +36,9 @@ ResearchReportOrchestrator
   |      -> issue_tree -> [主题与议题树确认]
   |      -> outline -> [大纲确认] -> research(产业/学术/实景)
   |      -> evidence_governance -> data_processing -> material_integration
-  |      -> visualization -> writing -> pressure_test -> [初稿确认]
+  |      -> visualization -> writing -> citation_management -> pressure_test -> [初稿确认]
   |      -> formatting -> [终审前确认] -> review -> quality_gate -> publish
+  |      -> experience_evolution
   |
   |-- SQLiteStateStore  -> state.db
   |      配置、节点状态、产物分片、确认、用户操作
@@ -173,7 +174,7 @@ completed -> invalidated -> running（用户修改后）
 #### 2.3.1 capability_sweep：技能与外部能力遍历
 
 - 触发：每个工作流第一个节点，禁止跳过。
-- 逻辑：完整列出 16 个内置 Skill；遍历开源/外部集成目录，记录许可证、星数快照、
+- 逻辑：完整列出 18 个内置 Skill；遍历开源/外部集成目录，记录许可证、星数快照、
   configured/disabled/reviewed_not_configured 和原因。
 - 输出：`capability_manifest`。内置清单缺项或外部目录未遍历完整时失败。
 - 边界：盘点不等于执行；无许可证、无认证或不适用的第三方能力不得强行运行。
@@ -252,26 +253,32 @@ completed -> invalidated -> running（用户修改后）
   可视化以 Mermaid/Vega-Lite 代码块嵌入；资料不足必须显式披露。
 - 输出：`draft`。模型路径当前仍是单次 generate，生产适配器应改为章节级调用。
 
-#### 2.3.12 pressure_test 与 draft_confirmation
+#### 2.3.12 citation_management：引用与参考资料
+
+- 输入：正文、证据账本和章节素材。
+- 逻辑：保留正文原始URL，添加正文→文末编号跳转、文末→正文返回锚点，统一格式。
+- 输出：`cited_draft`、引用覆盖率、遗漏来源和参考资料列表。
+
+#### 2.3.13 pressure_test 与 draft_confirmation
 
 - 逻辑：独立执行逻辑、证据、反方论证、完整性审计，并额外检查三类来源、URL、素材挂载和
   可视化，不把审查意见混入正文。
 - 输出：`pressure_test` 和 repair_actions。用户确认初稿时可同时审阅弱点报告。
 
-#### 2.3.13 formatting 与 pre_review_confirmation
+#### 2.3.14 formatting 与 pre_review_confirmation
 
 - 输入：初稿、style、output_format。
 - 逻辑：转换 Markdown、HTML、JSON 或 text，不新增事实。排版后的候选稿必须经审核前确认。
 - 输出：`formatted_draft`。
 
-#### 2.3.14 review：真实性与需求合规复核
+#### 2.3.15 review：真实性与需求合规复核
 
 - 输入：需求、调研、证据、大纲、素材、可视化、压力测试和格式化报告。
 - 逻辑：检查三类来源、每项原始 URL 是否出现在对应报告、篇幅、格式、素材挂载率、可视化、
   受众/文风声明和“禁止/不得包含”边界。
 - 输出：`final_report` 候选及 review_checks_passed、issues、checks。
 
-#### 2.3.15 quality_gate：D1–D7 发布质量门
+#### 2.3.16 quality_gate：D1–D7 发布质量门
 
 - 输入：能力清单、需求简报、证据账本、processed data、素材、可视化、压力测试和候选终稿。
 - 逻辑：评分满分 35、默认通过线 24；能力目录未遍历、三支柱/高等级证据/claim/链接不足、
@@ -280,12 +287,18 @@ completed -> invalidated -> running（用户修改后）
 - 拒绝：评分产物保留，节点和工作流 failed，抛出 QualityGateRejected；修订路由或
   update_sources 将流程退回最早受影响节点后重跑。
 
-#### 2.3.16 publish：报告交付
+#### 2.3.17 publish：报告交付
 
 - 输入：已通过质量门的 review、visualization 和 capability_manifest。
 - 输出：`published_report` 和 publish_manifest。
 - 规则：正文不再改写；明确格式、字数、图数、渲染器、self-contained、PNG 状态和限制。
 - 无真实 Mermaid/Vega/Pandoc 渲染器时不得声称 SVG/PNG 已完成；Markdown 可诚实降级。
+
+#### 2.3.18 experience_evolution：受控自进化
+
+- 输入：用户操作、质量门、发布产物和Skill研究结果。
+- 输出：按季度归类的学习提案、频次、置信度、有效性状态和复盘指标。
+- 只有validated_candidate和明确approved_by才能写入Skill受控区；默认禁止自动改仓库。
 
 ## 3. 功能模块与交互规则
 
@@ -321,7 +334,7 @@ SkillResult:
 Skill 必须是显式输入到不可变输出的转换器。远程服务可以实现 Proxy Skill，通过 RPC 传输相同
 结构；编排器无需了解供应商、模型或部署方式。
 
-编排器会把最多 16 个相关向量分片放入 `SkillRequest.context`。当前十六个内置 Skill
+编排器会把最多 16 个相关向量分片放入 `SkillRequest.context`。当前十八个内置 Skill
 均只消费 `inputs` 精确依赖，尚未读取 context；该字段目前供自定义/远程 Skill 使用。
 
 ### 3.3 TextGenerator
@@ -411,12 +424,14 @@ CLI 是薄适配层，不保存会话状态；所有恢复均依赖显式 workfl
 | data_processing | claim/评分、素材、可视化及写作/复核后代 |
 | material_integration | 素材整合、可视化及写作/复核后代 |
 | visualization | 可视化及写作/复核后代，不重跑素材整合 |
-| writing | writing、pressure_test、初稿确认、formatting、终审前确认、review、quality_gate、publish |
-| pressure_test | pressure_test、初稿确认、review、quality_gate、publish；不重跑 writing |
-| formatting | formatting、终审前确认、review、quality_gate、publish |
-| review | review、quality_gate、publish |
-| quality_gate | quality_gate、publish |
-| publish | 仅重新发布 |
+| writing | writing、citation_management、pressure_test、初稿确认及全部发布后代 |
+| citation_management | 引用、压力测试、排版、审核、质量门、发布和自进化 |
+| pressure_test | pressure_test、初稿确认及全部发布后代；不重跑 writing |
+| formatting | formatting、终审前确认、review、quality_gate、publish、experience_evolution |
+| review | review、quality_gate、publish、experience_evolution |
+| quality_gate | quality_gate、publish、experience_evolution |
+| publish | publish、experience_evolution |
+| experience_evolution | 仅重新生成经验提案 |
 
 修改确认节点本身不允许；用户应修改产生业务产物的节点。
 

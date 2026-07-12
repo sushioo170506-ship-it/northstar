@@ -9,7 +9,7 @@ version: 1.0.0
 
 实现：`research_workflow.skills.pressure_test.PressureTestSkill`。
 
-输入需求、大纲、议题树、调研、证据账本、章节素材、可视化和 writing，输出独立 JSON
+输入需求、大纲、议题树、调研、证据账本、章节素材、可视化和 citation_management，输出独立 JSON
 弱点报告，不会把自我审查混入正文。除四类审计外，还检查三类来源、原始链接、素材挂载率
 和可视化是否齐备。报告包括：
 

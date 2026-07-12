@@ -209,6 +209,29 @@ class VisualizationSkill(Skill):
                         },
                     },
                 },
+                {
+                    "id": "VIS-SOCIAL-SENTIMENT",
+                    "type": "statistical_chart",
+                    "format": "vega-lite",
+                    "title": "去重后的真实用户反馈揭示满意度分布",
+                    "section_ids": [],
+                    "content": {
+                        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+                        "data": {
+                            "values": [
+                                {"sentiment": sentiment, "count": count}
+                                for sentiment, count in processed.get(
+                                    "social_feedback", {}
+                                ).get("sentiment_counts", {}).items()
+                            ]
+                        },
+                        "mark": "bar",
+                        "encoding": {
+                            "x": {"field": "sentiment", "type": "nominal"},
+                            "y": {"field": "count", "type": "quantitative"},
+                        },
+                    },
+                },
             ]
         )
         payload = {
