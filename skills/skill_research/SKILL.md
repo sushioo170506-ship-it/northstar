@@ -44,6 +44,14 @@ version: 1.0.0
 GitHub Stars 仅用于排序，不代表安全或质量。许可证必须来自仓库元数据和 LICENSE 文件；子目录
 Skill 可覆盖顶层许可证，需再次核验。
 
+## 星标硬门槛
+
+- GitHub：默认 `github_skill_min_stars=500`；
+- OpenClaw Hub：默认 `openclaw_skill_min_stars=300`；
+- 低于门槛或星数未知：decision=`below_threshold`，只进入观察名单；
+- below_threshold 不得生成 adapted_skill_specs，即使许可证为 MIT；
+- 其他合规仓库默认不套用上述两平台门槛，可由部署配置另行审核。
+
 ## 二次改造规则
 
 允许候选会生成标准化适配草案，而不是立即执行远程代码：

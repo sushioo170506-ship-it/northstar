@@ -15,6 +15,8 @@ from ..models import SkillRequest, SkillResult
 
 
 PERMISSIVE_LICENSES = {"MIT", "MIT-0", "Apache-2.0", "BSD-3-Clause"}
+DEFAULT_GITHUB_MIN_STARS = 500
+DEFAULT_OPENCLAW_MIN_STARS = 300
 REQUIRED_PROVENANCE_FIELDS = {
     "name", "source_url", "author", "license", "version", "channel"
 }
@@ -39,6 +41,16 @@ class SkillResearchSkill(Skill):
             candidate["source_url"]: candidate for candidate in candidates
         }
         ranked = []
+        github_min_stars = int(
+            request.config.extra.get(
+                "github_skill_min_stars", DEFAULT_GITHUB_MIN_STARS
+            )
+        )
+        openclaw_min_stars = int(
+            request.config.extra.get(
+                "openclaw_skill_min_stars", DEFAULT_OPENCLAW_MIN_STARS
+            )
+        )
         for candidate in deduplicated.values():
             decision, reason = self._license_decision(candidate["license"])
             if (
@@ -48,8 +60,23 @@ class SkillResearchSkill(Skill):
             ):
                 decision = "review_required"
                 reason = "仅发现仓库；必须定位具体 SKILL.md 并复核子目录许可证"
+            minimum_stars = self._minimum_stars(
+                candidate, github_min_stars, openclaw_min_stars
+            )
+            stars = candidate.get("stars")
+            if (
+                minimum_stars > 0
+                and (stars is None or int(stars) < minimum_stars)
+                and decision not in {"reject"}
+            ):
+                decision = "below_threshold"
+                reason = (
+                    f"Stars {stars if stars is not None else 'unknown'} "
+                    f"低于渠道门槛 {minimum_stars}"
+                )
             candidate = {
                 **candidate,
+                "minimum_stars": minimum_stars,
                 "match_score": self._match_score(candidate, requirements),
                 "decision": decision,
                 "decision_reason": reason,
@@ -81,6 +108,9 @@ class SkillResearchSkill(Skill):
                 "unknown_license_action": "reject",
                 "noncommercial_action": "reject",
                 "copyleft_action": "external_process_only",
+                "github_min_stars": github_min_stars,
+                "openclaw_min_stars": openclaw_min_stars,
+                "below_threshold_action": "observe_only",
                 "dynamic_execution": False,
                 "human_review_required_before_registry_install": True,
             },
@@ -92,6 +122,9 @@ class SkillResearchSkill(Skill):
                 "adapted_spec_count": len(adapted),
                 "rejected_count": sum(
                     item["decision"] == "reject" for item in ranked
+                ),
+                "below_threshold_count": sum(
+                    item["decision"] == "below_threshold" for item in ranked
                 ),
             },
         }
@@ -181,6 +214,21 @@ class SkillResearchSkill(Skill):
                 }
             )
         return result
+
+    @staticmethod
+    def _minimum_stars(
+        candidate: dict[str, Any], github_min: int, openclaw_min: int
+    ) -> int:
+        channel = candidate.get("channel")
+        if channel in {"github", "github_live"} or "github.com" in candidate.get(
+            "source_url", ""
+        ):
+            return github_min
+        if channel == "openclaw_hub" or "clawhub.ai" in candidate.get(
+            "source_url", ""
+        ):
+            return openclaw_min
+        return 0
 
     @staticmethod
     def _license_decision(license_name: str) -> tuple[str, str]:

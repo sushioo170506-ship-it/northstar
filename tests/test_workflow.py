@@ -183,6 +183,7 @@ class WorkflowTests(unittest.TestCase):
                                 "license": "MIT",
                                 "version": "v1.2.3",
                                 "channel": "configured_repository",
+                                "stars": 1000,
                                 "description": "report research",
                                 "capability": "report_research",
                                 "original_skill_path": "skills/report/SKILL.md",
@@ -194,6 +195,7 @@ class WorkflowTests(unittest.TestCase):
                                 "license": "NOASSERTION",
                                 "version": "main",
                                 "channel": "configured_repository",
+                                "stars": 1000,
                                 "description": "unknown",
                                 "capability": "unknown",
                             },
@@ -225,6 +227,64 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(adapted["attribution"]["version"], "v1.2.3")
         self.assertTrue(adapted["modifications"])
         self.assertEqual(adapted["installation_status"], "pending_human_review")
+
+    def test_skill_research_enforces_channel_star_thresholds(self) -> None:
+        request = SkillRequest(
+            workflow_id="skill-threshold",
+            node_id="skill_research",
+            config=ReportConfig.from_dict(
+                {
+                    "topic": "Skill 门槛",
+                    "extra": {
+                        "max_adapted_skills": 20,
+                        "skill_candidates": [
+                            {
+                                "name": "low-github",
+                                "source_url": "https://github.com/example/low",
+                                "author": "example",
+                                "license": "MIT",
+                                "version": "v1",
+                                "channel": "github",
+                                "stars": 499,
+                                "description": "research",
+                                "capability": "research",
+                                "original_skill_path": "SKILL.md",
+                            },
+                            {
+                                "name": "low-openclaw",
+                                "source_url": "https://clawhub.ai/example/low",
+                                "author": "example",
+                                "license": "MIT",
+                                "version": "v1",
+                                "channel": "openclaw_hub",
+                                "stars": 299,
+                                "description": "research",
+                                "capability": "research",
+                                "original_skill_path": "SKILL.md",
+                            },
+                        ],
+                    },
+                }
+            ),
+            inputs={
+                "requirements_analysis": json.dumps(
+                    {
+                        "topic": "Skill 门槛",
+                        "deliverable": {"type": "research_report"},
+                    }
+                )
+            },
+        )
+        payload = json.loads(SkillResearchSkill().execute(request).content)
+        candidates = {item["name"]: item for item in payload["candidates"]}
+        self.assertEqual(candidates["low-github"]["decision"], "below_threshold")
+        self.assertEqual(candidates["low-openclaw"]["decision"], "below_threshold")
+        adapted_names = {
+            item["attribution"]["name"]
+            for item in payload["adapted_skill_specs"]
+        }
+        self.assertNotIn("low-github", adapted_names)
+        self.assertNotIn("low-openclaw", adapted_names)
 
     def test_research_traverses_all_three_source_passes(self) -> None:
         retriever = RecordingRetriever()

@@ -125,6 +125,7 @@
 - 新增 MIT/MIT-0/Apache-2.0/BSD 自动允许、GPL 外部进程、NC/专有/未知拒绝策略。
 - 新增标准化二次改造草案，强制包含原作者、来源 URL、版本、许可证和逐项修改日志。
 - 所有动态候选安装状态为 pending_human_review，禁止同一运行内执行远程代码。
+- 新增 GitHub≥500、OpenClaw Hub≥300 星硬门槛；低于门槛统一 observe_only。
 
 ### Skill 清单统一
 

@@ -47,6 +47,9 @@ Search API 实时检索；`extra.skill_candidates` 可注入 OpenClaw Hub 或其
 提供 name、source_url、author、license、version、channel。改造结果仅生成
 `pending_human_review` 规范，不会在同一工作流动态执行远程代码。
 
+默认硬门槛为 `extra.github_skill_min_stars=500`、`extra.openclaw_skill_min_stars=300`。
+低于门槛或星数未知的候选标记 `below_threshold`，不会生成适配草案。
+
 ## Skill 接口
 
 ```python

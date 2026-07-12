@@ -27,6 +27,9 @@
 候选可通过结构化 `skill_candidates` 输入。所有候选均输出作者、来源、版本、许可证、渠道、
 决策理由和修改清单。
 
+GitHub 默认硬门槛为 500 Stars，OpenClaw Hub 为 300 Stars。目录中低于门槛的历史候选仍可
+被遍历用于能力观察，但运行时 decision 为 `below_threshold`，不得进入适配草案。
+
 ## 未直接纳入
 
 | 候选 | 原因 |
