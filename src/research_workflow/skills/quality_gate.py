@@ -439,7 +439,19 @@ class QualityGateSkill(Skill):
         located = []
         for section in outline.get("sections", []):
             title = str(section.get("title", ""))
-            position = final_report.find(title)
+            position = -1
+            escaped = re.escape(title)
+            patterns = (
+                rf"(?m)^#{{1,6}}\s+[^\n]*{escaped}",
+                rf"<h[1-6]>[^<]*{escaped}",
+                rf"\\n#{{1,6}}\s+[^\"\\]*{escaped}",
+                rf"(?m)^[^#\[\]\n]*{escaped}[^\n]*$",
+            )
+            for pattern in patterns:
+                match = re.search(pattern, final_report)
+                if match:
+                    position = match.start()
+                    break
             if title and position >= 0:
                 located.append((position, section["id"]))
         located.sort()
