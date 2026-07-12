@@ -14,6 +14,7 @@ research-workflow create --topic "生成式人工智能治理" --length 8000 --f
 
 文档：
 
+- [工作流运行流程、核心功能、运维与风险说明](docs/WORKFLOW_RUNTIME_GUIDE.md)
 - [架构与长上下文设计](docs/ARCHITECTURE.md)
 - [API、Skill 接口与调用指南](docs/API.md)
 - [部署手册](docs/DEPLOYMENT.md)
