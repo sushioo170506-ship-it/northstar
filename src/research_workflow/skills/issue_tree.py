@@ -74,7 +74,10 @@ class IssueTreeSkill(Skill):
                 "all_included_issues_have_value": all(item["included"] for item in issues),
             },
             "excluded_issues": [],
-            "competitive_hypotheses": [
+            "feedback_applied": list(request.feedback),
+        }
+        if request.config.extra.get("enable_competitive_hypotheses", False):
+            payload["competitive_hypotheses"] = [
                 {
                     "id": "H1",
                     "consensus": "领先主要由单一硬参数决定",
@@ -93,9 +96,7 @@ class IssueTreeSkill(Skill):
                     "counter_hypothesis": "局部能力或生产可靠性可能回退",
                     "test": "检查同口径版本回归和社区失败案例",
                 },
-            ],
-            "feedback_applied": list(request.feedback),
-        }
+            ]
         return SkillResult(
             json.dumps(payload, ensure_ascii=False, indent=2),
             "issue_tree",

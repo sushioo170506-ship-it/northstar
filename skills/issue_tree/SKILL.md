@@ -31,8 +31,10 @@ result = IssueTreeSkill(generator=None).execute(request)
 - 3–7 个一级问题及必要二级问题；
 - 每个问题的 necessity、value、evidence_required、included；
 - provisional_thesis：判断、反对意见、证伪条件、行动价值；
-- ≥3 个 competitive_hypotheses：行业共识、反共识假说、检验数据；
 - excluded_issues 及删除理由。
+
+`competitive_hypotheses` 不是默认字段。仅当用户明确要求因果研究、争议命题检验或设置
+`extra.enable_competitive_hypotheses=true` 时才生成；普通行业研究不得强行加入。
 
 ## 质量与错误
 

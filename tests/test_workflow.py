@@ -397,6 +397,22 @@ class WorkflowTests(unittest.TestCase):
             ["academic", "social_media"],
         )
 
+    def test_competitive_hypotheses_are_opt_in(self) -> None:
+        child = ResearchReportOrchestrator(self.root / "hypothesis-opt-in")
+        workflow_id = child.create(
+            {
+                "topic": "因果争议测试",
+                "expected_length": 500,
+                "extra": {"enable_competitive_hypotheses": True},
+            }
+        )
+        outcome = child.run(workflow_id)
+        self.assertEqual(outcome.waiting_at, "issue_tree_confirmation")
+        issue_tree = json.loads(
+            child.state.node_artifact(workflow_id, "issue_tree")["content"]
+        )
+        self.assertEqual(len(issue_tree["competitive_hypotheses"]), 3)
+
     def test_content_boundary_violation_blocks_release(self) -> None:
         workflow_id = self.create(content_boundaries=["禁止：本节围绕"])
         for checkpoint in CHECKPOINTS:
@@ -486,6 +502,7 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertTrue(all(issue["children"] for issue in issue_tree["issues"]))
         self.assertTrue(all(issue["necessity"] for issue in issue_tree["issues"]))
+        self.assertNotIn("competitive_hypotheses", issue_tree)
         brief = json.loads(
             reloaded.state.node_artifact(workflow_id, "requirements_analysis")["content"]
         )

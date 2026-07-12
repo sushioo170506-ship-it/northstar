@@ -132,6 +132,12 @@
 - 目录名、frontmatter name、Python Skill.name 和 DAG node 全部使用 canonical underscore 名称。
 - 维护口径统一为 1 个主编排 Skill + 16 个可执行 Skill = 17 个 SKILL.md。
 
+### 竞争性假说改为可选
+
+- 删除 issue_tree 和 outline 的默认强制假说要求。
+- 仅当 `extra.enable_competitive_hypotheses=true` 时生成和校验竞争性假说。
+- 普通行业研究使用研究问题、情景条件和判断失效条件，不为满足模板强行设置假说。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

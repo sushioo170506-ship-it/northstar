@@ -83,11 +83,12 @@ class OutlineSkill(Skill):
             },
             "rhythm": {
                 "front_30_percent": "核心判断与最强证据",
-                "middle_40_percent": "评分、对比、冲突与假说检验",
+                "middle_40_percent": "评分、对比、冲突与证据检验",
                 "back_30_percent": "行动含义、边界与闭环",
             },
-            "competitive_hypotheses": issue_tree.get("competitive_hypotheses", []),
         }
+        if issue_tree.get("competitive_hypotheses"):
+            payload["competitive_hypotheses"] = issue_tree["competitive_hypotheses"]
         return SkillResult(json.dumps(payload, ensure_ascii=False, indent=2), "outline")
 
     def validate(self, result: SkillResult) -> None:
@@ -101,7 +102,5 @@ class OutlineSkill(Skill):
                 "anchor_requirements"
             ):
                 raise ValueError("每个章节必须包含判断和数据锚点需求")
-        if not payload.get("narrative_gates") or not payload.get(
-            "competitive_hypotheses"
-        ):
-            raise ValueError("outline 必须包含传播门和竞争性假说")
+        if not payload.get("narrative_gates"):
+            raise ValueError("outline 必须包含传播门")

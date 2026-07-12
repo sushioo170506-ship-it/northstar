@@ -15,6 +15,9 @@
 | `prior_thoughts` | string | 用户对问题的前置判断或假设 |
 | `extra` | object | 可包含 `sources` 等适配器参数 |
 
+`extra.enable_competitive_hypotheses` 默认 false。只有因果研究、争议命题检验等用户明确要求的
+任务才设为 true；普通行业报告不会生成假说步骤或独立假说 Skill。
+
 ## Python API
 
 ```python
