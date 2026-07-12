@@ -33,6 +33,10 @@ result = ResearchSkill(generator=None).execute(request)
 SourceRetriever 必须按单一 category 调用三次；每次记录 completed/missing/error、数量和错误。
 任何一 pass 失败都继续保存其他来源，但质量门不得发布。
 
+生产接入可使用 `CompositeSourceRetriever` 组合多个Provider；单个Provider失败不得抹掉其他
+成功结果。内置 `OpenAlexRetriever` 提供无密钥学术元数据、DOI、引用量、venue和摘要检索。
+Crawl4AI、金融数据库及社媒官方API通过同一SourceRetriever协议接入。
+
 ## 提取字段
 
 每个来源至少包含 id、title、category、url、published_at、content、issue_ids。数字还应保存

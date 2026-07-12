@@ -26,6 +26,7 @@ class WorkflowStatus(StrEnum):
 SUPPORTED_FORMATS = {
     "markdown", "html", "json", "text", "feishu", "docx", "pdf"
 }
+SUPPORTED_WORKFLOW_PROFILES = {"quick", "standard", "deep", "regulatory"}
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ class ReportConfig:
     audience: str = "通用专业读者"
     content_boundaries: tuple[str, ...] = ()
     prior_thoughts: str = ""
+    workflow_profile: str = "deep"
     extra: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
@@ -79,12 +81,18 @@ class ReportConfig:
             " ".join(str(item).split()) for item in raw_boundaries if str(item).strip()
         )
         prior_thoughts = str(raw.get("prior_thoughts", "")).strip()
+        workflow_profile = str(raw.get("workflow_profile", "deep")).strip().lower()
+        if workflow_profile not in SUPPORTED_WORKFLOW_PROFILES:
+            raise ValueError(
+                f"workflow_profile 必须是 {sorted(SUPPORTED_WORKFLOW_PROFILES)} 之一"
+            )
         extra = raw.get("extra", {})
         if not isinstance(extra, dict):
             raise ValueError("extra 必须是对象")
         return cls(
             topic, expected_length, style, output_format, language,
-            output_type, audience, content_boundaries, prior_thoughts, extra,
+            output_type, audience, content_boundaries, prior_thoughts,
+            workflow_profile, extra,
         )
 
     def to_dict(self) -> dict[str, Any]:

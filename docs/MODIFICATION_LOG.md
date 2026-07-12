@@ -147,6 +147,13 @@
 - quality_gate新增章节级inline_source_coverage，文末链接不能替代正文内联。
 - skill_research新增“名称/来源/功能/Stars/协议/结论”Markdown参考表。
 
+### 优化建议落地
+
+- 新增quick/standard/deep/regulatory Profile及差异化确认和质量阈值。
+- 新增CompositeSourceRetriever与无密钥OpenAlexRetriever。
+- 新增PandocDocumentRenderer，真实渲染DOCX/PDF并返回base64与MIME元数据。
+- 新增节点评论与actor审计接口，评论不自动使产物失效。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

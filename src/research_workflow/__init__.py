@@ -2,6 +2,8 @@
 
 from .models import ReportConfig, RunOutcome, SkillRequest, SkillResult
 from .orchestrator import QualityGateRejected, ResearchReportOrchestrator
+from .providers import CompositeSourceRetriever, OpenAlexRetriever
+from .renderers import PandocDocumentRenderer
 
 __all__ = [
     "ResearchReportOrchestrator",
@@ -10,4 +12,7 @@ __all__ = [
     "RunOutcome",
     "SkillRequest",
     "SkillResult",
+    "CompositeSourceRetriever",
+    "OpenAlexRetriever",
+    "PandocDocumentRenderer",
 ]

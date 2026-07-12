@@ -42,6 +42,9 @@ material_integration、visualization、pressure_test，输出
 D1 事实准确性；D2 逻辑严密；D3 事实/观点分离；D4 结构完整；D5 So What；D6 时效与边界；
 D7 量级感。每维 0–5，总分 35。分数是解释层，硬红线优先：高分不能抵消红线。
 
+门槛由workflow_profile提供，用户可通过明确extra字段覆盖，但覆盖值必须写入质量产物：
+quick 22/60%/3图，standard 24/75%/4图，deep 24/80%/6图，regulatory 30/90%/6图。
+
 ## 错误处理
 
 拒绝时仍保存完整 gate artifact、problems、required_actions 和最早修复节点，工作流置 failed；

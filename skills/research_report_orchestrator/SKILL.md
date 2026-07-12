@@ -66,6 +66,20 @@ outcome = workflow.run(workflow_id)
 - 条件能力仍必须执行其包装 Skill：不适用时输出结构化 `not_applicable`，不得伪造结果。
 - “调用全部”不等于“执行全部第三方程序”；无凭证、无许可证或不适用组件不得运行。
 
+## 工作流Profile
+
+| Profile | 人工确认 | 质量分 | 高等级证据 | 最少图表 |
+|---|---:|---:|---:|---:|
+| quick | 1 | 22 | 60% | 3 |
+| standard | 2 | 24 | 75% | 4 |
+| deep（默认） | 4 | 24 | 80% | 6 |
+| regulatory | 4 | 30 | 90% | 6 |
+
+未启用的确认节点仍写入 completed，并记录 auto_skip_checkpoint 和Profile，不得直接消失。
+
+节点评论通过 `add_comment(..., actor_id=...)` 追加审计，不自动失效产物；需要修改时必须另行
+调用 request_revision/modify，避免评论与执行状态混淆。
+
 ## 阶段质量卡口
 
 | 阶段 | 卡口 | 失败退回 |

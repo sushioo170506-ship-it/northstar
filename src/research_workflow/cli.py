@@ -24,6 +24,11 @@ def _parser() -> argparse.ArgumentParser:
     create.add_argument("--audience", default="通用专业读者")
     create.add_argument("--boundary", action="append", default=[])
     create.add_argument("--prior-thoughts", default="")
+    create.add_argument(
+        "--profile",
+        choices=("quick", "standard", "deep", "regulatory"),
+        default="deep",
+    )
     create.add_argument("--sources-json", help="包含 sources 数组的 JSON 文件")
 
     for name in ("run", "status", "final"):
@@ -48,6 +53,16 @@ def _parser() -> argparse.ArgumentParser:
     revise = sub.add_parser("revise")
     revise.add_argument("workflow_id")
     revise.add_argument("feedback")
+
+    comment = sub.add_parser("comment")
+    comment.add_argument("workflow_id")
+    comment.add_argument("node")
+    comment.add_argument("comment")
+    comment.add_argument("--actor", required=True)
+
+    comments = sub.add_parser("comments")
+    comments.add_argument("workflow_id")
+    comments.add_argument("--node")
     return parser
 
 
@@ -70,6 +85,7 @@ def main(argv: list[str] | None = None) -> int:
                     "audience": args.audience,
                     "content_boundaries": args.boundary,
                     "prior_thoughts": args.prior_thoughts,
+                    "workflow_profile": args.profile,
                     "extra": extra,
                 }
             )
@@ -95,6 +111,18 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 json.dumps(
                     {"target_node": target, "affected": sorted(affected)},
+                    ensure_ascii=False,
+                )
+            )
+        elif args.command == "comment":
+            orchestrator.add_comment(
+                args.workflow_id, args.node, args.comment, actor_id=args.actor
+            )
+            print(json.dumps({"commented": args.node}, ensure_ascii=False))
+        elif args.command == "comments":
+            print(
+                json.dumps(
+                    orchestrator.list_comments(args.workflow_id, args.node),
                     ensure_ascii=False,
                 )
             )

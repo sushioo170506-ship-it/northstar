@@ -26,6 +26,12 @@ Semantic Scholar、Mermaid、Vega-Lite 和 Pandoc 适配边界见开源目录。
 飞书/HTML可使用内置文本格式路径；Word/PDF必须部署 DocumentRenderer。推荐把Typst、Pandoc或
 经审查的Word适配器作为独立进程，返回真实payload/URI和`rendered=true`元数据。
 
+生产检索通过CompositeSourceRetriever组合Provider。仓库自带OpenAlex学术Provider；产业、
+金融和社媒Provider必须使用组织授权API。Provider应设置超时、限流、缓存、来源快照和删除策略。
+
+根据任务风险选择Profile：quick仅1次确认，standard 2次，deep/regulatory 4次。监管、投资
+和高风险报告不得由调用方偷偷降为quick；API层应按角色限制Profile。
+
 ## 多实例
 
 内置 SQLite 适合单写者，不支持跨主机协调。水平扩展时实现同等 StateStore/VectorStore

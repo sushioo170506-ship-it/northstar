@@ -26,9 +26,10 @@ missing_or_defaulted。所有后续节点使用该简报，不再从隐式会话
 
 1. 识别产出类型、主题、目标受众和使用决策。
 2. 统一篇幅、语言、文风、格式和内容边界。
-3. 盘点用户资料：数量、类别、URL 是否存在；不判断真实性。
-4. 原样保留 prior_thoughts，并区分用户观点与已证事实。
-5. 把默认值和缺失维度写入 missing_or_defaulted。
+3. 记录workflow_profile（quick/standard/deep/regulatory）并明确确认与质量门级别。
+4. 盘点用户资料：数量、类别、URL 是否存在；不判断真实性。
+5. 原样保留 prior_thoughts，并区分用户观点与已证事实。
+6. 把默认值和缺失维度写入 missing_or_defaulted。
 
 ## MUST / MUST NOT / ON_FAIL
 

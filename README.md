@@ -6,6 +6,8 @@
 论断账本与数据锚点评分、素材映射、6–10 项可视化、写作、压力测试、复核、发布阻断和交付。
 输出支持 Markdown、网页、飞书、JSON、纯文本，并通过 DocumentRenderer 适配 Word/PDF；
 未配置真实渲染器时不会伪报二进制导出成功。
+Quick/Standard/Deep/Regulatory Profile分别提供1/2/4/4次确认；生产调研可注入
+CompositeSourceRetriever、OpenAlex和组织授权的产业/社媒Provider。
 
 ```bash
 python3 -m pip install -e .

@@ -18,6 +18,8 @@ from research_workflow.models import (
     SkillRequest,
     WorkflowStatus,
 )
+from research_workflow.providers import CompositeSourceRetriever, OpenAlexRetriever
+from research_workflow.renderers import PandocDocumentRenderer
 from research_workflow.orchestrator import (
     NODES,
     QualityGateRejected,
@@ -100,6 +102,11 @@ class RecordingRetriever(SourceRetriever):
                 "issue_ids": ["ISSUE-01"],
             }
         ]
+
+
+class FailingRetriever(SourceRetriever):
+    def retrieve(self, *, topic, questions, categories):
+        raise RuntimeError("provider unavailable")
 
 
 class FakeRenderer(DocumentRenderer):
@@ -361,6 +368,55 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(sources[0]["platform"], "wechat_official_account")
         self.assertEqual(sources[1]["platform"], "hacker_news")
 
+    def test_composite_provider_isolates_failures_and_deduplicates(self) -> None:
+        recording = RecordingRetriever()
+        composite = CompositeSourceRetriever([FailingRetriever(), recording, recording])
+        sources = composite.retrieve(
+            topic="Provider测试",
+            questions=("问题",),
+            categories=("academic",),
+        )
+        self.assertEqual(len(sources), 1)
+        self.assertEqual(len(composite.last_errors), 1)
+        self.assertEqual(sources[0]["category"], "academic")
+
+    def test_openalex_normalization_and_missing_pandoc(self) -> None:
+        source = OpenAlexRetriever._normalize(
+            {
+                "id": "https://openalex.org/W1",
+                "display_name": "Paper",
+                "publication_date": "2026-01-01",
+                "doi": "https://doi.org/10.1/example",
+                "type": "article",
+                "cited_by_count": 5,
+                "abstract_inverted_index": {"hello": [0], "world": [1]},
+                "primary_location": {
+                    "source": {"display_name": "Journal"}
+                },
+            }
+        )
+        self.assertEqual(source["content"], "hello world")
+        self.assertTrue(source["peer_reviewed"])
+        with self.assertRaises(ValueError):
+            PandocDocumentRenderer("__definitely_missing_pandoc__")
+
+    def test_node_comments_are_audited_without_invalidating(self) -> None:
+        workflow_id = self.create()
+        self.workflow.add_comment(
+            workflow_id,
+            "outline",
+            "请关注章节比例",
+            actor_id="reviewer-1",
+        )
+        comments = self.workflow.list_comments(workflow_id, "outline")
+        self.assertEqual(len(comments), 1)
+        self.assertEqual(comments[0]["payload"]["actor_id"], "reviewer-1")
+        self.assertEqual(comments[0]["payload"]["comment"], "请关注章节比例")
+        self.assertEqual(
+            self.workflow.state.workflow_status(workflow_id),
+            WorkflowStatus.RUNNING,
+        )
+
     def test_data_processing_uses_anchor_based_scoring(self) -> None:
         candidates = [f"P{i}" for i in range(5)]
         dimensions = [
@@ -494,6 +550,42 @@ class WorkflowTests(unittest.TestCase):
             child.state.node_artifact(workflow_id, "issue_tree")["content"]
         )
         self.assertEqual(len(issue_tree["competitive_hypotheses"]), 3)
+
+    def test_quick_and_standard_profiles_reduce_confirmations(self) -> None:
+        quick = ResearchReportOrchestrator(self.root / "profile-quick")
+        quick_id = quick.create(
+            {
+                "topic": "Quick报告",
+                "expected_length": 500,
+                "workflow_profile": "quick",
+                "extra": {"sources": compliant_sources("QUICK")},
+            }
+        )
+        outcome = quick.run(quick_id)
+        self.assertEqual(outcome.waiting_at, "pre_review_confirmation")
+        quick.confirm(quick_id, "pre_review_confirmation")
+        self.assertEqual(quick.run(quick_id).status, WorkflowStatus.COMPLETED)
+        skipped = quick.state.operations(quick_id, "auto_skip_checkpoint")
+        self.assertEqual(len(skipped), 3)
+        gate = json.loads(
+            quick.state.node_artifact(quick_id, "quality_gate")["content"]
+        )
+        self.assertEqual(gate["pass_score"], 22.0)
+
+        standard = ResearchReportOrchestrator(self.root / "profile-standard")
+        standard_id = standard.create(
+            {
+                "topic": "Standard报告",
+                "expected_length": 500,
+                "workflow_profile": "standard",
+                "extra": {"sources": compliant_sources("STANDARD")},
+            }
+        )
+        first = standard.run(standard_id)
+        self.assertEqual(first.waiting_at, "outline_confirmation")
+        standard.confirm(standard_id, "outline_confirmation")
+        second = standard.run(standard_id)
+        self.assertEqual(second.waiting_at, "pre_review_confirmation")
 
     def test_content_boundary_violation_blocks_release(self) -> None:
         workflow_id = self.create(content_boundaries=["禁止：本节围绕"])

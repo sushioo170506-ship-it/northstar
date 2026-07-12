@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .contracts import SkillRegistry
+from .contracts import DocumentRenderer, SkillRegistry, SourceRetriever
 from .models import (
     NodeStatus,
     ReportConfig,
@@ -14,6 +14,7 @@ from .models import (
     SkillRequest,
     WorkflowStatus,
 )
+from .profiles import WORKFLOW_PROFILES
 from .skills import (
     CapabilitySweepSkill,
     DataProcessingSkill,
@@ -183,15 +184,20 @@ NODES = (
 NODE_MAP = {node.id: node for node in NODES}
 
 
-def default_registry() -> SkillRegistry:
+def default_registry(
+    *,
+    source_retriever: SourceRetriever | None = None,
+    document_renderer: DocumentRenderer | None = None,
+) -> SkillRegistry:
     registry = SkillRegistry()
     for skill in (
         CapabilitySweepSkill(), RequirementsAnalysisSkill(), SkillResearchSkill(),
         IssueTreeSkill(),
-        OutlineSkill(), ResearchSkill(), EvidenceGovernanceSkill(),
+        OutlineSkill(), ResearchSkill(retriever=source_retriever),
+        EvidenceGovernanceSkill(),
         DataProcessingSkill(), MaterialIntegrationSkill(), VisualizationSkill(),
         WritingSkill(), PressureTestSkill(), FormattingSkill(), ReviewSkill(),
-        QualityGateSkill(), PublishSkill(),
+        QualityGateSkill(), PublishSkill(renderer=document_renderer),
     ):
         registry.register(skill)
     return registry
@@ -205,11 +211,16 @@ class ResearchReportOrchestrator:
         data_dir: str | Path = ".research-workflow",
         *,
         registry: SkillRegistry | None = None,
+        source_retriever: SourceRetriever | None = None,
+        document_renderer: DocumentRenderer | None = None,
     ) -> None:
         root = Path(data_dir)
         self.state = SQLiteStateStore(root / "state.db")
         self.context = SQLiteVectorStore(root / "vectors.db")
-        self.registry = registry or default_registry()
+        self.registry = registry or default_registry(
+            source_retriever=source_retriever,
+            document_renderer=document_renderer,
+        )
 
     def create(self, raw_config: dict[str, Any], workflow_id: str | None = None) -> str:
         config = ReportConfig.from_dict(raw_config)
@@ -227,6 +238,21 @@ class ResearchReportOrchestrator:
             if not self._dependencies_complete(workflow_id, spec):
                 raise RuntimeError(f"节点 {spec.id} 的依赖未完成")
             if spec.checkpoint:
+                profile = WORKFLOW_PROFILES[config.workflow_profile]
+                if spec.id not in profile.confirmation_nodes:
+                    self.state.set_node(
+                        workflow_id, spec.id, NodeStatus.COMPLETED
+                    )
+                    self.state.record_operation(
+                        workflow_id,
+                        "auto_skip_checkpoint",
+                        {
+                            "checkpoint_id": spec.id,
+                            "workflow_profile": config.workflow_profile,
+                        },
+                        spec.id,
+                    )
+                    continue
                 if self.state.is_confirmed(workflow_id, spec.id):
                     self.state.set_node(workflow_id, spec.id, NodeStatus.COMPLETED)
                     continue
@@ -499,6 +525,34 @@ class ResearchReportOrchestrator:
             target,
         )
         return target, self.modify(workflow_id, target, feedback)
+
+    def add_comment(
+        self,
+        workflow_id: str,
+        node_id: str,
+        comment: str,
+        *,
+        actor_id: str,
+    ) -> None:
+        if node_id not in NODE_MAP:
+            raise ValueError(f"未知节点: {node_id}")
+        if not actor_id.strip() or not comment.strip():
+            raise ValueError("actor_id 和 comment 不能为空")
+        self.state.config(workflow_id)
+        self.state.record_operation(
+            workflow_id,
+            "comment",
+            {"actor_id": actor_id.strip(), "comment": comment.strip()},
+            node_id,
+        )
+
+    def list_comments(
+        self, workflow_id: str, node_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        comments = self.state.operations(workflow_id, "comment")
+        if node_id is not None:
+            comments = [item for item in comments if item["node_id"] == node_id]
+        return comments
 
     @staticmethod
     def affected_nodes(target_node: str) -> set[str]:

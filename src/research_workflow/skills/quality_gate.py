@@ -7,6 +7,7 @@ import re
 
 from ..contracts import Skill, TextGenerator
 from ..models import SkillRequest, SkillResult
+from ..profiles import WORKFLOW_PROFILES
 
 
 DIMENSIONS = (
@@ -35,6 +36,17 @@ class QualityGateSkill(Skill):
         capability = json.loads(request.inputs["capability_sweep"])
         skill_research = json.loads(request.inputs["skill_research"])
         requirements = json.loads(request.inputs["requirements_analysis"])
+        profile = WORKFLOW_PROFILES[request.config.workflow_profile]
+        pass_score = float(
+            request.config.extra.get(
+                "quality_pass_score", profile.quality_pass_score
+            )
+        )
+        requirements["minimum_visual_assets"] = int(
+            request.config.extra.get(
+                "minimum_visual_assets", profile.minimum_visual_assets
+            )
+        )
         outline = json.loads(request.inputs["outline"])
         evidence_text = request.inputs["evidence_governance"]
         processed = json.loads(request.inputs["data_processing"])
@@ -49,7 +61,9 @@ class QualityGateSkill(Skill):
             / graded_total if graded_total else 0.0
         )
         minimum_high_grade_ratio = float(
-            request.config.extra.get("minimum_high_grade_ratio", 0.8)
+            request.config.extra.get(
+                "minimum_high_grade_ratio", profile.minimum_high_grade_ratio
+            )
         )
         requirements_policy = self._requirements_policy(
             final_report, requirements, evidence, processed, materials,
@@ -59,7 +73,7 @@ class QualityGateSkill(Skill):
             prompt = (
                 "先检查红线，再按 D1事实准确性、D2逻辑严密性、D3事实观点分离、"
                 "D4结构完整性、D5 So What、D6边界感、D7量级感各评 0-5 分。"
-                f"总分低于 {self.pass_score} 或触发红线必须拒绝。严格输出 JSON。\n"
+                f"总分低于 {pass_score} 或触发红线必须拒绝。严格输出 JSON。\n"
                 f"终稿：{final_report}\n证据账本：{evidence_text}\n压力测试：{pressure_text}"
             )
             content = self.generator.generate(
@@ -89,12 +103,12 @@ class QualityGateSkill(Skill):
                 and all_links_present
                 and requirements_policy["compliant"]
                 and high_grade_ratio >= minimum_high_grade_ratio
-                and total >= self.pass_score
+                and total >= pass_score
             )
             generated.update(
                 {
                     "passed": passed,
-                    "pass_score": self.pass_score,
+                    "pass_score": pass_score,
                     "total_score": total,
                     "maximum_score": 35,
                     "red_lines": red_lines,
@@ -110,7 +124,7 @@ class QualityGateSkill(Skill):
                     "quality_passed": passed,
                     "total_score": total,
                     "red_line_count": len(red_lines),
-                    "pass_score": self.pass_score,
+                    "pass_score": pass_score,
                 },
             )
 
@@ -164,7 +178,7 @@ class QualityGateSkill(Skill):
             and requirements_policy["compliant"]
             and high_grade_ratio >= minimum_high_grade_ratio
             and not red_lines
-            and total >= self.pass_score
+            and total >= pass_score
         )
         problems = []
         if evidence_gaps:
@@ -207,11 +221,11 @@ class QualityGateSkill(Skill):
             problems.append("存在未覆盖的大纲章节")
         if red_lines:
             problems.append("触发证据红线")
-        if total < self.pass_score:
-            problems.append(f"总分 {total} 低于门槛 {self.pass_score}")
+        if total < pass_score:
+            problems.append(f"总分 {total} 低于门槛 {pass_score}")
         payload = {
             "passed": passed,
-            "pass_score": self.pass_score,
+            "pass_score": pass_score,
             "total_score": total,
             "maximum_score": 35,
             "red_lines": red_lines,
@@ -265,7 +279,7 @@ class QualityGateSkill(Skill):
                 "quality_passed": passed,
                 "total_score": total,
                 "red_line_count": len(red_lines),
-                "pass_score": self.pass_score,
+                "pass_score": pass_score,
             },
         )
 

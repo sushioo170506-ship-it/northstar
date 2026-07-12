@@ -243,6 +243,24 @@ class SQLiteStateStore:
             ).fetchall()
         return tuple(json.loads(row["payload_json"])["feedback"] for row in rows)
 
+    def operations(
+        self, workflow_id: str, operation: str | None = None
+    ) -> list[dict[str, Any]]:
+        query = "SELECT * FROM user_operations WHERE workflow_id=?"
+        params: list[Any] = [workflow_id]
+        if operation:
+            query += " AND operation=?"
+            params.append(operation)
+        query += " ORDER BY created_at"
+        with self._connect() as db:
+            rows = db.execute(query, params).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["payload"] = json.loads(item.pop("payload_json"))
+            result.append(item)
+        return result
+
     def confirm(self, workflow_id: str, checkpoint_id: str, comment: str = "") -> None:
         with self._connect() as db:
             db.execute(

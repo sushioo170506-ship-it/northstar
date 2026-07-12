@@ -37,6 +37,9 @@ self_contained、raster_exported、第三方候选审查数、待人工审批改
 - PDF：必须注入 DocumentRenderer（如 Typst/Pandoc适配器），保存 PDF payload/URI。
 - renderer 缺失或未返回 `rendered=true` 时，DOCX/PDF发布失败，不得静默改成Markdown。
 
+仓库提供 `PandocDocumentRenderer`：以固定参数和超时调用本机Pandoc，成功后返回base64
+payload、MIME、字节数和renderer元数据；Pandoc或PDF engine缺失时明确失败。
+
 ## 错误处理
 
 - quality passed=false：失败，退回 quality_gate 指示的最早节点。

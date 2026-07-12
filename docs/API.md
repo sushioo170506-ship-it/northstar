@@ -13,6 +13,7 @@
 | `audience` | string | 目标受众，默认通用专业读者 |
 | `content_boundaries` | string[] | 内容禁止项、范围和合规边界 |
 | `prior_thoughts` | string | 用户对问题的前置判断或假设 |
+| `workflow_profile` | enum | quick/standard/deep/regulatory，默认deep |
 | `extra` | object | 可包含 `sources` 等适配器参数 |
 
 `extra.enable_competitive_hypotheses` 默认 false。只有因果研究、争议命题检验等用户明确要求的
@@ -28,6 +29,8 @@ orchestrator.confirm(workflow_id, outcome.waiting_at, "同意")
 affected = orchestrator.modify(workflow_id, "writing", "补充反方证据")
 affected = orchestrator.update_sources(workflow_id, new_sources, "修复证据红线")
 target, affected = orchestrator.request_revision(workflow_id, "补充图表并调整架构图")
+orchestrator.add_comment(workflow_id, "outline", "关注章节比例", actor_id="reviewer")
+comments = orchestrator.list_comments(workflow_id, "outline")
 snapshot = orchestrator.state.snapshot(workflow_id)
 report = orchestrator.final_report(workflow_id)
 ```
@@ -78,6 +81,23 @@ Skill 实现 `name`、`version`、`execute(request)`，经 `SkillRegistry.regist
 飞书和网页由内置格式器直接支持。DOCX/PDF 必须向 PublishSkill 注入 DocumentRenderer；
 未配置或未返回 `rendered=true` 时发布失败，不会把Markdown中间稿冒充Word/PDF。
 
+```python
+from research_workflow import (
+    CompositeSourceRetriever, OpenAlexRetriever,
+    PandocDocumentRenderer, ResearchReportOrchestrator,
+)
+
+workflow = ResearchReportOrchestrator(
+    data_dir,
+    source_retriever=CompositeSourceRetriever([
+        OpenAlexRetriever(mailto="research@example.com"),
+        organization_industry_provider,
+        authorized_social_provider,
+    ]),
+    document_renderer=PandocDocumentRenderer(),
+)
+```
+
 调研适配器实现 `SourceRetriever.retrieve(topic, questions, categories)`；research 会分别以
 industry、academic、social_media 单类别调用三次。每个返回项至少应含 id、title、category、url、
 published_at、content、issue_ids；内置模式没有检索器时仅整理用户 sources。
@@ -96,11 +116,15 @@ published_at、content、issue_ids；内置模式没有检索器时仅整理用�
 research-workflow --data-dir ./data create \
   --topic "AI 治理" --length 8000 --style "政策研究" --format markdown \
   --output-type "决策研究报告" --audience "企业管理层" \
-  --boundary "不得包含：未标明来源的数据" --prior-thoughts "需平衡创新与风险"
+  --boundary "不得包含：未标明来源的数据" --prior-thoughts "需平衡创新与风险" \
+  --profile deep
 research-workflow --data-dir ./data run WORKFLOW_ID
 research-workflow --data-dir ./data confirm WORKFLOW_ID outline_confirmation
 research-workflow --data-dir ./data modify WORKFLOW_ID writing "补充风险情景"
 research-workflow --data-dir ./data revise WORKFLOW_ID "图表需要改为流程图"
+research-workflow --data-dir ./data comment WORKFLOW_ID outline "关注章节比例" \
+  --actor reviewer-1
+research-workflow --data-dir ./data comments WORKFLOW_ID --node outline
 research-workflow --data-dir ./data update-sources WORKFLOW_ID sources.json \
   --reason "替换不可追溯来源"
 research-workflow --data-dir ./data status WORKFLOW_ID
