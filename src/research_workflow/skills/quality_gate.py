@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from ..contracts import Skill, TextGenerator
 from ..models import SkillRequest, SkillResult
@@ -33,8 +34,13 @@ class QualityGateSkill(Skill):
         final_report = request.inputs["review"]
         requirements = json.loads(request.inputs["requirements_analysis"])
         evidence_text = request.inputs["evidence_governance"]
+        materials = json.loads(request.inputs["material_integration"])
+        visualizations = json.loads(request.inputs["visualization"])
         pressure_text = request.inputs["pressure_test"]
         evidence = json.loads(evidence_text)
+        requirements_policy = self._requirements_policy(
+            final_report, requirements, evidence, materials, visualizations
+        )
         if self.generator:
             prompt = (
                 "先检查红线，再按 D1事实准确性、D2逻辑严密性、D3事实观点分离、"
@@ -67,6 +73,7 @@ class QualityGateSkill(Skill):
                 and self.REQUIRED_SOURCE_CATEGORIES <= categories
                 and link_coverage == 1.0
                 and all_links_present
+                and requirements_policy["compliant"]
                 and total >= self.pass_score
             )
             generated.update(
@@ -120,20 +127,13 @@ class QualityGateSkill(Skill):
         d7 = 3.5
         scores = dict(zip(DIMENSIONS, (d1, d2, d3, d4, d5, d6, d7), strict=True))
         total = round(sum(scores.values()), 1)
-        missing_categories = sorted(self.REQUIRED_SOURCE_CATEGORIES - categories)
-        missing_report_links = [
-            source["id"] for source in evidence.get("sources", [])
-            if not source.get("original_url") or source["original_url"] not in final_report
-        ]
-        minimum_length = int(requirements["deliverable"]["expected_length"] * 0.75)
-        length_compliant = len(final_report) >= minimum_length
-        boundary_violations = []
-        for boundary in requirements.get("content_boundaries", []):
-            for prefix in ("不得包含:", "不得包含：", "禁止:", "禁止："):
-                if boundary.startswith(prefix):
-                    forbidden = boundary[len(prefix):].strip()
-                    if forbidden and forbidden in final_report:
-                        boundary_violations.append(forbidden)
+        missing_categories = requirements_policy["missing_source_categories"]
+        missing_report_links = requirements_policy["missing_report_links"]
+        minimum_length = requirements_policy["minimum_length"]
+        maximum_length = requirements_policy["maximum_length"]
+        prose_length = requirements_policy["prose_length"]
+        length_compliant = requirements_policy["length_compliant"]
+        boundary_violations = requirements_policy["boundary_violations"]
         passed = (
             source_count > 0
             and not missing_categories
@@ -141,6 +141,7 @@ class QualityGateSkill(Skill):
             and not missing_report_links
             and not boundary_violations
             and length_compliant
+            and requirements_policy["compliant"]
             and not red_lines
             and total >= self.pass_score
         )
@@ -156,7 +157,13 @@ class QualityGateSkill(Skill):
         if boundary_violations:
             problems.append("违反内容边界：" + "、".join(boundary_violations))
         if not length_compliant:
-            problems.append(f"报告篇幅低于最低要求 {minimum_length}")
+            problems.append(
+                f"报告正文篇幅 {prose_length} 不在 {minimum_length}-{maximum_length} 范围"
+            )
+        if requirements_policy["material_mount_coverage"] < 1.0:
+            problems.append("存在未映射到对应议题章节的素材")
+        if requirements_policy["visual_asset_count"] < 1:
+            problems.append("没有可视化成果")
         if completeness:
             problems.append("存在未覆盖的大纲章节")
         if red_lines:
@@ -176,11 +183,17 @@ class QualityGateSkill(Skill):
                 "audience": requirements.get("audience"),
                 "style": requirements.get("style"),
                 "minimum_length": minimum_length,
+                "maximum_length": maximum_length,
                 "actual_length": len(final_report),
+                "prose_length": prose_length,
                 "length_compliant": length_compliant,
                 "boundary_violations": boundary_violations,
                 "missing_source_categories": missing_categories,
                 "missing_report_links": missing_report_links,
+                "material_mount_coverage": requirements_policy[
+                    "material_mount_coverage"
+                ],
+                "visual_asset_count": requirements_policy["visual_asset_count"],
             },
             "decision": "allow_release" if passed else "block_release",
             "feedback_applied": list(request.feedback),
@@ -221,3 +234,68 @@ class QualityGateSkill(Skill):
         expected_decision = "allow_release" if payload["passed"] else "block_release"
         if payload.get("decision") != expected_decision:
             raise ValueError("quality_gate decision 与 passed 不一致")
+
+    def _requirements_policy(
+        self,
+        final_report: str,
+        requirements: dict,
+        evidence: dict,
+        materials: dict,
+        visualizations: dict,
+    ) -> dict:
+        categories = set(evidence.get("metrics", {}).get("source_categories", []))
+        missing_categories = sorted(self.REQUIRED_SOURCE_CATEGORIES - categories)
+        missing_report_links = [
+            source["id"] for source in evidence.get("sources", [])
+            if not source.get("original_url") or source["original_url"] not in final_report
+        ]
+        expected_length = int(requirements["deliverable"]["expected_length"])
+        minimum_length = int(expected_length * 0.75)
+        maximum_length = max(int(expected_length * 1.25), expected_length + 2_000)
+        prose = re.sub(r"```.*?```", "", final_report, flags=re.DOTALL)
+        prose = re.sub(r"<[^>]+>", "", prose)
+        prose_length = len(prose)
+        length_compliant = minimum_length <= prose_length <= maximum_length
+        boundary_violations = []
+        for boundary in requirements.get("content_boundaries", []):
+            for prefix in ("不得包含:", "不得包含：", "禁止:", "禁止："):
+                if boundary.startswith(prefix):
+                    forbidden = boundary[len(prefix):].strip()
+                    if forbidden and forbidden in final_report:
+                        boundary_violations.append(forbidden)
+        source_issue_ids = {
+            source["id"]: set(source.get("issue_ids", []))
+            for source in evidence.get("sources", [])
+        }
+        correctly_mounted: set[str] = set()
+        for section in materials.get("sections", {}).values():
+            linked_issue = section.get("linked_issue")
+            if not linked_issue:
+                continue
+            for material in section.get("materials", []):
+                source_id = material.get("source_id")
+                if linked_issue in source_issue_ids.get(source_id, set()):
+                    correctly_mounted.add(source_id)
+        material_mount_coverage = (
+            len(correctly_mounted) / len(source_issue_ids) if source_issue_ids else 0.0
+        )
+        visual_asset_count = len(visualizations.get("assets", []))
+        return {
+            "missing_source_categories": missing_categories,
+            "missing_report_links": missing_report_links,
+            "minimum_length": minimum_length,
+            "maximum_length": maximum_length,
+            "prose_length": prose_length,
+            "length_compliant": length_compliant,
+            "boundary_violations": boundary_violations,
+            "material_mount_coverage": material_mount_coverage,
+            "visual_asset_count": visual_asset_count,
+            "compliant": (
+                not missing_categories
+                and not missing_report_links
+                and length_compliant
+                and not boundary_violations
+                and material_mount_coverage == 1.0
+                and visual_asset_count >= 1
+            ),
+        }

@@ -102,6 +102,55 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.workflow.create({"topic": "", "expected_length": 100})
 
+    def test_missing_source_categories_block_release(self) -> None:
+        workflow_id = self.create(extra={"sources": [compliant_sources()[0]]})
+        for checkpoint in CHECKPOINTS:
+            outcome = self.workflow.run(workflow_id)
+            self.assertEqual(outcome.waiting_at, checkpoint)
+            self.workflow.confirm(workflow_id, checkpoint)
+        with self.assertRaises(QualityGateRejected):
+            self.workflow.run(workflow_id)
+        gate = json.loads(
+            self.workflow.state.node_artifact(workflow_id, "quality_gate")["content"]
+        )
+        self.assertEqual(
+            gate["requirements_checks"]["missing_source_categories"],
+            ["academic", "social_media"],
+        )
+
+    def test_content_boundary_violation_blocks_release(self) -> None:
+        workflow_id = self.create(content_boundaries=["禁止：本节围绕"])
+        for checkpoint in CHECKPOINTS:
+            outcome = self.workflow.run(workflow_id)
+            self.assertEqual(outcome.waiting_at, checkpoint)
+            self.workflow.confirm(workflow_id, checkpoint)
+        with self.assertRaises(QualityGateRejected):
+            self.workflow.run(workflow_id)
+        gate = json.loads(
+            self.workflow.state.node_artifact(workflow_id, "quality_gate")["content"]
+        )
+        self.assertEqual(
+            gate["requirements_checks"]["boundary_violations"], ["本节围绕"]
+        )
+
+    def test_unmapped_materials_block_release(self) -> None:
+        sources = compliant_sources("UNMAPPED")
+        for source in sources:
+            source["issue_ids"] = ["ISSUE-UNKNOWN"]
+        workflow_id = self.create(extra={"sources": sources})
+        for checkpoint in CHECKPOINTS:
+            outcome = self.workflow.run(workflow_id)
+            self.assertEqual(outcome.waiting_at, checkpoint)
+            self.workflow.confirm(workflow_id, checkpoint)
+        with self.assertRaises(QualityGateRejected):
+            self.workflow.run(workflow_id)
+        gate = json.loads(
+            self.workflow.state.node_artifact(workflow_id, "quality_gate")["content"]
+        )
+        self.assertEqual(
+            gate["requirements_checks"]["material_mount_coverage"], 0.0
+        )
+
     def test_checkpoints_resume_and_final_output(self) -> None:
         workflow_id = self.create()
         first = self.workflow.run(workflow_id)
@@ -121,7 +170,11 @@ class WorkflowTests(unittest.TestCase):
         final = reloaded.run(workflow_id)
 
         self.assertEqual(final.status, WorkflowStatus.COMPLETED)
-        self.assertIn("# 生成式人工智能治理研究", reloaded.final_report(workflow_id))
+        final_report = reloaded.final_report(workflow_id)
+        self.assertIn("# 生成式人工智能治理研究", final_report)
+        self.assertIn("https://official.example/policy", final_report)
+        self.assertIn("https://academic.example/paper", final_report)
+        self.assertIn("https://social.example/post", final_report)
         self.assertEqual(reloaded.state.node(workflow_id, "research")["attempts"], 1)
         self.assertEqual(
             reloaded.state.node(workflow_id, "quality_gate")["status"], NodeStatus.COMPLETED
@@ -132,6 +185,11 @@ class WorkflowTests(unittest.TestCase):
             reloaded.state.node_artifact(workflow_id, "evidence_governance")["content"]
         )
         self.assertEqual(ledger["issue_coverage"]["ISSUE-01"], ["S-OFFICIAL"])
+        issue_tree = json.loads(
+            reloaded.state.node_artifact(workflow_id, "issue_tree")["content"]
+        )
+        self.assertTrue(all(issue["children"] for issue in issue_tree["issues"]))
+        self.assertTrue(all(issue["necessity"] for issue in issue_tree["issues"]))
         brief = json.loads(
             reloaded.state.node_artifact(workflow_id, "requirements_analysis")["content"]
         )
@@ -216,6 +274,11 @@ class WorkflowTests(unittest.TestCase):
         snapshot = self.workflow.state.snapshot(workflow_id)
         operations = [row["operation"] for row in snapshot["operations"]]
         self.assertIn("route_revision", operations)
+        routing_id = self.create()
+        target, _ = self.workflow.request_revision(routing_id, "调整主题下的议题树和子问题")
+        self.assertEqual(target, "issue_tree")
+        target, _ = self.workflow.request_revision(routing_id, "修改章节里的来源链接")
+        self.assertEqual(target, "research")
 
     def test_long_context_is_chunked_losslessly_and_retrievable(self) -> None:
         workflow_id = self.create(expected_length=105_000)
@@ -335,6 +398,10 @@ class WorkflowTests(unittest.TestCase):
                 "evidence_governance": json.dumps(
                     {"metrics": {"source_count": 0}, "red_lines": []}
                 ),
+                "material_integration": json.dumps(
+                    {"sections": {}, "metrics": {"mount_coverage": 0.0}}
+                ),
+                "visualization": json.dumps({"assets": []}),
                 "pressure_test": json.dumps({"repair_actions": []}),
             },
         )

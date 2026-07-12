@@ -125,9 +125,15 @@ NODES = (
     ),
     NodeSpec(
         "quality_gate",
-        ("requirements_analysis", "evidence_governance", "pressure_test", "review"),
+        (
+            "requirements_analysis", "evidence_governance", "material_integration",
+            "visualization", "pressure_test", "review",
+        ),
         "quality_gate",
-        ("requirements_analysis", "evidence_governance", "pressure_test", "review"),
+        (
+            "requirements_analysis", "evidence_governance", "material_integration",
+            "visualization", "pressure_test", "review",
+        ),
         quality_gate=True,
     ),
 )
@@ -349,28 +355,80 @@ class ResearchReportOrchestrator:
         normalized = feedback.strip().lower()
         if not normalized:
             raise ValueError("修改意见不能为空")
-        routes = (
+        routes: tuple[tuple[str, tuple[tuple[str, int], ...]], ...] = (
             (
                 "requirements_analysis",
-                ("主题", "受众", "边界", "前置思考", "需求", "产出形态", "audience", "scope"),
+                (
+                    ("目标受众", 3), ("内容边界", 3), ("前置思考", 3),
+                    ("产出形态", 3), ("主题", 1), ("需求", 1),
+                    ("audience", 3), ("scope", 2),
+                ),
             ),
-            ("outline", ("大纲", "框架", "章节", "结构", "outline")),
+            (
+                "issue_tree",
+                (
+                    ("议题树", 4), ("子问题", 3), ("问题拆解", 3),
+                    ("mece", 3), ("核心问题", 2),
+                ),
+            ),
+            (
+                "outline",
+                (("大纲", 3), ("文章框架", 3), ("章节", 1), ("结构", 1), ("outline", 3)),
+            ),
             (
                 "research",
-                ("来源", "链接", "事实", "数据", "材料", "调研", "引用", "source", "citation"),
+                (
+                    ("来源", 3), ("链接", 3), ("事实", 2), ("数据", 2),
+                    ("材料", 2), ("调研", 2), ("引用", 2),
+                    ("source", 3), ("citation", 3),
+                ),
+            ),
+            (
+                "evidence_governance",
+                (("证据治理", 4), ("可追溯", 3), ("利益相关方", 3), ("证据红线", 3)),
+            ),
+            (
+                "material_integration",
+                (("素材挂载", 4), ("素材整合", 4), ("章节素材", 3)),
             ),
             (
                 "visualization",
-                ("图表", "可视化", "流程图", "架构图", "chart", "diagram"),
+                (
+                    ("图表", 3), ("可视化", 3), ("流程图", 4),
+                    ("架构图", 4), ("chart", 3), ("diagram", 3),
+                ),
             ),
-            ("formatting", ("格式", "排版", "html", "json", "markdown")),
-            ("writing", ("篇幅", "文风", "措辞", "论证", "内容", "语气", "style")),
+            (
+                "pressure_test",
+                (("压力测试", 4), ("反方论证", 3), ("完整性审计", 3)),
+            ),
+            (
+                "formatting",
+                (("格式", 3), ("排版", 3), ("html", 3), ("json", 3), ("markdown", 3)),
+            ),
+            (
+                "review",
+                (("复核", 3), ("审核", 2), ("真实性校验", 4), ("合规校验", 4)),
+            ),
+            (
+                "quality_gate",
+                (("质量门", 4), ("评分", 2), ("发布阻断", 4)),
+            ),
+            (
+                "writing",
+                (
+                    ("篇幅", 3), ("文风", 3), ("措辞", 2), ("论证", 2),
+                    ("内容", 1), ("语气", 2), ("style", 3),
+                ),
+            ),
         )
-        target = "writing"
-        for candidate, keywords in routes:
-            if any(keyword in normalized for keyword in keywords):
-                target = candidate
-                break
+        scores = {
+            candidate: sum(
+                weight for keyword, weight in weighted_keywords if keyword in normalized
+            )
+            for candidate, weighted_keywords in routes
+        }
+        target = max(scores, key=scores.get) if max(scores.values(), default=0) else "writing"
         self.state.record_operation(
             workflow_id,
             "route_revision",

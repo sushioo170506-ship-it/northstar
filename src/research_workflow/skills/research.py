@@ -42,6 +42,7 @@ class ResearchSkill(Skill):
             )
         sources = self._normalize_sources(raw_sources)
         prompt = RESEARCH_PROMPT.format(topic=request.config.topic)
+        model_analysis = None
         if self.generator:
             prompt += (
                 f"\n需求简报：{json.dumps(requirements, ensure_ascii=False)}"
@@ -49,10 +50,13 @@ class ResearchSkill(Skill):
                 f"\n已确认大纲：{json.dumps(outline, ensure_ascii=False)}"
                 f"\n检索候选：{json.dumps(sources, ensure_ascii=False)}"
             )
-            content = self.generator.generate(
+            generated = self.generator.generate(
                 system="你是严谨的研究员。不得虚构来源。", prompt=prompt, max_tokens=4000
             )
-            return SkillResult(content, "evidence_pack", {"prompt_version": "1.0"})
+            try:
+                model_analysis = json.loads(generated)
+            except json.JSONDecodeError:
+                model_analysis = {"raw": generated, "parse_error": True}
 
         present_categories = sorted(
             {source["category"] for source in sources if source["category"] != "unknown"}
@@ -82,6 +86,7 @@ class ResearchSkill(Skill):
                 [f"缺少来源类别：{category}" for category in missing_categories]
                 if missing_categories else []
             ),
+            "model_analysis": model_analysis,
             "feedback_applied": list(request.feedback),
         }
         return SkillResult(
@@ -91,6 +96,7 @@ class ResearchSkill(Skill):
                 "source_count": len(sources),
                 "source_category_count": len(present_categories),
                 "requires_external_retrieval": bool(missing_categories),
+                "prompt_version": "1.0" if self.generator else None,
             },
         )
 

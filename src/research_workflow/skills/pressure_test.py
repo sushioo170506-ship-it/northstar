@@ -23,6 +23,7 @@ class PressureTestSkill(Skill):
         issue_tree_text = request.inputs["issue_tree"]
         materials_text = request.inputs["material_integration"]
         visualizations_text = request.inputs["visualization"]
+        model_analysis = None
         if self.generator:
             prompt = (
                 "独立审计初稿，不要把审查意见折叠进正文。执行逻辑、证据、最强反方论证、"
@@ -32,11 +33,14 @@ class PressureTestSkill(Skill):
                 f"调研：{research_text}\n素材映射：{materials_text}\n"
                 f"可视化：{visualizations_text}"
             )
-            content = self.generator.generate(
+            generated = self.generator.generate(
                 system="你是持怀疑态度的独立报告压力测试员。",
                 prompt=prompt, max_tokens=5000,
             )
-            return SkillResult(content, "pressure_test", {"prompt_version": "1.0"})
+            try:
+                model_analysis = json.loads(generated)
+            except json.JSONDecodeError:
+                model_analysis = {"raw": generated, "parse_error": True}
 
         outline = json.loads(outline_text)
         research = json.loads(research_text)
@@ -163,6 +167,7 @@ class PressureTestSkill(Skill):
                 "issue_tree_questions_reviewed": issue_questions,
             },
             "repair_actions": repair_actions,
+            "model_analysis": model_analysis,
             "feedback_applied": list(request.feedback),
         }
         return SkillResult(
@@ -173,6 +178,7 @@ class PressureTestSkill(Skill):
                 "issue_count": len(logic_issues) + len(evidence_gaps)
                 + len(completeness_issues),
                 "red_line_count": len(red_lines),
+                "prompt_version": "1.0" if self.generator else None,
             },
         )
 

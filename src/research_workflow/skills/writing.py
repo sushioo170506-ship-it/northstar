@@ -75,7 +75,7 @@ class WritingSkill(Skill):
                     f"检视该议题；现有材料不足以支持的判断不作为确定事实。"
                 )
                 counter += 1
-            section_body = "".join(sentences)[:target]
+            section_body = "".join(sentences)
             parts.append(f"## {section['title']}\n\n{section_body}\n")
             applicable = [
                 asset for asset in visualizations.get("assets", [])

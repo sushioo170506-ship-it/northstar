@@ -17,16 +17,20 @@ class EvidenceGovernanceSkill(Skill):
     def execute(self, request: SkillRequest) -> SkillResult:
         research_text = request.inputs["research"]
         issue_tree_text = request.inputs["issue_tree"]
+        model_analysis = None
         if self.generator:
             prompt = (
                 "审计来源的主体、时间、一手性、利益相关性、独立验证和冲突。"
                 "不得把无法验证等同于虚假。输出 JSON 证据账本、问题和红线。\n"
                 f"证据包：{research_text}\n议题树：{issue_tree_text}"
             )
-            content = self.generator.generate(
+            generated = self.generator.generate(
                 system="你是独立证据治理审核员。", prompt=prompt, max_tokens=4000
             )
-            return SkillResult(content, "evidence_ledger", {"prompt_version": "1.0"})
+            try:
+                model_analysis = json.loads(generated)
+            except json.JSONDecodeError:
+                model_analysis = {"raw": generated, "parse_error": True}
 
         research = json.loads(research_text)
         issue_tree = json.loads(issue_tree_text)
@@ -124,6 +128,7 @@ class EvidenceGovernanceSkill(Skill):
             },
             "issues": issues,
             "red_lines": red_lines,
+            "model_analysis": model_analysis,
             "feedback_applied": list(request.feedback),
         }
         return SkillResult(
@@ -135,6 +140,7 @@ class EvidenceGovernanceSkill(Skill):
                 "traceability_ratio": payload["metrics"]["traceability_ratio"],
                 "original_link_coverage": payload["metrics"]["original_link_coverage"],
                 "source_category_count": len(categories),
+                "prompt_version": "1.0" if self.generator else None,
             },
         )
 

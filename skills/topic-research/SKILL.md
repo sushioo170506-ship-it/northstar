@@ -9,12 +9,12 @@ version: 1.0.0
 
 独立实现：`research_workflow.skills.research.ResearchSkill`。
 
-输入为 `SkillRequest`：读取 `config.topic`、`config.extra.sources`、`feedback`；不依赖其他
-节点。输出 `SkillResult(artifact_type="evidence_pack")`，内容为包含 `topic`、
-`research_questions`、`sources`、`evidence_gaps` 的 JSON。
+在最终大纲确认后执行。输入 requirements_analysis、issue_tree、outline，以及
+`config.extra.sources`；输出 `SkillResult(artifact_type="evidence_pack")`，内容包含
+research_questions、sources、outline_sections、retrieval_summary 和 evidence_gaps。
 
-未配置模型时使用确定性本地实现，只整理已提供来源且绝不伪造检索结果。注入
-`TextGenerator` 后可对接检索增强模型，外部适配器仍须返回相同契约。独立调用：
+未配置检索器时只整理已提供来源且绝不伪造检索结果。注入 `SourceRetriever` 后按 official、
+academic、social_media 三类检索；缺少任一类时保持 evidence gap，最终质量门阻断发布。
 
 ```python
 result = ResearchSkill(generator=None).execute(request)

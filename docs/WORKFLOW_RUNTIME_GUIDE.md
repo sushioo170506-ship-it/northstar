@@ -10,7 +10,7 @@
 系统将研究报告从主题输入到终稿输出拆分为可审计、可确认、可恢复的标准流程，主要解决：
 
 1. 统一主题、篇幅、风格和输出格式，避免各阶段参数漂移；
-2. 将研究、议题树、证据治理、大纲、写作、压力测试、排版、审核和质量门解耦；
+2. 将需求、议题树、大纲、调研、证据、素材、可视化、写作、压力测试、排版、审核和质量门解耦；
 3. 在议题树、大纲、初稿、终审前强制人工确认，避免错误自动扩散；
 4. 修改任意产物时只重跑受影响节点，保留无关的有效结果；
 5. 持久化配置、节点状态、产物、反馈和操作记录，支持进程中断后恢复；
@@ -32,8 +32,9 @@ ResearchReportOrchestrator
   |-- DAG 调度、状态机、确认门、影响分析
   |-- SkillRegistry -------------------------------+
   |                                                |
-  |   research -> issue_tree -> [议题树确认] -> evidence_governance
-  |      -> outline -> [大纲确认] -> writing -> pressure_test -> [初稿确认]
+  |   requirements_analysis -> issue_tree -> [主题与议题树确认]
+  |      -> outline -> [大纲确认] -> research -> evidence_governance
+  |      -> material_integration -> visualization -> writing -> pressure_test -> [初稿确认]
   |      -> formatting -> [终审前确认] -> review -> quality_gate
   |
   |-- SQLiteStateStore  -> state.db
@@ -67,12 +68,16 @@ ResearchReportOrchestrator
 | `style` | string | 专业、客观、证据驱动 | 模型 outline、formatting 元数据/模型 |
 | `output_format` | enum | markdown/html/json/text | formatting、review |
 | `language` | string | zh-CN | 已持久化；当前内置 Skill 尚未消费 |
+| `output_type` | string | research_report | requirements_analysis、outline |
+| `audience` | string | 通用专业读者 | requirements_analysis、outline、review |
+| `content_boundaries` | string[] | 默认空 | requirements_analysis、review、quality_gate |
+| `prior_thoughts` | string | 默认空 | requirements_analysis、issue_tree |
 | `extra` | object | 默认空对象 | research/外部适配器 |
 
 `md/htm/txt` 分别标准化为 `markdown/html/text`。离线 outline 不根据 style 改写结构，
 离线 formatting 主要做格式转换并记录 style；实际风格生成依赖 TextGenerator。运行过程中
-Skill 不能私自更改配置。来源可通过 `update_sources()` 合法替换，该操作更新配置并从 research
-开始失效全部后代，用于修复证据红线；topic、篇幅、风格和格式仍需创建新工作流。已实现与
+Skill 不能私自更改配置。来源可通过 `update_sources()` 合法替换，该操作更新配置并从
+requirements_analysis 开始失效全部后代，用于修复证据红线；topic、篇幅、风格和格式仍需创建新工作流。已实现与
 尚未验证的边界见 6.4。
 
 ## 2. 完整运行流程
@@ -82,17 +87,23 @@ Skill 不能私自更改配置。来源可通过 `update_sources()` 合法替换
 ```text
 create
   |
-research
+requirements_analysis
   |
 issue_tree
   |
 [issue_tree_confirmation] -- 未确认则暂停
   |
-evidence_governance
-  |
 outline
   |
 [outline_confirmation] -- 未确认则暂停
+  |
+research
+  |
+evidence_governance
+  |
+material_integration
+  |
+visualization
   |
 writing
   |
@@ -137,192 +148,90 @@ completed -> invalidated -> running（用户修改后）
 
 ### 2.3 节点详细说明
 
-#### 2.3.1 research：主题拆解与证据整理
+#### 2.3.1 requirements_analysis：需求拆解与意图识别
 
-- 触发条件：工作流已创建；无前置节点；当前节点未完成或已失效/失败。
-- 输入：
-  - `config.topic`；
-  - `config.extra.sources`，可选字符串或对象数组；
-  - 针对 research 的历史修改意见。
-- 标准来源字段：`id`、`title`、`content`；缺失 ID/标题时按本次输入顺序生成序号。输入重排
-  会改变自动 ID，生产来源适配器应提供跨运行稳定 ID。
-- 执行逻辑：
-  1. 按概念范围、现状驱动、关键机制、风险局限、结论建议拆分研究问题；
-  2. 标准化用户提供的来源；
-  3. 没有来源时生成明确的 `evidence_gaps`，不伪造引用；
-  4. 注入 `TextGenerator` 后可改由模型处理，但仍须维持相同输出契约。
-- 输出：
-  - `artifact_type="evidence_pack"`；
-  - JSON 字段：`topic`、`research_questions`、`sources`、`evidence_gaps`、
-    `feedback_applied`；
-  - 元数据：来源数量、是否需要外部检索。
-- 后继：issue_tree；同时作为 evidence_governance、outline、writing 和 review 的精确依赖。
+- 触发：工作流创建后首先执行。
+- 输入：topic、output_type、style、audience、expected_length、output_format、language、
+  content_boundaries、reference sources、prior_thoughts。
+- 逻辑：完整提取九类需求维度，标记默认值和缺失资料，不从隐式会话猜测。
+- 输出：`requirements_brief`，供全部业务节点作为统一需求基线。
 
-#### 2.3.2 issue_tree：议题树
+#### 2.3.2 issue_tree 与 issue_tree_confirmation
 
-- 触发条件：research 已完成。
-- 输入：`inputs["research"]`、topic、针对 issue_tree 的修改意见。
-- 执行逻辑：
-  1. 生成 3–7 个可由证据回答的子问题；
-  2. 每个子问题包含稳定 ID、初始假设、证据需求和状态；
-  3. validate 强制检查子问题数量；
-  4. MECE 完整性由后续人工确认和模型适配器增强。
-- 输出：`artifact_type="issue_tree"`，JSON 包含 main_question、issues、coverage。
-- 后继：`issue_tree_confirmation`。
+- 输入：requirements_brief。
+- 逻辑：生成 3–7 个一级问题及二级问题；逐项记录必要性、写作价值、证据需求和保留状态，
+  无价值问题进入 excluded_issues。
+- 输出：`issue_tree`。人工确认同时确认最终主题和多层级问题，未确认不得搭建大纲。
 
-#### 2.3.3 issue_tree_confirmation 与 evidence_governance
+#### 2.3.3 outline 与 outline_confirmation
 
-- 确认触发条件：issue_tree 已完成；未确认时工作流暂停。
-- 证据治理触发条件：research、issue_tree 和确认节点均完成。
-- 输入：完整 evidence_pack 与已确认 issue_tree。
-- 执行逻辑：
-  1. 为来源记录主体、类型、发布时间、可追溯性、利益相关性和独立验证；
-  2. 计算来源可追溯率、关键来源数量和独立覆盖率；
-  3. 将一般缺失信息记为 issue，不把“无法验证”直接等同于“虚假”；
-  4. 检测显式编造来源、无法追溯的关键来源、单一利益相关方关键支撑三类红线。
-- 输出：`artifact_type="evidence_ledger"`，包含 sources、issue_coverage、metrics、issues、
-  red_lines。
-- 后继：outline，并作为 writing、pressure_test、review、quality_gate 的精确依赖。
+- 输入：已确认议题树、需求简报、篇幅和文风。
+- 逻辑：将每个有效问题映射到章节，分配稳定 ID、目标篇幅、核心目的和证据要求，记录受众、
+  文风、产出形态和内容边界对齐信息。
+- 输出：`outline`。用户确认后形成最终大纲，后续调研只能依据该版本执行。
 
-#### 2.3.4 outline：大纲架构设计
+#### 2.3.4 research：按最终大纲调研
 
-- 触发条件：research 已完成。
-- 输入：
-  - `inputs["research"]`：完整 evidence_pack；
-  - `inputs["issue_tree"]`：已确认议题树；
-  - `inputs["evidence_governance"]`：证据治理账本；
-  - topic、expected_length、style；
-  - 针对 outline 的修改意见。
-- 执行逻辑：
-  1. 创建摘要、背景、发现、机制、风险、结论等章节；
-  2. 为每节分配稳定 ID、目标篇幅、论证目的和证据需求；
-  3. 记录 evidence_pack 的 SHA-256 提示，便于追踪输入版本。
-- 输出：
-  - `artifact_type="outline"`；
-  - JSON 字段：标题、章节列表、总目标篇幅、已应用反馈、
-    `evidence_checksum_hint`。
-- 后继：必须先进入 `outline_confirmation`。
+- 输入：需求简报、议题树、已确认大纲、用户来源和可选 SourceRetriever。
+- 逻辑：按问题和章节收集并去重来源，标准化 official、academic、social_media 类别，保留
+  title、content、published_at、original URL、issue_ids；不会伪造联网结果。
+- 输出：`evidence_pack` 与 retrieval_summary。缺少任一必需类别时明确记录 evidence gap。
 
-#### 2.3.5 outline_confirmation：大纲确认
+#### 2.3.5 evidence_governance：证据治理
 
-- 触发条件：outline 已完成。
-- 输入：workflow_id、可选人工确认意见。
-- 执行逻辑：
-  - 未确认：写入 `waiting_confirmation`，工作流暂停；
-  - 调用 `confirm(workflow_id, "outline_confirmation", comment)`：写入确认和用户操作；
-  - confirm 调用会立即把确认节点设为 completed、工作流设为 running；再次运行时跳过该节点。
-- 输出：没有业务产物，仅有确认记录和节点状态。
-- 后继：writing。
+- 输入：调研包和议题树。
+- 逻辑：计算可追溯率、原始链接覆盖率、来源类别覆盖、议题证据映射、利益相关方独立验证，
+  检测编造、关键来源不可追溯、单一利益相关方支撑三类红线。
+- 输出：`evidence_ledger`。无法验证不会直接等同虚假，但三类来源或链接不足会在质量门阻断。
 
-#### 2.3.6 writing：内容撰写
+#### 2.3.6 material_integration：素材整合
 
-- 触发条件：research、issue_tree、evidence_governance、outline 和 outline_confirmation
-  均已完成。
-- 输入：
-  - `inputs["research"]`；
-  - `inputs["issue_tree"]`；
-  - `inputs["evidence_governance"]`；
-  - `inputs["outline"]`；
-  - expected_length；
-  - 针对 writing 的累计修改意见。
-- 执行逻辑：
-  1. 离线实现按大纲逐节确定性生成；
-  2. 事实、分析、建议分离；
-  3. 仅引用证据包中存在的来源；
-  4. 来源不足时保留“资料缺口：待检索”；
-  5. 将修改意见附入修订说明或交给模型适配器执行。
-- 模型路径限制：当前 `TextGenerator` 分支进行一次 generate 调用，并可能请求很大的
-  max_tokens；十万字生产写作必须由适配器分段，或后续把 WritingSkill 改为章节级模型调用。
-- 输出：
-  - `artifact_type="draft"`；
-  - Markdown 结构初稿；
-  - 元数据：字符数、章节数、Skill 版本。
-- 后继：`pressure_test`。
+- 输入：最终大纲、调研包、证据账本。
+- 逻辑：按 issue_ids 和 outline.linked_issue 把每项材料挂载到对应章节；综合章节引用全部
+  来源；保留 source_id、类别、URL、内容和用途。
+- 输出：`section_materials` 和 mount_coverage，覆盖率不足会进入压力测试。
 
-#### 2.3.7 pressure_test：独立压力测试
+#### 2.3.7 visualization：可视化处理
 
-- 触发条件：issue_tree、evidence_governance、outline、writing 均已完成。
-- 输入：初稿、议题树、大纲和证据治理账本。
-- 执行逻辑：独立执行逻辑、证据、最强反方论证、完整性四项审计；不把审查内容混入正文。
-- 输出：`artifact_type="pressure_test"`，包含 overall_confidence、四类 audit、
-  repair_actions、红线和元数据。
-- 后继：`draft_confirmation`。用户确认时可同时审阅初稿和独立弱点报告。
+- 输入：多层级议题树和章节素材。
+- 逻辑：生成 Mermaid 研究问题逻辑图、Vega-Lite 来源类别图；存在量化素材时增加量化证据图。
+- 输出：`visualization_assets`，每项含稳定 ID、类型、格式、适用章节和可渲染 content。
 
-#### 2.3.8 draft_confirmation：初稿确认
+#### 2.3.8 writing：完整报告生成
 
-- 触发条件：writing 已完成。
-- 输入/输出及确认规则与 outline_confirmation 相同。
-- 业务含义：用户确认报告内容方向后才允许排版，减少在错误内容上的格式化成本。
-- 后继：formatting。
+- 输入：需求、议题树、大纲、调研、证据账本、章节素材、可视化。
+- 逻辑：按章节和目标篇幅写作，区分事实/分析/建议；事实章节附 `[source_id](original_url)`；
+  可视化以 Mermaid/Vega-Lite 代码块嵌入；资料不足必须显式披露。
+- 输出：`draft`。模型路径当前仍是单次 generate，生产适配器应改为章节级调用。
 
-#### 2.3.9 formatting：格式排版与风格统一
+#### 2.3.9 pressure_test 与 draft_confirmation
 
-- 触发条件：writing、draft_confirmation 已完成。
-- 输入：
-  - `inputs["writing"]`；
-  - style、output_format；
-  - 针对 formatting 的修改意见。
-- 执行逻辑：
-  1. 规范连续空行和标题层级；
-  2. 按目标格式转换：
-     - markdown：保留规范化 Markdown；
-     - html：转义正文并生成 h1/h2/p 和 UTF-8 页面；
-     - json：输出 title、style、content_markdown；
-     - text：移除 Markdown 标题标记；
-  3. 不新增事实或证据。
-- 输出：
-  - `artifact_type="formatted_draft"`；
-  - 对应格式的完整内容；
-  - 元数据：格式和风格。
-- 后继：`pre_review_confirmation`。
+- 逻辑：独立执行逻辑、证据、反方论证、完整性审计，并额外检查三类来源、URL、素材挂载和
+  可视化，不把审查意见混入正文。
+- 输出：`pressure_test` 和 repair_actions。用户确认初稿时可同时审阅弱点报告。
 
-#### 2.3.10 pre_review_confirmation：终稿审核前确认
+#### 2.3.10 formatting 与 pre_review_confirmation
 
-- 触发条件：formatting 已完成。
-- 业务含义：用户确认排版后的完整候选稿，再执行最终质量审核。
-- 输入/输出及确认规则与其他确认节点相同。
-- 后继：review。
+- 输入：初稿、style、output_format。
+- 逻辑：转换 Markdown、HTML、JSON 或 text，不新增事实。排版后的候选稿必须经审核前确认。
+- 输出：`formatted_draft`。
 
-#### 2.3.11 review：质量审核与润色
+#### 2.3.11 review：真实性与需求合规复核
 
-- 触发条件：research、evidence_governance、outline、pressure_test、formatting、
-  pre_review_confirmation 均已完成。
-- 输入：
-  - `inputs["research"]`、`inputs["evidence_governance"]`、`inputs["outline"]`、
-    `inputs["pressure_test"]`、`inputs["formatting"]`；
-  - expected_length、output_format；
-  - 针对 review 的修改意见。
-- 执行逻辑：
-  1. 检查内容非空、目标格式、来源数量；
-  2. Markdown 检查一级标题；
-  3. 检查正文是否达到目标篇幅的 75%；
-  4. 无来源时保留风险说明，不补造引文；
-  5. 按格式安全地附加审核反馈。
-- 当前限制：outline 虽作为精确输入传入，但内置 ReviewSkill 尚未使用它执行大纲一致性检查；
-  该输入为后续增强和自定义审核 Skill 保留。
-- 输出：
-  - `artifact_type="final_report"`；
-  - 终稿正文；
-  - 元数据：`quality_passed`、`issues`、`checks`。
-- 后继：quality_gate。
+- 输入：需求、调研、证据、大纲、素材、可视化、压力测试和格式化报告。
+- 逻辑：检查三类来源、每项原始 URL 是否出现在对应报告、篇幅、格式、素材挂载率、可视化、
+  受众/文风声明和“禁止/不得包含”边界。
+- 输出：`final_report` 候选及 review_checks_passed、issues、checks。
 
 #### 2.3.12 quality_gate：D1–D7 发布质量门
 
-- 触发条件：evidence_governance、pressure_test、review 均已完成。
-- 输入：证据账本、独立压力测试和终稿。
-- 执行逻辑：
-  1. 汇总证据红线；
-  2. 对事实准确性、逻辑严密性、事实观点分离、结构完整性、So What、边界感、量级感评分；
-  3. 总分满分 35，默认通过线为 24；
-  4. 没有可追溯来源、任一红线或总分不足时作出 `block_release` 决定。
-- 输出：`artifact_type="quality_gate"`，包含 passed、total_score、D1–D7、red_lines、
-  problems、required_actions 和 decision。
-- 通过：节点和工作流 completed，终稿可读取。
-- 拒绝：评估产物仍被保存，节点和工作流 failed，抛出 `QualityGateRejected`；公开
-  `final_report()` 和默认 `state.node_artifact(..., "review")` 均拒绝读取。编排器内部仅在
-  执行 quality_gate 时使用显式 `internal=True` 读取候选稿，该参数不是外部发布接口。
-
-ReviewSkill 自身仍会生成 issues 元数据；最终发布权由 quality_gate 决定。
+- 输入：需求简报、证据账本、压力测试和候选终稿。
+- 逻辑：评分满分 35、默认通过线 24；缺少三类来源、链接覆盖不足 100%、终稿漏链、素材
+  未正确映射到对应议题章节、无可视化、篇幅不足/超限、边界违规、红线或低分任一条件都会
+  `block_release`。挂载率由质量门根据 issue_ids 重新计算，不采信上游自报值。
+- 通过：工作流 completed，终稿可读取。
+- 拒绝：评分产物保留，节点和工作流 failed，抛出 QualityGateRejected；修订路由或
+  update_sources 将流程退回最早受影响节点后重跑。
 
 ## 3. 功能模块与交互规则
 
@@ -358,7 +267,7 @@ SkillResult:
 Skill 必须是显式输入到不可变输出的转换器。远程服务可以实现 Proxy Skill，通过 RPC 传输相同
 结构；编排器无需了解供应商、模型或部署方式。
 
-编排器会把最多 16 个相关向量分片放入 `SkillRequest.context`。当前九个内置离线 Skill
+编排器会把最多 16 个相关向量分片放入 `SkillRequest.context`。当前十二个内置离线 Skill
 均只消费 `inputs` 精确依赖，尚未读取 context；该字段目前供自定义/远程 Skill 使用。
 
 ### 3.3 TextGenerator
@@ -426,7 +335,8 @@ Skill 尚未消费召回结果，因此十万字测试主要验证的是关系�
 
 ### 3.7 CLI
 
-命令包括 `create`、`run`、`confirm`、`modify`、`update-sources`、`status`、`final`。结构化结果使用 JSON，
+命令包括 `create`、`run`、`confirm`、`modify`、`revise`、`update-sources`、`status`、
+`final`。结构化结果使用 JSON，
 可预期的 ValueError/KeyError/RuntimeError 写入 stderr 并返回退出码 2。
 
 CLI 是薄适配层，不保存会话状态；所有恢复均依赖显式 workflow_id 和 data directory。
@@ -439,10 +349,13 @@ CLI 是薄适配层，不保存会话状态；所有恢复均依赖显式 workfl
 
 | 修改目标 | 主要失效范围 |
 |---|---|
-| research | 全部后续节点和确认 |
-| issue_tree | 议题树及全部后代；保留 research |
-| evidence_governance | 证据治理及下游；保留 research、issue_tree 和确认 |
-| outline | outline 及其全部后代；保留上游证据成果 |
+| requirements_analysis | 全部后续节点和确认 |
+| issue_tree | 议题树及全部后代；保留需求简报 |
+| outline | outline 及全部后代；保留需求和已确认议题树 |
+| research | 调研、证据、素材、可视化及全部写作/复核后代 |
+| evidence_governance | 证据治理及下游；保留需求、议题树、大纲和原始调研 |
+| material_integration | 素材整合、可视化及写作/复核后代 |
+| visualization | 可视化及写作/复核后代，不重跑素材整合 |
 | writing | writing、pressure_test、初稿确认、formatting、终审前确认、review、quality_gate |
 | pressure_test | pressure_test、初稿确认、review、quality_gate；不重跑 writing |
 | formatting | formatting、终审前确认、review、quality_gate |
@@ -467,8 +380,14 @@ modify 当前不限制工作流整体状态；在 waiting/failed/completed 状�
 场景，调用层应先串行化同一 workflow 的写操作。
 
 证据红线修复使用 `update_sources(workflow_id, sources, reason)`：新来源先经过 ReportConfig
-校验并持久化，再记录不含正文的 update_sources 审计事件，随后以 research 为目标执行同一
+校验并持久化，再记录不含正文的 update_sources 审计事件，随后以 requirements_analysis 为目标执行同一
 影响分析。议题树等四个确认会重新打开，质量门通过前终稿始终不可读取。
+
+自然语言修改使用 `request_revision()`/CLI `revise`，通过加权关键词而非首词匹配：主题、
+受众、边界路由到需求节点；议题树/子问题到 issue_tree；大纲/框架到 outline；来源、事实、
+数据、链接到 research；证据治理、素材整合、图表、压力测试、格式、复核、质量门均有独立
+目标；篇幅、文风和论证路由到 writing。混合意见选择总权重最高且最早必要的节点，路由结果
+和原始反馈写入审计表，再由 DAG 计算全部后代。
 
 ### 4.3 中断恢复
 
@@ -576,17 +495,21 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 2026-07-12 在 Linux 6.12、Python 3.12.3 上验证：
 
-- 9 个测试全部通过；
+- 13 个测试全部通过；
 - 20 个独立离线确定性工作流全部完成：20/20（测试阈值为 ≥95%）；该样本不代表外部模型、
   检索或生产环境 SLA；
-- 105000 字目标端到端完成，最新基线终稿 105167 字；
+- 105000 字目标端到端完成，最新基线终稿 116630 字（含来源与可视化规范）；
 - 进程重启后从大纲确认点恢复；
 - 四个确认门全部验证；
-- 议题树 3–7 条约束、证据红线、压力测试和 D1–D7 质量门均进入真实 DAG；
+- 九类需求、多层级议题、三类来源、素材映射、可视化、压力测试和质量门均进入真实 DAG；
 - 显式编造关键来源会阻断发布并禁止读取终稿；
 - 无来源报告会披露证据缺口并被质量门阻断；
 - 模型质量门即使自行返回满分通过，也不能绕过确定性的来源、红线和分数策略；
 - 来源 issue_ids 到议题树的证据覆盖映射已验证；
+- 缺少学术或社媒类别会被阻断，三类原始 URL 均须出现在终稿；
+- 图表反馈会路由到 visualization，保留未受影响的素材整合产物；
+- “禁止/不得包含”边界命中后会阻断发布并列出违规项；
+- 来源 issue_ids 与章节不匹配时，质量门重算挂载率并阻断；
 - 修改 writing 后仅重跑后代，research 和 outline 产物 ID/执行次数不变；
 - 旧 writing 向量失活，查询只返回新产物；
 - Markdown、HTML、JSON、纯文本路径通过；
@@ -596,19 +519,20 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 独立临时测量程序在同一环境创建一个全新 data directory，依次执行 create、四次
 run/confirm 和最终 run，再使用 `time.perf_counter()`、`resource.getrusage()`、文件
-`stat()` 采集结果。它不是 9 个 unittest 的计时，也尚未纳入 CI 基准脚本。基线输入包含
-一个可追溯来源：
+`stat()` 采集结果。它不是 13 个 unittest 的计时，也尚未纳入 CI 基准脚本。基线输入包含
+官方、学术、主流社媒三类可追溯来源：
 
 | 指标 | 结果 |
 |---|---:|
 | 目标篇幅 | 105000 字符 |
-| 最终报告 | 105167 字符 |
-| 端到端处理耗时 | 0.6224 秒 |
-| 峰值 RSS | 34904 KiB（约 34.1 MiB） |
-| state.db 文件族（含 WAL/SHM） | 1400304 bytes（约 1.34 MiB） |
-| vectors.db 文件族（含 WAL/SHM） | 1948384 bytes（约 1.86 MiB） |
+| 最终报告 | 116630 字符 |
+| 端到端处理耗时 | 0.6554 秒 |
+| 峰值 RSS | 34100 KiB（约 33.3 MiB） |
+| state.db 文件族（含 WAL/SHM） | 1369376 bytes（约 1.31 MiB） |
+| vectors.db 文件族（含 WAL/SHM） | 2048000 bytes（约 1.95 MiB） |
 | 确认节点 | 4 个，全部按序命中 |
-| D1–D7 质量分 | 32.5/35，通过 |
+| 可视化资产 | 3 |
+| D1–D7 质量分 | 33.0/35，通过 |
 | 最终状态 | completed |
 
 测量包含本地写作、格式化、关系库分片、向量计算和索引，不包含人工等待时间。数据仅表示
@@ -691,7 +615,7 @@ SQLite page、WAL checkpoint、操作系统缓存和历史版本影响。
    - 优化：新增 `node_attempts` 追加表，记录开始/结束、错误、耗时和供应商请求 ID。
 
 10. **仅来源支持带影响分析的配置更新**
-    - 风险：update_sources 已可从 research 重跑以修复红线，但风格、篇幅或格式变化仍须新建工作流。
+    - 风险：update_sources 已可从需求简报开始重跑以修复红线，但文风、篇幅或格式变化仍须新建工作流。
     - 优化：扩展参数到节点的影响映射；例如仅改输出格式时从 formatting 开始失效。
 
 11. **HTML 转换器能力基础**

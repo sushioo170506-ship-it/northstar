@@ -9,7 +9,7 @@ version: 1.0.0
 
 实现：`research_workflow.skills.quality_gate.QualityGateSkill`。
 
-输入 `review`、`evidence_governance`、`pressure_test`，输出
+输入 `requirements_analysis`、`review`、`evidence_governance`、`pressure_test`，输出
 `artifact_type="quality_gate"`，包含：
 
 - D1 事实准确性
@@ -21,6 +21,7 @@ version: 1.0.0
 - D7 量级感
 - 红线、问题、必需修复项和发布决定
 
-默认通过线为 24/35。没有可追溯来源、任一红线或总分不足，都会持久化评估产物、把
-quality_gate 和工作流设为 failed，并抛出 `QualityGateRejected`。终稿在工作流重新通过
-质量门前不可通过公开 API 或默认状态存储读取。
+默认通过线为 24/35。缺少 official、academic、social_media 任一来源类别、原始 URL 覆盖
+不足 100%、终稿未包含全部来源链接、违反内容边界、篇幅不足、任一红线或总分不足，都会
+持久化评估产物并阻断发布。质量门还会从证据 issue_ids 和章节 linked_issue 重新计算素材
+挂载覆盖率，并要求至少一个结构完整的可视化资产，不能只信任上游自报指标。

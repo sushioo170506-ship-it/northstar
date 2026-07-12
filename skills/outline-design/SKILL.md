@@ -9,9 +9,9 @@ version: 1.0.0
 
 独立实现：`research_workflow.skills.outline.OutlineSkill`。
 
-输入 `SkillRequest.inputs["research"]`（`evidence_pack` JSON）及统一 `ReportConfig`。
-输出 `artifact_type="outline"` 的 JSON，章节包含稳定 ID、标题、目标篇幅、目的和证据需求。
-不读取检索 Skill 内部状态。
+输入 `requirements_analysis`、已确认 `issue_tree` 及统一 `ReportConfig`，在调研前先确定
+最终写作框架。输出 `artifact_type="outline"` 的 JSON，章节包含稳定 ID、标题、目标篇幅、
+目的、对应议题和证据需求，并记录受众、文风、产出类型、内容边界对齐信息。
 
 ```python
 result = OutlineSkill(generator=None).execute(request)

@@ -10,7 +10,8 @@ version: 1.0.0
 ## 触发条件
 
 当用户要求生成、恢复、修改或审核研究报告时调用。输入必须包含 `topic`，可选
-`expected_length`、`style`、`output_format`、`language` 和 `extra.sources`。
+`expected_length`、`style`、`output_format`、`language`、`output_type`、`audience`、
+`content_boundaries`、`prior_thoughts` 和 `extra.sources`。
 
 ## 标准调用
 
@@ -30,19 +31,22 @@ outcome = workflow.run(workflow_id)
 
 ## 时序与确认
 
-1. `research`
+1. `requirements_analysis`
 2. `issue_tree`
-3. `issue_tree_confirmation`（强制人工确认）
-4. `evidence_governance`
-5. `outline`
-6. `outline_confirmation`（强制人工确认）
-7. `writing`
-8. `pressure_test`
-9. `draft_confirmation`（强制人工确认）
-10. `formatting`
-11. `pre_review_confirmation`（强制人工确认）
-12. `review`
-13. `quality_gate`（D1–D7 与红线发布阻断）
+3. `issue_tree_confirmation`（主题与多层级问题确认）
+4. `outline`
+5. `outline_confirmation`（最终大纲确认）
+6. `research`（确认大纲后调研）
+7. `evidence_governance`
+8. `material_integration`
+9. `visualization`
+10. `writing`
+11. `pressure_test`
+12. `draft_confirmation`（强制人工确认）
+13. `formatting`
+14. `pre_review_confirmation`（强制人工确认）
+15. `review`
+16. `quality_gate`（三类来源、链接、D1–D7 与红线发布阻断）
 
 `run()` 在确认点返回 `waiting_confirmation`。调用
 `confirm(workflow_id, checkpoint_id, comment)` 后再次 `run()`。不得跳过确认。

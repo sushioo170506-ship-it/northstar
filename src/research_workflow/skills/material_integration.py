@@ -49,10 +49,15 @@ class MaterialIntegrationSkill(Skill):
         for source in research.get("sources", []):
             governed_source = governed.get(source.get("id"), {})
             issue_ids = set(governed_source.get("issue_ids", []))
-            targets = [
+            matched_targets = [
                 section_id for section_id, section in sections.items()
                 if section["linked_issue"] in issue_ids
             ]
+            targets = list(matched_targets)
+            targets.extend(
+                section_id for section_id, section in sections.items()
+                if not section["linked_issue"] and section_id not in targets
+            )
             if not targets and fallback:
                 targets = [fallback]
             material = {
@@ -65,7 +70,7 @@ class MaterialIntegrationSkill(Skill):
             }
             for target in targets:
                 sections[target]["materials"].append(material)
-            if targets:
+            if matched_targets:
                 mounted += 1
         total = len(research.get("sources", []))
         payload = {
@@ -74,6 +79,7 @@ class MaterialIntegrationSkill(Skill):
                 "material_count": total,
                 "mounted_material_count": mounted,
                 "mount_coverage": mounted / total if total else 0.0,
+                "synthesis_sections_receive_all_sources": True,
             },
             "feedback_applied": list(request.feedback),
         }

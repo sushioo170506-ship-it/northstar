@@ -67,6 +67,34 @@
 - 新增 D1–D7 共 35 分评分，默认 24 分通过线。
 - 新增红线和低分发布阻断；拒绝结果持久化并抛出 `QualityGateRejected`。
 
+### requirements-analysis 1.0.0
+
+- 新增产出形态、主题、文风、受众、篇幅、格式、边界、资料和前置思考九类需求抽取。
+- ReportConfig 新增 output_type、audience、content_boundaries、prior_thoughts。
+
+### material-integration 1.0.0
+
+- 新增来源到最终大纲章节的 issue_id 映射和素材挂载覆盖率。
+- 每项素材保留来源类别、原始 URL、正文和预期用途。
+
+### visualization 1.0.0
+
+- 新增 Mermaid 多层级议题图和 Vega-Lite 来源类别/量化素材图。
+- 可视化作为版本化 JSON 产物进入写作、压力测试和复核。
+
+### 既有 Skill 标准流程升级
+
+- issue-tree 改为消费需求简报，增加二级问题、必要性、价值和排除项。
+- outline 移至调研前并绑定最终议题树及需求对齐信息。
+- research 移至大纲确认后，新增 SourceRetriever 和三类来源覆盖摘要。
+- evidence-governance 新增原始链接及来源类别覆盖率。
+- writing 新增章节素材、原始 URL 引用和可视化嵌入。
+- pressure-test/review/quality-gate 新增三类来源、URL、素材、可视化和需求边界检查。
+- research/evidence-governance/pressure-test 的模型输出改为辅助分析，确定性来源指标和红线
+  不能被模型 JSON 覆盖。
+- quality-gate 根据 issue_ids 重算素材挂载率，并硬性检查可视化和正文篇幅上下限。
+- orchestrator 新增加权关键词 `request_revision` 精确退回规则，处理混合修改意图。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。
