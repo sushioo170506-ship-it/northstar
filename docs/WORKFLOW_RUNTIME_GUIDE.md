@@ -71,8 +71,9 @@ ResearchReportOrchestrator
 
 `md/htm/txt` 分别标准化为 `markdown/html/text`。离线 outline 不根据 style 改写结构，
 离线 formatting 主要做格式转换并记录 style；实际风格生成依赖 TextGenerator。运行过程中
-Skill 不能私自更改配置；如需变更全局参数，当前版本应创建新工作流，后续可增加带影响分析
-的配置变更 API。已实现与尚未验证的边界见 6.4。
+Skill 不能私自更改配置。来源可通过 `update_sources()` 合法替换，该操作更新配置并从 research
+开始失效全部后代，用于修复证据红线；topic、篇幅、风格和格式仍需创建新工作流。已实现与
+尚未验证的边界见 6.4。
 
 ## 2. 完整运行流程
 
@@ -313,11 +314,13 @@ completed -> invalidated -> running（用户修改后）
   1. 汇总证据红线；
   2. 对事实准确性、逻辑严密性、事实观点分离、结构完整性、So What、边界感、量级感评分；
   3. 总分满分 35，默认通过线为 24；
-  4. 任一红线或总分不足时作出 `block_release` 决定。
+  4. 没有可追溯来源、任一红线或总分不足时作出 `block_release` 决定。
 - 输出：`artifact_type="quality_gate"`，包含 passed、total_score、D1–D7、red_lines、
   problems、required_actions 和 decision。
 - 通过：节点和工作流 completed，终稿可读取。
-- 拒绝：评估产物仍被保存，节点和工作流 failed，抛出 `QualityGateRejected`，终稿读取被拒绝。
+- 拒绝：评估产物仍被保存，节点和工作流 failed，抛出 `QualityGateRejected`；公开
+  `final_report()` 和默认 `state.node_artifact(..., "review")` 均拒绝读取。编排器内部仅在
+  执行 quality_gate 时使用显式 `internal=True` 读取候选稿，该参数不是外部发布接口。
 
 ReviewSkill 自身仍会生成 issues 元数据；最终发布权由 quality_gate 决定。
 
@@ -423,7 +426,7 @@ Skill 尚未消费召回结果，因此十万字测试主要验证的是关系�
 
 ### 3.7 CLI
 
-命令包括 `create`、`run`、`confirm`、`modify`、`status`、`final`。结构化结果使用 JSON，
+命令包括 `create`、`run`、`confirm`、`modify`、`update-sources`、`status`、`final`。结构化结果使用 JSON，
 可预期的 ValueError/KeyError/RuntimeError 写入 stderr 并返回退出码 2。
 
 CLI 是薄适配层，不保存会话状态；所有恢复均依赖显式 workflow_id 和 data directory。
@@ -462,6 +465,10 @@ CLI 是薄适配层，不保存会话状态；所有恢复均依赖显式 workfl
 modify 当前不限制工作流整体状态；在 waiting/failed/completed 状态均可调用。它也没有与
 同时进行的 run 建立互斥，因此即使在单主机，多进程并发 run/modify 也属于未定义且未验证
 场景，调用层应先串行化同一 workflow 的写操作。
+
+证据红线修复使用 `update_sources(workflow_id, sources, reason)`：新来源先经过 ReportConfig
+校验并持久化，再记录不含正文的 update_sources 审计事件，随后以 research 为目标执行同一
+影响分析。议题树等四个确认会重新打开，质量门通过前终稿始终不可读取。
 
 ### 4.3 中断恢复
 
@@ -569,12 +576,17 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 2026-07-12 在 Linux 6.12、Python 3.12.3 上验证：
 
-- 6 个测试全部通过；
+- 9 个测试全部通过；
 - 20 个独立离线确定性工作流全部完成：20/20（测试阈值为 ≥95%）；该样本不代表外部模型、
   检索或生产环境 SLA；
-- 105000 字目标端到端完成，终稿 105082 字；
+- 105000 字目标端到端完成，最新基线终稿 105167 字；
 - 进程重启后从大纲确认点恢复；
-- 三个确认门全部验证；
+- 四个确认门全部验证；
+- 议题树 3–7 条约束、证据红线、压力测试和 D1–D7 质量门均进入真实 DAG；
+- 显式编造关键来源会阻断发布并禁止读取终稿；
+- 无来源报告会披露证据缺口并被质量门阻断；
+- 模型质量门即使自行返回满分通过，也不能绕过确定性的来源、红线和分数策略；
+- 来源 issue_ids 到议题树的证据覆盖映射已验证；
 - 修改 writing 后仅重跑后代，research 和 outline 产物 ID/执行次数不变；
 - 旧 writing 向量失活，查询只返回新产物；
 - Markdown、HTML、JSON、纯文本路径通过；
@@ -582,19 +594,21 @@ duration_ms, error_type, retryable, trace_id, actor_id
 
 ### 6.2 十万字离线性能基线（单次手工测量，N=1）
 
-独立临时测量程序在同一环境创建一个全新 data directory，依次执行 create、三次
+独立临时测量程序在同一环境创建一个全新 data directory，依次执行 create、四次
 run/confirm 和最终 run，再使用 `time.perf_counter()`、`resource.getrusage()`、文件
-`stat()` 采集结果。它不是 6 个 unittest 的计时，也尚未纳入 CI 基准脚本：
+`stat()` 采集结果。它不是 9 个 unittest 的计时，也尚未纳入 CI 基准脚本。基线输入包含
+一个可追溯来源：
 
 | 指标 | 结果 |
 |---|---:|
 | 目标篇幅 | 105000 字符 |
-| 最终报告 | 105082 字符 |
-| 端到端处理耗时 | 0.5446 秒 |
-| 峰值 RSS | 33396 KiB（约 32.6 MiB） |
-| state.db | 57344 bytes（约 56 KiB） |
-| vectors.db | 598016 bytes（约 584 KiB） |
-| 确认节点 | 3 个，全部按序命中 |
+| 最终报告 | 105167 字符 |
+| 端到端处理耗时 | 0.6224 秒 |
+| 峰值 RSS | 34904 KiB（约 34.1 MiB） |
+| state.db 文件族（含 WAL/SHM） | 1400304 bytes（约 1.34 MiB） |
+| vectors.db 文件族（含 WAL/SHM） | 1948384 bytes（约 1.86 MiB） |
+| 确认节点 | 4 个，全部按序命中 |
+| D1–D7 质量分 | 32.5/35，通过 |
 | 最终状态 | completed |
 
 测量包含本地写作、格式化、关系库分片、向量计算和索引，不包含人工等待时间。数据仅表示
@@ -676,9 +690,9 @@ SQLite page、WAL checkpoint、操作系统缓存和历史版本影响。
    - 风险：新重试会覆盖节点最后错误，无法完整分析每次失败。
    - 优化：新增 `node_attempts` 追加表，记录开始/结束、错误、耗时和供应商请求 ID。
 
-10. **配置创建后不能就地修改**
-    - 风险：风格或篇幅变化必须新建工作流，不能复用已验证上游成果。
-    - 优化：参数到节点的影响映射；例如仅改输出格式时从 formatting 开始失效。
+10. **仅来源支持带影响分析的配置更新**
+    - 风险：update_sources 已可从 research 重跑以修复红线，但风格、篇幅或格式变化仍须新建工作流。
+    - 优化：扩展参数到节点的影响映射；例如仅改输出格式时从 formatting 开始失效。
 
 11. **HTML 转换器能力基础**
     - 风险：列表、表格、代码块和复杂引用没有完整 Markdown 语义。

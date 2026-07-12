@@ -32,6 +32,7 @@ class QualityGateSkill(Skill):
         final_report = request.inputs["review"]
         evidence_text = request.inputs["evidence_governance"]
         pressure_text = request.inputs["pressure_test"]
+        evidence = json.loads(evidence_text)
         if self.generator:
             prompt = (
                 "先检查红线，再按 D1事实准确性、D2逻辑严密性、D3事实观点分离、"
@@ -44,19 +45,37 @@ class QualityGateSkill(Skill):
                 prompt=prompt, max_tokens=4000,
             )
             generated = json.loads(content)
+            dimensions = generated.get("dimensions", {})
+            total = round(sum(float(dimensions.get(name, 0.0)) for name in DIMENSIONS), 1)
+            red_lines = list(evidence.get("red_lines", []))
+            for item in generated.get("red_lines", []):
+                if item not in red_lines:
+                    red_lines.append(item)
+            source_count = evidence.get("metrics", {}).get("source_count", 0)
+            passed = not red_lines and source_count > 0 and total >= self.pass_score
+            generated.update(
+                {
+                    "passed": passed,
+                    "pass_score": self.pass_score,
+                    "total_score": total,
+                    "maximum_score": 35,
+                    "red_lines": red_lines,
+                    "decision": "allow_release" if passed else "block_release",
+                }
+            )
+            content = json.dumps(generated, ensure_ascii=False, indent=2)
             return SkillResult(
                 content,
                 "quality_gate",
                 {
                     "prompt_version": "1.0",
-                    "quality_passed": bool(generated.get("passed", False)),
-                    "total_score": generated.get("total_score"),
-                    "red_line_count": len(generated.get("red_lines", [])),
+                    "quality_passed": passed,
+                    "total_score": total,
+                    "red_line_count": len(red_lines),
                     "pass_score": self.pass_score,
                 },
             )
 
-        evidence = json.loads(evidence_text)
         pressure = json.loads(pressure_text)
         source_count = evidence.get("metrics", {}).get("source_count", 0)
         traceability = evidence.get("metrics", {}).get("traceability_ratio", 0.0)
@@ -77,10 +96,12 @@ class QualityGateSkill(Skill):
         d7 = 3.5
         scores = dict(zip(DIMENSIONS, (d1, d2, d3, d4, d5, d6, d7), strict=True))
         total = round(sum(scores.values()), 1)
-        passed = not red_lines and total >= self.pass_score
+        passed = source_count > 0 and not red_lines and total >= self.pass_score
         problems = []
         if evidence_gaps:
             problems.append("存在证据缺口，需在决策使用时披露")
+        if source_count == 0:
+            problems.append("没有可追溯来源，不能发布决策报告")
         if completeness:
             problems.append("存在未覆盖的大纲章节")
         if red_lines:
@@ -117,3 +138,21 @@ class QualityGateSkill(Skill):
             raise ValueError("quality_gate 必须返回布尔 passed")
         if set(payload.get("dimensions", {})) != set(DIMENSIONS):
             raise ValueError("quality_gate 必须返回完整 D1-D7 评分")
+        scores = payload["dimensions"]
+        if any(
+            not isinstance(score, (int, float)) or not 0 <= score <= 5
+            for score in scores.values()
+        ):
+            raise ValueError("quality_gate 每个维度必须为 0-5 分")
+        total = round(sum(float(score) for score in scores.values()), 1)
+        if payload.get("total_score") != total:
+            raise ValueError("quality_gate 总分与维度评分不一致")
+        expected = (
+            not payload.get("red_lines")
+            and total >= float(payload.get("pass_score", self.pass_score))
+        )
+        if payload["passed"] and not expected:
+            raise ValueError("quality_gate 发布决定与红线或分数不一致")
+        expected_decision = "allow_release" if payload["passed"] else "block_release"
+        if payload.get("decision") != expected_decision:
+            raise ValueError("quality_gate decision 与 passed 不一致")

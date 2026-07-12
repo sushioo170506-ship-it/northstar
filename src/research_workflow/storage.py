@@ -106,6 +106,15 @@ class SQLiteStateStore:
             raise KeyError(f"工作流不存在: {workflow_id}")
         return ReportConfig.from_dict(json.loads(row["config_json"]))
 
+    def update_config(self, workflow_id: str, config: ReportConfig) -> None:
+        with self._connect() as db:
+            cursor = db.execute(
+                "UPDATE workflows SET config_json=?, updated_at=? WHERE id=?",
+                (json.dumps(config.to_dict(), ensure_ascii=False), utc_now(), workflow_id),
+            )
+        if cursor.rowcount != 1:
+            raise KeyError(f"工作流不存在: {workflow_id}")
+
     def workflow_status(self, workflow_id: str) -> WorkflowStatus:
         with self._connect() as db:
             row = db.execute("SELECT status FROM workflows WHERE id=?", (workflow_id,)).fetchone()
@@ -198,7 +207,15 @@ class SQLiteStateStore:
             raise ValueError(f"产物校验失败: {artifact_id}")
         return result
 
-    def node_artifact(self, workflow_id: str, node_id: str) -> dict[str, Any] | None:
+    def node_artifact(
+        self, workflow_id: str, node_id: str, *, internal: bool = False
+    ) -> dict[str, Any] | None:
+        if (
+            node_id == "review"
+            and not internal
+            and self.workflow_status(workflow_id) != WorkflowStatus.COMPLETED
+        ):
+            raise PermissionError("终稿尚未通过质量门")
         node = self.node(workflow_id, node_id)
         if not node or not node["output_artifact_id"]:
             return None

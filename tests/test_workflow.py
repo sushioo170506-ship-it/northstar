@@ -5,8 +5,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from research_workflow.models import NodeStatus, WorkflowStatus
+from research_workflow.contracts import FunctionGenerator
+from research_workflow.models import (
+    NodeStatus,
+    ReportConfig,
+    SkillRequest,
+    WorkflowStatus,
+)
 from research_workflow.orchestrator import QualityGateRejected, ResearchReportOrchestrator
+from research_workflow.skills.quality_gate import DIMENSIONS, QualityGateSkill
 
 
 CHECKPOINTS = (
@@ -42,7 +49,13 @@ class WorkflowTests(unittest.TestCase):
             "output_format": "markdown",
             "extra": {
                 "sources": [
-                    {"id": "S1", "title": "政策原文", "content": "治理需要风险分级。"}
+                    {
+                        "id": "S1",
+                        "title": "政策原文",
+                        "content": "治理需要风险分级。",
+                        "published_at": "2026-07-12",
+                        "issue_ids": ["ISSUE-01"],
+                    }
                 ]
             },
         }
@@ -86,6 +99,10 @@ class WorkflowTests(unittest.TestCase):
         )
         gate = reloaded.state.node_artifact(workflow_id, "quality_gate")
         self.assertTrue(json.loads(gate["content"])["passed"])
+        ledger = json.loads(
+            reloaded.state.node_artifact(workflow_id, "evidence_governance")["content"]
+        )
+        self.assertEqual(ledger["issue_coverage"]["ISSUE-01"], ["S1"])
 
     def test_modification_only_reruns_descendants(self) -> None:
         workflow_id = self.create()
@@ -137,6 +154,15 @@ class WorkflowTests(unittest.TestCase):
                     "topic": "格式测试",
                     "expected_length": 500,
                     "output_format": output_format,
+                    "extra": {
+                        "sources": [
+                            {
+                                "id": "S1",
+                                "title": "格式测试来源",
+                                "content": "可追溯材料",
+                            }
+                        ]
+                    },
                 }
             )
             complete(child, workflow_id)
@@ -195,6 +221,102 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(decision["red_lines"])
         with self.assertRaises(ValueError):
             self.workflow.final_report(workflow_id)
+        with self.assertRaises(PermissionError):
+            self.workflow.state.node_artifact(workflow_id, "review")
+        with self.assertRaises(QualityGateRejected):
+            self.workflow.run(workflow_id)
+        with self.assertRaises(ValueError):
+            self.workflow.update_sources(workflow_id, [], "错误地清空来源")
+        affected = self.workflow.update_sources(
+            workflow_id,
+            [
+                {
+                    "id": "S-REPLACEMENT",
+                    "title": "可核验官方材料",
+                    "content": "更新后的可追溯证据",
+                    "published_at": "2026-07-12",
+                    "source_type": "primary",
+                }
+            ],
+            "移除编造来源并替换为官方材料",
+        )
+        self.assertIn("quality_gate", affected)
+        recovered = complete(self.workflow, workflow_id)
+        self.assertEqual(recovered.status, WorkflowStatus.COMPLETED)
+        recovered_gate = json.loads(
+            self.workflow.state.node_artifact(workflow_id, "quality_gate")["content"]
+        )
+        self.assertTrue(recovered_gate["passed"])
+
+    def test_no_sources_are_disclosed_and_block_release(self) -> None:
+        workflow_id = self.workflow.create(
+            {
+                "topic": "无来源报告",
+                "expected_length": 500,
+                "output_format": "markdown",
+            }
+        )
+        for checkpoint in CHECKPOINTS:
+            outcome = self.workflow.run(workflow_id)
+            self.assertEqual(outcome.waiting_at, checkpoint)
+            self.workflow.confirm(workflow_id, checkpoint)
+        with self.assertRaises(QualityGateRejected):
+            self.workflow.run(workflow_id)
+        pressure = json.loads(
+            self.workflow.state.node_artifact(workflow_id, "pressure_test")["content"]
+        )
+        self.assertTrue(pressure["evidence_audit"]["gaps"])
+        gate = self.workflow.state.node_artifact(workflow_id, "quality_gate")
+        self.assertFalse(json.loads(gate["content"])["passed"])
+
+    def test_generator_cannot_bypass_missing_source_gate(self) -> None:
+        generated = json.dumps(
+            {
+                "passed": True,
+                "total_score": 35,
+                "red_lines": [],
+                "dimensions": {name: 5 for name in DIMENSIONS},
+                "decision": "allow_release",
+            },
+            ensure_ascii=False,
+        )
+        skill = QualityGateSkill(
+            FunctionGenerator(lambda _system, _prompt, _max_tokens: generated)
+        )
+        request = SkillRequest(
+            workflow_id="generator-test",
+            node_id="quality_gate",
+            config=ReportConfig.from_dict({"topic": "模型门控测试"}),
+            inputs={
+                "review": "# 报告\n风险、建议与资料缺口",
+                "evidence_governance": json.dumps(
+                    {"metrics": {"source_count": 0}, "red_lines": []}
+                ),
+                "pressure_test": json.dumps({"repair_actions": []}),
+            },
+        )
+        result = skill.execute(request)
+        skill.validate(result)
+        decision = json.loads(result.content)
+        self.assertFalse(decision["passed"])
+        self.assertEqual(decision["decision"], "block_release")
+        red_line_request = SkillRequest(
+            workflow_id="generator-red-line-test",
+            node_id="quality_gate",
+            config=request.config,
+            inputs={
+                **request.inputs,
+                "evidence_governance": json.dumps(
+                    {
+                        "metrics": {"source_count": 1},
+                        "red_lines": [{"code": "FABRICATED_SOURCE"}],
+                    }
+                ),
+            },
+        )
+        red_line_result = skill.execute(red_line_request)
+        skill.validate(red_line_result)
+        self.assertFalse(json.loads(red_line_result.content)["passed"])
 
     def test_twenty_deterministic_runs_meet_success_threshold(self) -> None:
         successes = 0
@@ -205,6 +327,15 @@ class WorkflowTests(unittest.TestCase):
                     "topic": f"可靠性样例 {index}",
                     "expected_length": 500,
                     "output_format": "markdown",
+                    "extra": {
+                        "sources": [
+                            {
+                                "id": f"S-{index}",
+                                "title": "批量测试来源",
+                                "content": "可追溯材料",
+                            }
+                        ]
+                    },
                 }
             )
             if complete(child, workflow_id).status == WorkflowStatus.COMPLETED:

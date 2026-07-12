@@ -19,6 +19,7 @@ workflow_id = orchestrator.create(config)
 outcome = orchestrator.run(workflow_id)
 orchestrator.confirm(workflow_id, outcome.waiting_at, "同意")
 affected = orchestrator.modify(workflow_id, "writing", "补充反方证据")
+affected = orchestrator.update_sources(workflow_id, new_sources, "修复证据红线")
 snapshot = orchestrator.state.snapshot(workflow_id)
 report = orchestrator.final_report(workflow_id)
 ```
@@ -29,7 +30,8 @@ report = orchestrator.final_report(workflow_id)
 `research`、`issue_tree`、`evidence_governance`、`outline`、`writing`、
 `pressure_test`、`formatting`、`review`、`quality_gate`。
 
-质量门触发红线或总分低于 24/35 时，`run` 抛出 `QualityGateRejected`，但评分产物已持久化。
+质量门没有可追溯来源、触发红线或总分低于 24/35 时，`run` 抛出
+`QualityGateRejected`，但评分产物已持久化。
 修改上游问题并重新确认后，可按 DAG 选择性重跑；工作流完成前 `final_report` 拒绝返回内容。
 
 ## Skill 接口
@@ -62,6 +64,8 @@ research-workflow --data-dir ./data create \
 research-workflow --data-dir ./data run WORKFLOW_ID
 research-workflow --data-dir ./data confirm WORKFLOW_ID outline_confirmation
 research-workflow --data-dir ./data modify WORKFLOW_ID writing "补充风险情景"
+research-workflow --data-dir ./data update-sources WORKFLOW_ID sources.json \
+  --reason "替换不可追溯来源"
 research-workflow --data-dir ./data status WORKFLOW_ID
 research-workflow --data-dir ./data final WORKFLOW_ID > report.md
 ```

@@ -58,7 +58,7 @@ class ReviewSkill(Skill):
             content,
             "final_report",
             {
-                "quality_passed": not issues,
+                "review_checks_passed": not issues,
                 "issues": issues,
                 "checks": {
                     "non_empty": bool(content.strip()),

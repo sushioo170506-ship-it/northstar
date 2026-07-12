@@ -38,6 +38,25 @@ class PressureTestSkill(Skill):
         logic_issues: list[dict[str, str]] = []
         evidence_gaps: list[dict[str, str]] = []
         completeness_issues: list[dict[str, str]] = []
+        certainty_markers = ("因此必然", "已经证明", "一定会", "毫无疑问")
+        for marker in certainty_markers:
+            if marker in draft:
+                logic_issues.append(
+                    {
+                        "severity": "high",
+                        "location": "全文",
+                        "message": f"检测到未经限定的确定性推断：{marker}",
+                    }
+                )
+        if not evidence.get("sources"):
+            evidence_gaps.append(
+                {
+                    "severity": "high",
+                    "location": "全文",
+                    "message": "没有任何可治理来源，不能作为决策报告发布",
+                    "repair": "至少补充一个可追溯来源并重新执行证据治理",
+                }
+            )
         if "资料缺口" in draft:
             evidence_gaps.append(
                 {

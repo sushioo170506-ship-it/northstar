@@ -173,7 +173,7 @@ class ResearchReportOrchestrator:
                 inputs=self._input_artifact_ids(workflow_id, spec),
                 output_artifact_id=artifact_id,
             )
-        final = self.state.node_artifact(workflow_id, "review")
+        final = self.state.node_artifact(workflow_id, "review", internal=True)
         self.state.set_workflow_status(workflow_id, WorkflowStatus.COMPLETED)
         return RunOutcome(
             workflow_id, WorkflowStatus.COMPLETED,
@@ -185,7 +185,7 @@ class ResearchReportOrchestrator:
     ) -> str:
         assert spec.skill is not None
         input_artifacts = {
-            node_id: self.state.node_artifact(workflow_id, node_id)
+            node_id: self.state.node_artifact(workflow_id, node_id, internal=True)
             for node_id in spec.input_nodes
         }
         if any(value is None for value in input_artifacts.values()):
@@ -231,7 +231,7 @@ class ResearchReportOrchestrator:
     def _input_artifact_ids(self, workflow_id: str, spec: NodeSpec) -> dict[str, str]:
         result: dict[str, str] = {}
         for node_id in spec.input_nodes:
-            artifact = self.state.node_artifact(workflow_id, node_id)
+            artifact = self.state.node_artifact(workflow_id, node_id, internal=True)
             if artifact:
                 result[node_id] = artifact["id"]
         return result
@@ -280,6 +280,31 @@ class ResearchReportOrchestrator:
         self.state.set_workflow_status(workflow_id, WorkflowStatus.RUNNING)
         return affected
 
+    def update_sources(
+        self,
+        workflow_id: str,
+        sources: list[dict[str, Any] | str],
+        reason: str = "更新研究来源",
+    ) -> set[str]:
+        if not isinstance(sources, list):
+            raise ValueError("sources 必须是数组")
+        if not sources:
+            raise ValueError("修复证据时 sources 不能为空")
+        if any(not isinstance(source, (str, dict)) for source in sources):
+            raise ValueError("每个 source 必须是字符串或对象")
+        config = self.state.config(workflow_id)
+        raw = config.to_dict()
+        raw["extra"] = {**config.extra, "sources": sources}
+        updated = ReportConfig.from_dict(raw)
+        self.state.update_config(workflow_id, updated)
+        self.state.record_operation(
+            workflow_id,
+            "update_sources",
+            {"source_count": len(sources), "reason": reason},
+            "research",
+        )
+        return self.modify(workflow_id, "research", reason)
+
     @staticmethod
     def affected_nodes(target_node: str) -> set[str]:
         if target_node not in NODE_MAP:
@@ -295,8 +320,10 @@ class ResearchReportOrchestrator:
         return affected
 
     def final_report(self, workflow_id: str) -> str:
+        if self.state.workflow_status(workflow_id) != WorkflowStatus.COMPLETED:
+            raise ValueError("工作流尚未生成终稿")
         artifact = self.state.node_artifact(workflow_id, "review")
-        if not artifact or self.state.workflow_status(workflow_id) != WorkflowStatus.COMPLETED:
+        if not artifact:
             raise ValueError("工作流尚未生成终稿")
         return artifact["content"]
 

@@ -35,6 +35,11 @@ def _parser() -> argparse.ArgumentParser:
     modify.add_argument("workflow_id")
     modify.add_argument("node")
     modify.add_argument("feedback")
+
+    update_sources = sub.add_parser("update-sources")
+    update_sources.add_argument("workflow_id")
+    update_sources.add_argument("sources_json", help="包含 sources 数组的 JSON 文件")
+    update_sources.add_argument("--reason", default="更新研究来源")
     return parser
 
 
@@ -64,6 +69,12 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"confirmed": args.checkpoint}, ensure_ascii=False))
         elif args.command == "modify":
             affected = orchestrator.modify(args.workflow_id, args.node, args.feedback)
+            print(json.dumps({"affected": sorted(affected)}, ensure_ascii=False))
+        elif args.command == "update-sources":
+            payload = json.loads(Path(args.sources_json).read_text(encoding="utf-8"))
+            affected = orchestrator.update_sources(
+                args.workflow_id, payload["sources"], args.reason
+            )
             print(json.dumps({"affected": sorted(affected)}, ensure_ascii=False))
         elif args.command == "status":
             print(json.dumps(orchestrator.state.snapshot(args.workflow_id), ensure_ascii=False))

@@ -30,6 +30,12 @@ class EvidenceGovernanceSkill(Skill):
 
         research = json.loads(research_text)
         issue_tree = json.loads(issue_tree_text)
+        valid_issue_ids = {
+            issue["id"] for issue in issue_tree.get("issues", []) if issue.get("id")
+        }
+        issue_coverage: dict[str, list[str]] = {
+            issue_id: [] for issue_id in valid_issue_ids
+        }
         governed = []
         issues: list[dict[str, str]] = []
         red_lines: list[dict[str, str]] = []
@@ -45,6 +51,12 @@ class EvidenceGovernanceSkill(Skill):
             )
             published_at = source.get("published_at") or source.get("year")
             critical = bool(source.get("critical", False))
+            source_issue_ids = source.get("issue_ids", [])
+            if isinstance(source_issue_ids, str):
+                source_issue_ids = [source_issue_ids]
+            linked_issues = sorted(set(source_issue_ids) & valid_issue_ids)
+            for issue_id in linked_issues:
+                issue_coverage[issue_id].append(source_id)
             if source.get("fabricated") is True:
                 red_lines.append(
                     {"code": "FABRICATED_SOURCE", "source_id": source_id,
@@ -79,6 +91,7 @@ class EvidenceGovernanceSkill(Skill):
                     "stakeholder": stakeholder,
                     "independent_verification": independent,
                     "critical": critical,
+                    "issue_ids": linked_issues,
                 }
             )
         total = len(governed)
@@ -89,15 +102,13 @@ class EvidenceGovernanceSkill(Skill):
         critical_count = sum(item["critical"] for item in governed)
         payload = {
             "sources": governed,
-            "issue_coverage": {
-                issue["id"]: [] for issue in issue_tree.get("issues", [])
-            },
+            "issue_coverage": issue_coverage,
             "metrics": {
                 "source_count": total,
                 "traceability_ratio": traceable_count / total if total else 0.0,
                 "critical_source_count": critical_count,
                 "critical_independent_coverage": (
-                    independently_supported / critical_count if critical_count else 1.0
+                    independently_supported / critical_count if critical_count else None
                 ),
             },
             "issues": issues,
