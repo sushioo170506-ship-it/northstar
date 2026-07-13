@@ -605,6 +605,26 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('id="slide-1"', html_content)
         self.assertTrue(html_meta["self_contained"])
 
+    def test_slides_do_not_treat_ids_or_years_as_business_metrics(self) -> None:
+        report = (
+            Path(__file__).parents[1]
+            / "outputs"
+            / "gpt-live-application-research"
+            / "gpt-live应用探索研究报告.md"
+        ).read_text(encoding="utf-8")
+        html_content, metadata = SlidesRenderer().render(
+            content=report,
+            output_format="slides_html",
+            visualizations={"assets": []},
+        )
+        self.assertNotIn("<div class='metric'>2604.15804</div>", html_content)
+        self.assertNotIn("<div class='metric'>2024</div>", html_content)
+        self.assertNotIn("<div class='metric'>6561</div>", html_content)
+        self.assertIn("Qwen3.5", html_content)
+        self.assertIn("音频环境", html_content)
+        self.assertIn("OpenAI：Introducing GPT", html_content)
+        self.assertGreaterEqual(metadata["slide_count"], 17)
+
     def test_feishu_user_oauth_builds_and_exchanges_authorization(self) -> None:
         calls = []
 

@@ -30,7 +30,27 @@ def _slide_sections(content: str) -> list[tuple[str, str]]:
     sections = []
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(content)
-        sections.append((_strip_markup(match.group(1)), content[match.end():end].strip()))
+        section_title = _strip_markup(match.group(1))
+        body = content[match.end():end].strip()
+        subheads = list(re.finditer(r"(?m)^###\s+(.+)$", body))
+        should_split = (
+            len(subheads) >= 2
+            and any(keyword in section_title for keyword in ("能力", "竞品", "市场需求"))
+        )
+        if should_split:
+            for sub_index, subhead in enumerate(subheads):
+                sub_end = (
+                    subheads[sub_index + 1].start()
+                    if sub_index + 1 < len(subheads) else len(body)
+                )
+                sections.append(
+                    (
+                        _strip_markup(subhead.group(1)),
+                        body[subhead.end():sub_end].strip(),
+                    )
+                )
+        else:
+            sections.append((section_title, body))
     return [(title, ""), *sections]
 
 
@@ -369,19 +389,47 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
             line for line in clean_lines
             if not line.startswith("#") and not re.match(r"^\d+\.\s", line)
         ]
-        metrics = []
-        for number, suffix in re.findall(
-            r"(?<![\w.])(\d+(?:\.\d+)?)(%|亿|万|分钟|秒|ms)?", body
-        ):
-            display = number + suffix
-            if display not in metrics and (
-                suffix or float(number) >= 10
-            ):
-                metrics.append(display)
         tables = [
             value for kind, value in MarkdownTableParser.split_document(body)
             if kind == "table"
         ]
+        metrics: list[dict[str, str]] = []
+        seen_metrics: set[tuple[str, str]] = set()
+
+        def add_metric(value: str, label: str) -> None:
+            label = re.sub(r"https?://\S+|[|>*_`]", " ", label)
+            label = " ".join(label.split()).strip("：:，,。 ")
+            if not label or len(label) > 70:
+                label = label[:67] + "…" if label else "关键指标"
+            key = (value, label)
+            if key not in seen_metrics:
+                seen_metrics.add(key)
+                metrics.append({"value": value, "label": label})
+
+        metric_pattern = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?(?:%|亿|万))")
+        for table in tables:
+            for row in table.rows:
+                row_label = row[0] if row else "关键指标"
+                for column_index, cell in enumerate(row[1:], 1):
+                    for metric in metric_pattern.findall(cell):
+                        header = (
+                            table.headers[column_index]
+                            if column_index < len(table.headers) else ""
+                        )
+                        add_metric(metric, f"{row_label} · {header}")
+        for line in body.splitlines():
+            if line.startswith(("|", "#", "```")) or "http" in line:
+                continue
+            for metric in metric_pattern.findall(line):
+                context = _strip_markup(line)
+                context = context.replace(metric, "").strip("：:，,。 ")
+                add_metric(metric, context)
+        metrics.sort(
+            key=lambda item: (
+                0 if item["value"].endswith("%") else 1,
+                len(item["label"]),
+            )
+        )
         mermaid = re.search(r"```mermaid\s*\n(.*?)```", body, re.DOTALL)
         edges = []
         if mermaid:
@@ -408,6 +456,38 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
             "tables": tables,
             "edges": edges,
         }
+
+    @staticmethod
+    def _table_items(data: dict[str, Any], limit: int = 8) -> list[tuple[str, str]]:
+        items: list[tuple[str, str]] = []
+        for table in data["tables"]:
+            for row in table.rows:
+                if not row:
+                    continue
+                details = []
+                for index, value in enumerate(row[1:], 1):
+                    if not value:
+                        continue
+                    header = (
+                        table.headers[index]
+                        if index < len(table.headers) else f"字段{index + 1}"
+                    )
+                    details.append(f"{header}：{value}")
+                items.append((row[0], "；".join(details)))
+                if len(items) >= limit:
+                    return items
+        return items
+
+    @staticmethod
+    def _card_items(data: dict[str, Any], limit: int = 8) -> list[tuple[str, str]]:
+        table_items = SlidesRenderer._table_items(data, limit)
+        if table_items:
+            return table_items
+        raw = data["bullets"] or data["subheads"] or data["paragraphs"]
+        return [
+            (f"{index + 1:02d}", item)
+            for index, item in enumerate(raw[:limit])
+        ]
 
     @staticmethod
     def _html_slide(index: int, title: str, body: str, total: int) -> str:
@@ -449,20 +529,22 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
                 for left, label, right in data["edges"][:12]
             )
             content_html = f"<div class='flow-wrap'>{edges}</div>"
-        elif len(data["metrics"]) >= 3:
+        elif (
+            len(data["metrics"]) >= 3
+            and any(keyword in title for keyword in ("评测", "需求信号", "数据"))
+        ):
             metric_cards = "".join(
-                f"<div class='card metric-card'><div class='metric'>{html.escape(metric)}</div>"
-                f"<div class='metric-label'>{html.escape((data['subheads'] + ['关键指标'])[i % max(1, len(data['subheads']) or 1)])}</div></div>"
-                for i, metric in enumerate(data["metrics"][:6])
+                f"<div class='card metric-card'><div class='metric'>{html.escape(metric['value'])}</div>"
+                f"<div class='metric-label'>{html.escape(metric['label'])}</div></div>"
+                for metric in data["metrics"][:6]
             )
             content_html = f"<div class='grid grid-3'>{metric_cards}</div>"
         else:
-            items = data["bullets"] or data["subheads"] or data["paragraphs"]
-            items = items[:6]
+            items = SlidesRenderer._card_items(data, 6)
             cards = "".join(
-                f"<article class='card'><h3>{i + 1:02d}</h3>"
-                f"<p>{html.escape(item[:150])}</p></article>"
-                for i, item in enumerate(items)
+                f"<article class='card'><h3>{html.escape(item_title[:42])}</h3>"
+                f"<p>{html.escape(item_body[:180])}</p></article>"
+                for item_title, item_body in items
             )
             risk = " risk" if "风险" in title else ""
             content_html = f"<div class='grid {'grid-2' if len(items) <= 4 else 'grid-3'}{risk}'>{cards}</div>"
@@ -536,7 +618,10 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
                     slide, data["edges"][:12], MSO_SHAPE, RGBColor, Inches, Pt,
                     PP_ALIGN, MSO_ANCHOR,
                 )
-            elif len(data["metrics"]) >= 3:
+            elif (
+                len(data["metrics"]) >= 3
+                and any(keyword in title for keyword in ("评测", "需求信号", "数据"))
+            ):
                 SlidesRenderer._pptx_metrics(
                     slide, data, MSO_SHAPE, RGBColor, Inches, Pt
                 )
@@ -622,14 +707,14 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
 
     @staticmethod
     def _pptx_cards(slide, data, risk, MSO_SHAPE, RGBColor, Inches, Pt):
-        items = data["bullets"] or data["subheads"] or data["paragraphs"]
-        items = items[:6] or ["暂无可展示内容"]
+        items = SlidesRenderer._card_items(data, 6)
+        items = items or [("提示", "暂无可展示内容")]
         columns = 2 if len(items) <= 4 else 3
         rows = (len(items) + columns - 1) // columns
         card_w = 11.75 / columns
         card_h = min(2.15, 4.95 / rows)
         accents = ["cyan", "amber", "red"] if risk else ["cyan", "blue", "amber"]
-        for i, item in enumerate(items):
+        for i, (item_title, item_body) in enumerate(items):
             col, row = i % columns, i // columns
             x, y = 0.72 + col * (card_w + 0.16), 1.75 + row * (card_h + 0.18)
             shape = slide.shapes.add_shape(
@@ -656,15 +741,15 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
             frame.margin_right = Inches(0.2)
             frame.margin_top = Inches(0.18)
             p = frame.paragraphs[0]
-            p.text = f"{i + 1:02d}"
+            p.text = item_title[:42]
             p.font.size = Pt(12)
             p.font.bold = True
             p.font.color.rgb = RGBColor.from_string(
                 SlidesRenderer.THEME[accents[i % len(accents)]]
             )
             body = frame.add_paragraph()
-            body.text = item[:120]
-            body.font.size = Pt(15 if len(item) < 80 else 12)
+            body.text = item_body[:180]
+            body.font.size = Pt(15 if len(item_body) < 80 else 11)
             body.font.color.rgb = RGBColor.from_string(
                 SlidesRenderer.THEME["text"]
             )
@@ -688,15 +773,14 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
             frame = shape.text_frame
             frame.clear()
             p = frame.paragraphs[0]
-            p.text = metric
+            p.text = metric["value"]
             p.font.size = Pt(30)
             p.font.bold = True
             p.font.color.rgb = RGBColor.from_string(
                 SlidesRenderer.THEME["cyan"]
             )
             label = frame.add_paragraph()
-            labels = data["subheads"] or ["关键证据"]
-            label.text = labels[i % len(labels)][:45]
+            label.text = metric["label"][:60]
             label.font.size = Pt(12)
             label.font.color.rgb = RGBColor.from_string(
                 SlidesRenderer.THEME["muted"]
