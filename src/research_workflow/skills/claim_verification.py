@@ -9,7 +9,9 @@ from ..contracts import Skill
 from ..models import SkillRequest, SkillResult
 
 
-NUMBER = re.compile(r"(?<!\w)\d+(?:\.\d+)?(?:%|亿|万|千|百|元|美元|年|月|日)?")
+NUMBER = re.compile(
+    r"(?<![A-Za-z0-9_.])\d+(?:\.\d+)?(?:%|亿|万|千|百|元|美元|年|月|日)?"
+)
 
 
 class ClaimVerificationSkill(Skill):

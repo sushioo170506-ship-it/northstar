@@ -30,7 +30,10 @@ class DataProcessingSkill(Skill):
         for source in research.get("sources", []):
             key = str(source.get("claim_key") or source.get("id"))
             grouped[key].append(source)
-            for raw in re.findall(r"(?<!\w)(\d+(?:\.\d+)?%?)", source.get("content", "")):
+            for raw in re.findall(
+                r"(?<![A-Za-z0-9_.])(\d+(?:\.\d+)?%?)",
+                source.get("content", ""),
+            ):
                 data_points.append(
                     {
                         "value": raw,
