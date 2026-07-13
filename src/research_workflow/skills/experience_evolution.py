@@ -18,6 +18,10 @@ class ExperienceEvolutionSkill(Skill):
     ROUTES = {
         "outline": ("大纲", "章节", "比例", "摘要"),
         "research": ("来源", "检索", "社媒", "论文", "数据"),
+        "source_snapshot": ("来源快照", "网页快照", "内容哈希", "抓取时间"),
+        "claim_verification": (
+            "论断验证", "原文片段", "数字核验", "证据对齐", "冲突仲裁"
+        ),
         "data_processing": ("评分", "claim", "交叉验证", "证据等级"),
         "visualization": ("图表", "可视化", "流程图"),
         "writing_standards": (

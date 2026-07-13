@@ -38,7 +38,9 @@ HTML Slides由工作流直接输出单个`.html`，使用`research-workflow expo
 发布正式应用；正式版和不支持免审的权限仍须企业管理员审批。
 
 生产检索通过CompositeSourceRetriever组合Provider。仓库自带OpenAlex学术Provider；产业、
-金融和社媒Provider必须使用组织授权API。Provider应设置超时、限流、缓存、来源快照和删除策略。
+arXiv与Crossref无密钥Provider；产业、金融和社媒Provider必须使用组织授权API。Provider应设置
+超时、限流和缓存。所有返回内容由source_snapshot冻结原文、抓取时间、Provider和SHA-256，
+再由claim_verification完成原文片段、数字、独立来源与冲突硬验证。
 
 根据任务风险选择Profile：quick仅1次确认，standard 2次，deep/regulatory 4次。监管、投资
 和高风险报告不得由调用方偷偷降为quick；API层应按角色限制Profile。

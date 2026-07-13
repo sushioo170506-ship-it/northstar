@@ -7,6 +7,10 @@ version: 1.0.0
 
 # Quality Gate
 
+发布决定以硬门为准：来源快照场景策略通过、全部论断具有原文片段且数字一致、关键论断双
+独立来源、无未解决冲突、引用/素材/结构/边界合规且无红线。D1-D7只作为诊断信息，模型评分
+或总分不得覆盖硬门。
+
 实现：`research_workflow.skills.quality_gate.QualityGateSkill`。
 
 输入 capability_sweep、skill_research、requirements_analysis、review、evidence_governance、data_processing、

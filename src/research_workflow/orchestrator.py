@@ -594,6 +594,13 @@ class ResearchReportOrchestrator:
                 ),
             ),
             (
+                "source_snapshot",
+                (
+                    ("来源快照", 5), ("网页快照", 4), ("内容哈希", 4),
+                    ("source snapshot", 5),
+                ),
+            ),
+            (
                 "evidence_governance",
                 (("证据治理", 4), ("可追溯", 3), ("利益相关方", 3), ("证据红线", 3)),
             ),
@@ -602,6 +609,13 @@ class ResearchReportOrchestrator:
                 (
                     ("数据处理", 4), ("评分模型", 4), ("交叉验证", 3),
                     ("论断账本", 4), ("claim ledger", 4),
+                ),
+            ),
+            (
+                "claim_verification",
+                (
+                    ("论断验证", 5), ("原文片段", 5), ("数字核验", 5),
+                    ("证据对齐", 4), ("claim verification", 5),
                 ),
             ),
             (

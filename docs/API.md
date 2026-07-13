@@ -47,7 +47,8 @@ html_file = orchestrator.export_final(workflow_id, "report.html")
 `issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation`、
 `pre_review_confirmation`。允许修改的产物节点：
 `capability_sweep`、`requirements_analysis`、`skill_research`、`writing_standards`、`issue_tree`、`outline`、`research`、
-`evidence_governance`、`data_processing`、`material_integration`、`visualization`、`writing`、
+`source_snapshot`、`evidence_governance`、`data_processing`、`claim_verification`、
+`material_integration`、`visualization`、`writing`、
 `citation_management`、`content_optimization`、`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`、
 `experience_evolution`。
 
@@ -92,7 +93,7 @@ Skill 实现 `name`、`version`、`execute(request)`，经 `SkillRegistry.regist
 
 ```python
 from research_workflow import (
-    CompositeSourceRetriever, OpenAlexRetriever,
+    ArxivRetriever, CompositeSourceRetriever, CrossrefRetriever, OpenAlexRetriever,
     AestheticDocxRenderer, CompositeDocumentRenderer,
     FeishuApiClient, FeishuDocumentRenderer, SlidesRenderer,
     PandocDocumentRenderer, ResearchReportOrchestrator,
@@ -102,6 +103,8 @@ workflow = ResearchReportOrchestrator(
     data_dir,
     source_retriever=CompositeSourceRetriever([
         OpenAlexRetriever(mailto="research@example.com"),
+        ArxivRetriever(),
+        CrossrefRetriever(mailto="research@example.com"),
         organization_industry_provider,
         authorized_social_provider,
     ]),
@@ -125,8 +128,11 @@ Sheet Block。个性化规范通过`extra.writing_standard`注册并版本化，
 `docs/WRITING_STANDARDS_AND_FEISHU.md`。
 
 调研适配器实现 `SourceRetriever.retrieve(topic, questions, categories)`；research 会分别以
-industry、academic、social_media 单类别调用三次。每个返回项至少应含 id、title、category、url、
+当前场景要求的类别调用。每个返回项至少应含id、title、category、url、
 published_at、content、issue_ids；内置模式没有检索器时仅整理用户 sources。
+
+`source_snapshot`随后冻结正文、Provider、抓取时间与SHA-256；`claim_verification`要求每项
+论断包含可定位原文片段，数字/单位在来源中一致，关键论断达到双独立来源且无未解决冲突。
 
 ```json
 {"sources": [

@@ -196,6 +196,15 @@
 - 新增`slides_zip`私有交付格式；`slides`默认映射离线包，包含HTML、可编辑PPTX和README，
   发布清单禁止Cursor预览链接与未授权公开托管。
 
+### 可信研究硬门升级（2026-07-13）
+
+- 新增`source_snapshot`：逐来源冻结原文、URL、抓取时间、Provider和SHA-256，并执行
+  技术/投研/公众号/官方内参四类场景来源策略。
+- 新增`claim_verification`：逐论断定位原文片段，核验数字锚点、独立来源与冲突。
+- 删除WritingSkill循环模板句；证据不足时明确退回检索和论断验证，不再填充篇幅。
+- quality_gate发布决定改由来源快照、论断验证、证据/需求和红线硬门决定；D1-D7仅保留诊断。
+- 新增无密钥ArxivRetriever和CrossrefRetriever；产业、金融、微信仍要求组织授权Provider。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。
