@@ -41,6 +41,8 @@ FEISHU = OUTPUT / "gpt-live应用探索研究报告-飞书导入.md"
 MANIFEST = OUTPUT / "gpt-live应用探索研究报告-飞书发布清单.json"
 PPTX = OUTPUT / "gpt-live应用探索研究报告-汇报版.pptx"
 SLIDES_HTML = OUTPUT / "gpt-live应用探索研究报告-汇报版.html"
+PPTX_ASCII = OUTPUT / "gpt-live-deck.pptx"
+SLIDES_HTML_ASCII = OUTPUT / "gpt-live-deck.html"
 
 LINK = re.compile(r"\[([^\]]+)\]\((https?://[^)]+)\)")
 INLINE = re.compile(r"(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?://[^)]+\))")
@@ -424,12 +426,14 @@ def render_slides(markdown: str) -> None:
         content=markdown, output_format="pptx", visualizations={"assets": []}
     )
     PPTX.write_bytes(base64.b64decode(pptx))
+    PPTX_ASCII.write_bytes(PPTX.read_bytes())
     slides_html, _ = renderer.render(
         content=markdown,
         output_format="slides_html",
         visualizations={"assets": []},
     )
     SLIDES_HTML.write_text(slides_html, encoding="utf-8")
+    SLIDES_HTML_ASCII.write_text(slides_html, encoding="utf-8")
 
 
 def main() -> None:
@@ -448,6 +452,8 @@ def main() -> None:
                 "manifest": str(MANIFEST),
                 "pptx": str(PPTX),
                 "slides_html": str(SLIDES_HTML),
+                "pptx_ascii": str(PPTX_ASCII),
+                "slides_html_ascii": str(SLIDES_HTML_ASCII),
             },
             ensure_ascii=False,
         )
