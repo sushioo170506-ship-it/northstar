@@ -6,7 +6,7 @@
 
 ## 结果
 
-39个自动化测试全部通过，最近一次耗时13.439秒：
+41个自动化测试全部通过，最近一次耗时14.086秒：
 
 | 验收项 | 自动化证据 | 结果 |
 |---|---|---|
@@ -23,7 +23,7 @@
 | 三支柱门 | official 兼容为 industry；缺 academic/social_media 时阻断 | 通过 |
 | 三 pass 遍历 | SourceRetriever 按 industry/academic/social_media 分别调用且记录状态 | 通过 |
 | 数据处理评分 | 生成 claim ledger；5 候选×4 锚定维度按公式计算并追溯 | 通过 |
-| 能力遍历 | 20个内置Skill全部completed；14个外部集成全部记录状态 | 通过 |
+| 能力遍历 | 20个内置Skill全部completed；15个外部集成全部记录状态 | 通过 |
 | Skill 文档一致性 | 1个主编排+20个可执行Skill；目录/name/Registry/DAG完全一致 | 通过 |
 | Skill 合规研究 | MIT 候选生成含完整溯源的适配草案；NOASSERTION 候选被拒绝 | 通过 |
 | Skill 星标门槛 | GitHub 499星、OpenClaw 299星候选均进入观察名单且不生成草案 | 通过 |
@@ -38,6 +38,7 @@
 | 专业Word | DOCX ZIP有效、样式/页眉页脚/目录/可编辑表格和流程路径生成 | 通过 |
 | Slides | 可编辑PPTX与自包含HTML Slides均生成并通过结构校验 | 通过 |
 | 飞书个人OAuth | 授权URL、state、授权码交换和refresh_token响应模拟通过 | 通过 |
+| 直接HTML导出 | 工作流/CLI直接写单个HTML，不依赖ZIP；固定画布和Swiss Modern设计元数据完整 | 通过 |
 | 社媒来源 | 微信公众号与Hacker News URL自动归一化platform | 通过 |
 | 主题风险 | ETF报告risk_scope聚焦折溢价、估值、流动性和跟踪误差 | 通过 |
 | 章节内联来源 | 链接只放文末时inline_source_coverage=0并阻断 | 通过 |
