@@ -600,6 +600,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("width:1920px;height:1080px", html_content)
         self.assertIn('class="slide cover is-active"', html_content)
         self.assertIn("class='card'", html_content)
+        self.assertIn(".slide:target", html_content)
+        self.assertIn('href="#slide-2"', html_content)
+        self.assertIn('id="slide-1"', html_content)
         self.assertTrue(html_meta["self_contained"])
 
     def test_feishu_user_oauth_builds_and_exchanges_authorization(self) -> None:

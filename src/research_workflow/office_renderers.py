@@ -289,7 +289,9 @@ background:var(--bg);overflow:hidden;box-shadow:0 30px 100px #000b}
 transform:translateY(24px) scale(.992);transition:.45s ease;background:
 radial-gradient(circle at 82% 12%,#174b6d88 0,transparent 30%),
 linear-gradient(135deg,#07111f 0%,#0a1b2f 68%,#07111f 100%)}
-.slide.is-active{opacity:1;visibility:visible;transform:none}.chrome{display:flex;
+.slide.is-active,.slide:target{opacity:1;visibility:visible;transform:none;z-index:2}
+#stage:has(.slide:target) .slide.is-active:not(:target){opacity:0;visibility:hidden}
+.chrome{display:flex;
 justify-content:space-between;align-items:center;font:600 18px/1.2 "Arial";letter-spacing:.18em;
 color:var(--cyan);text-transform:uppercase}.section-no{color:var(--muted);letter-spacing:.08em}
 h1{font-size:58px;line-height:1.12;letter-spacing:-.035em;margin:32px 0 24px;
@@ -325,6 +327,10 @@ background:linear-gradient(90deg,var(--cyan),var(--blue))}.notes{display:none}
 color:white;border-radius:50%;font-size:20px;cursor:pointer}.tag{display:inline-block;
 padding:8px 14px;border:1px solid #46d6c866;border-radius:999px;color:var(--cyan);
 font-size:17px;margin:8px 8px 0 0}
+.slide-nav{position:absolute;right:22px;bottom:18px;display:flex;gap:8px;z-index:8}
+.slide-nav a{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;
+border:1px solid #8ab5d455;background:#07111fcc;color:#fff;text-decoration:none;
+font-size:22px}.slide-nav a:hover{border-color:var(--cyan);color:var(--cyan)}
 </style></head><body><div id="viewport"><main id="stage">""" + "".join(slides) + """
 </main></div><div id="controls"><button onclick="move(-1)">‹</button>
 <button onclick="move(1)">›</button></div><script>
@@ -414,10 +420,14 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
         footer = (
             f'<span class="page">{index + 1} / {total}</span>'
             f'<div class="progress" style="width:{(index + 1) / total * 100:.1f}%"></div>'
+            f'<nav class="slide-nav"><a href="#slide-{(index - 1) % total + 1}" '
+            'aria-label="上一页">‹</a>'
+            f'<a href="#slide-{(index + 1) % total + 1}" '
+            'aria-label="下一页">›</a></nav>'
         )
         if index == 0:
             return (
-                '<section class="slide cover is-active"><div class="orb"></div>'
+                '<section id="slide-1" class="slide cover is-active"><div class="orb"></div>'
                 '<div class="kicker">STRATEGY · TECHNOLOGY · APPLICATION</div>'
                 f"<h1>{safe_title}</h1><div class='accent'></div>"
                 "<p class='subtitle'>全双工交互架构、能力边界、竞品格局与场景落地路线</p>"
@@ -457,7 +467,7 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
             risk = " risk" if "风险" in title else ""
             content_html = f"<div class='grid {'grid-2' if len(items) <= 4 else 'grid-3'}{risk}'>{cards}</div>"
         return (
-            f'<section class="slide">{header}{content_html}'
+            f'<section id="slide-{index + 1}" class="slide">{header}{content_html}'
             f"<aside class='notes'>本页围绕“{safe_title}”给出判断和证据。</aside>"
             f"{footer}</section>"
         )
