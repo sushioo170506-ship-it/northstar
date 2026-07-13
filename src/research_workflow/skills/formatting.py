@@ -19,7 +19,8 @@ class FormattingSkill(Skill):
 
     def execute(self, request: SkillRequest) -> SkillResult:
         draft = request.inputs.get(
-            "citation_management", request.inputs.get("writing", "")
+            "content_optimization",
+            request.inputs.get("citation_management", request.inputs.get("writing", "")),
         )
         prompt = FORMAT_PROMPT.format(
             output_format=request.config.output_format, style=request.config.style
@@ -59,7 +60,7 @@ class FormattingSkill(Skill):
         elif output_format == "feishu":
             # Canonical Markdown is handed to the Feishu Open API renderer.
             content = normalized
-        elif output_format in {"docx", "pdf"}:
+        elif output_format in {"docx", "pdf", "pptx", "slides_html"}:
             # Canonical Markdown is handed to an injected renderer in publish.
             content = normalized
         else:
@@ -69,7 +70,9 @@ class FormattingSkill(Skill):
             {
                 "format": output_format,
                 "style": request.config.style,
-                "requires_renderer": output_format in {"docx", "pdf", "feishu"},
+                "requires_renderer": output_format in {
+                    "docx", "pdf", "feishu", "pptx", "slides_html"
+                },
                 "native_format": output_format in {
                     "markdown", "html", "json", "text"
                 },

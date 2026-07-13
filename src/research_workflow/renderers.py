@@ -246,22 +246,35 @@ class FeishuApiClient:
         access_token: str | None = None,
         base_url: str = "https://open.feishu.cn",
         timeout_seconds: int = 30,
+        token_provider: Callable[[], str] | None = None,
+        auth_mode: str | None = None,
         transport: Callable[
             [str, str, dict[str, Any] | None, dict[str, str]], dict[str, Any]
         ] | None = None,
     ) -> None:
-        if not access_token and not (app_id and app_secret):
-            raise ValueError("飞书客户端需要 access_token 或 app_id/app_secret")
+        if not access_token and not token_provider and not (app_id and app_secret):
+            raise ValueError(
+                "飞书客户端需要 access_token、token_provider 或 app_id/app_secret"
+            )
         self.app_id = app_id
         self.app_secret = app_secret
         self.access_token = access_token
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.transport = transport
+        self.token_provider = token_provider
+        self.auth_mode = auth_mode or (
+            "user_oauth" if access_token or token_provider else "tenant"
+        )
 
     def _token(self) -> str:
         if self.access_token:
             return self.access_token
+        if self.token_provider:
+            token = self.token_provider()
+            if not token:
+                raise RuntimeError("飞书token_provider返回空Token")
+            return token
         response = self._raw_request(
             "POST",
             "/open-apis/auth/v3/tenant_access_token/internal",
@@ -527,5 +540,6 @@ class FeishuDocumentRenderer(DocumentRenderer):
                 "formulas_supported": True,
                 "readback_verified": True,
                 "visual_asset_count": len(visualizations.get("assets", [])),
+                "auth_mode": self.client.auth_mode,
             },
         )

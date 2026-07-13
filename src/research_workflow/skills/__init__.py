@@ -2,6 +2,7 @@
 
 from .capability_sweep import CapabilitySweepSkill
 from .citation_management import CitationManagementSkill
+from .content_optimization import ContentOptimizationSkill
 from .data_processing import DataProcessingSkill
 from .evidence_governance import EvidenceGovernanceSkill
 from .experience_evolution import ExperienceEvolutionSkill
@@ -23,6 +24,7 @@ from .writing_standards import WritingStandardsSkill
 __all__ = [
     "CapabilitySweepSkill",
     "CitationManagementSkill",
+    "ContentOptimizationSkill",
     "ResearchSkill",
     "RequirementsAnalysisSkill",
     "SkillResearchSkill",

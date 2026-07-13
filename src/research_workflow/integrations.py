@@ -76,6 +76,32 @@ DEFAULT_INTEGRATIONS = (
         author="jgm", version_checked="main@2026-07-12",
     ),
     IntegrationSpec(
+        "minimax-docx", "word_aesthetic_formatting",
+        "https://github.com/MiniMax-AI/skills/tree/main/skills/minimax-docx",
+        "MIT", 13_030,
+        notes=(
+            "参考其OOXML样式、模板映射和校验门方法；本项目采用clean-room "
+            "python-docx适配，不复制C#实现。"
+        ),
+        author="MiniMax-AI", version_checked="main@2026-07-13",
+    ),
+    IntegrationSpec(
+        "frontend-slides", "html_slides_design",
+        "https://github.com/zarazhangrui/frontend-slides",
+        "MIT", 25_376,
+        notes=(
+            "张咋啦发布的HTML Slides Skill；参考单文件、自包含和视觉层级方法，"
+            "本项目使用独立渲染器。"
+        ),
+        author="zarazhangrui", version_checked="main@2026-07-13",
+    ),
+    IntegrationSpec(
+        "marp", "slides_multi_format",
+        "https://github.com/marp-team/marp", "MIT", 12_172,
+        notes="可选外部CLI；内置SlidesRenderer不依赖Node或浏览器。",
+        author="marp-team", version_checked="main@2026-07-13",
+    ),
+    IntegrationSpec(
         "openclaw-deep-research", "claim_verified_research",
         "https://github.com/MilleniumGenAI/deep-research-openclaw-agent",
         "MIT-0", 2, notes="ClawHub integration with source registry and claim ledger.",
@@ -104,6 +130,7 @@ BUILTIN_SKILL_ORDER = (
     "visualization",
     "writing",
     "citation_management",
+    "content_optimization",
     "pressure_test",
     "formatting",
     "review",

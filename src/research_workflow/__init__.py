@@ -1,6 +1,12 @@
 """Northstar research report workflow."""
 
 from .models import ReportConfig, RunOutcome, SkillRequest, SkillResult
+from .feishu_oauth import FeishuOAuthClient
+from .office_renderers import (
+    AestheticDocxRenderer,
+    CompositeDocumentRenderer,
+    SlidesRenderer,
+)
 from .orchestrator import QualityGateRejected, ResearchReportOrchestrator
 from .providers import CompositeSourceRetriever, OpenAlexRetriever
 from .renderers import (
@@ -26,4 +32,8 @@ __all__ = [
     "MarkdownTableParser",
     "SQLiteWritingStandardStore",
     "WritingStandardProfile",
+    "FeishuOAuthClient",
+    "AestheticDocxRenderer",
+    "CompositeDocumentRenderer",
+    "SlidesRenderer",
 ]

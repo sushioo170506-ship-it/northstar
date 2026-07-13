@@ -19,6 +19,7 @@ from .profiles import WORKFLOW_PROFILES
 from .skills import (
     CapabilitySweepSkill,
     CitationManagementSkill,
+    ContentOptimizationSkill,
     DataProcessingSkill,
     EvidenceGovernanceSkill,
     ExperienceEvolutionSkill,
@@ -138,29 +139,36 @@ NODES = (
         ("writing", "evidence_governance", "material_integration"),
     ),
     NodeSpec(
+        "content_optimization",
+        ("citation_management", "writing_standards"),
+        "content_optimization",
+        ("citation_management", "writing_standards"),
+    ),
+    NodeSpec(
         "pressure_test",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
             "evidence_governance", "data_processing", "material_integration",
             "visualization", "writing", "citation_management",
+            "content_optimization",
         ),
         "pressure_test",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
             "evidence_governance", "data_processing", "material_integration",
-            "visualization", "citation_management",
+            "visualization", "content_optimization",
         ),
     ),
     NodeSpec(
         "draft_confirmation",
-        ("writing", "citation_management", "pressure_test"),
+        ("writing", "citation_management", "content_optimization", "pressure_test"),
         checkpoint=True,
     ),
     NodeSpec(
         "formatting",
-        ("citation_management", "writing_standards", "draft_confirmation"),
+        ("content_optimization", "writing_standards", "draft_confirmation"),
         "formatting",
-        ("citation_management", "writing_standards"),
+        ("content_optimization", "writing_standards"),
     ),
     NodeSpec("pre_review_confirmation", ("formatting",), checkpoint=True),
     NodeSpec(
@@ -184,14 +192,16 @@ NODES = (
             "capability_sweep", "skill_research", "requirements_analysis", "outline",
             "evidence_governance",
             "data_processing", "material_integration", "visualization",
-            "citation_management", "pressure_test", "writing_standards", "review",
+            "citation_management", "content_optimization", "pressure_test",
+            "writing_standards", "review",
         ),
         "quality_gate",
         (
             "capability_sweep", "skill_research", "requirements_analysis", "outline",
             "evidence_governance",
             "data_processing", "material_integration", "visualization",
-            "citation_management", "pressure_test", "writing_standards", "review",
+            "citation_management", "content_optimization", "pressure_test",
+            "writing_standards", "review",
         ),
         quality_gate=True,
     ),
@@ -233,7 +243,8 @@ def default_registry(
         OutlineSkill(), ResearchSkill(retriever=source_retriever),
         EvidenceGovernanceSkill(),
         DataProcessingSkill(), MaterialIntegrationSkill(), VisualizationSkill(),
-        WritingSkill(), CitationManagementSkill(), PressureTestSkill(),
+        WritingSkill(), CitationManagementSkill(), ContentOptimizationSkill(),
+        PressureTestSkill(),
         FormattingSkill(), ReviewSkill(), QualityGateSkill(),
         PublishSkill(renderer=document_renderer), ExperienceEvolutionSkill(),
     ):
@@ -576,6 +587,13 @@ class ResearchReportOrchestrator:
                 (
                     ("图表", 3), ("可视化", 3), ("流程图", 4),
                     ("架构图", 4), ("chart", 3), ("diagram", 3),
+                ),
+            ),
+            (
+                "content_optimization",
+                (
+                    ("流程图", 5), ("表格说明", 5), ("编号", 4),
+                    ("链接索引", 5), ("内容优化", 4),
                 ),
             ),
             (

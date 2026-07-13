@@ -55,7 +55,9 @@ class PublishSkill(Skill):
             "confidentiality_level": request.config.confidentiality_level,
         }
         published_content = report
-        if output_format in {"docx", "pdf", "feishu"}:
+        if output_format in {
+            "docx", "pdf", "feishu", "pptx", "slides_html"
+        }:
             if self.renderer is None:
                 raise ValueError(
                     f"{output_format} 输出需要配置 DocumentRenderer"

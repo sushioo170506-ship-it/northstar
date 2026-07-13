@@ -19,6 +19,11 @@ from research_workflow.models import (
     WorkflowStatus,
 )
 from research_workflow.providers import CompositeSourceRetriever, OpenAlexRetriever
+from research_workflow.feishu_oauth import FeishuOAuthClient
+from research_workflow.office_renderers import (
+    AestheticDocxRenderer,
+    SlidesRenderer,
+)
 from research_workflow.renderers import PandocDocumentRenderer
 from research_workflow.renderers import (
     FeishuApiClient,
@@ -34,6 +39,7 @@ from research_workflow.orchestrator import (
 from research_workflow.skills.quality_gate import DIMENSIONS, QualityGateSkill
 from research_workflow.skills.data_processing import DataProcessingSkill
 from research_workflow.skills.citation_management import CitationManagementSkill
+from research_workflow.skills.content_optimization import ContentOptimizationSkill
 from research_workflow.skills.experience_evolution import ExperienceEvolutionSkill
 from research_workflow.skills.outline import OutlineSkill
 from research_workflow.skills.publish import PublishSkill
@@ -252,7 +258,7 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(set(default_registry().names), set(BUILTIN_SKILL_ORDER))
         self.assertEqual(orchestrator_names, {"research_report_orchestrator"})
-        self.assertEqual(len(names) + len(orchestrator_names), 20)
+        self.assertEqual(len(names) + len(orchestrator_names), 21)
         architecture = (
             Path(__file__).parents[1] / "docs" / "ARCHITECTURE.md"
         ).read_text(encoding="utf-8")
@@ -517,6 +523,109 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('id="ref-S1"', result.content)
         self.assertIn("[↩1](#cite-S1-1)", result.content)
         self.assertEqual(result.metadata["coverage"], 1.0)
+
+    def test_content_optimization_standardizes_visual_structure(self) -> None:
+        source = """# 报告
+
+```text
+用户音频 → ASR → LLM → TTS → 输出音频
+```
+
+| 指标 | 数值 |
+|---|---:|
+| 成功率 | 80% |
+
+1. 第一项
+1. 第二项
+1. [官方来源](https://example.org/source)
+"""
+        request = SkillRequest(
+            workflow_id="content-opt",
+            node_id="content_optimization",
+            config=ReportConfig.from_dict({"topic": "内容优化"}),
+            inputs={
+                "citation_management": source,
+                "writing_standards": writing_standard_payload(),
+            },
+        )
+        skill = ContentOptimizationSkill()
+        result = skill.execute(request)
+        skill.validate(result)
+        self.assertIn("```mermaid\nflowchart TD", result.content)
+        self.assertIn("> **表格说明：**", result.content)
+        self.assertIn("2. 第二项", result.content)
+        self.assertIn("3. [官方来源]", result.content)
+        self.assertIn("## 全量关联链接", result.content)
+        self.assertEqual(result.metadata["flow_diagrams_converted"], 1)
+        self.assertEqual(result.metadata["tables_explained"], 1)
+
+    def test_office_and_slides_renderers_generate_editable_outputs(self) -> None:
+        markdown = """# 示例研究报告
+
+## 核心判断
+
+1. 第一项
+2. 第二项
+
+| 指标 | 数值 |
+|---|---:|
+| 完成率 | 80% |
+"""
+        docx_content, docx_meta = AestheticDocxRenderer().render(
+            content=markdown, output_format="docx", visualizations={"assets": []}
+        )
+        import base64
+        from zipfile import ZipFile
+        from io import BytesIO
+
+        with ZipFile(BytesIO(base64.b64decode(docx_content))) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertIn("word/document.xml", archive.namelist())
+        self.assertTrue(docx_meta["editable"])
+
+        pptx_content, pptx_meta = SlidesRenderer().render(
+            content=markdown, output_format="pptx", visualizations={"assets": []}
+        )
+        with ZipFile(BytesIO(base64.b64decode(pptx_content))) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertIn("ppt/presentation.xml", archive.namelist())
+        self.assertTrue(pptx_meta["editable"])
+        html_content, html_meta = SlidesRenderer().render(
+            content=markdown,
+            output_format="slides_html",
+            visualizations={"assets": []},
+        )
+        self.assertTrue(html_content.startswith("<!doctype html>"))
+        self.assertIn('class="slide active"', html_content)
+        self.assertTrue(html_meta["self_contained"])
+
+    def test_feishu_user_oauth_builds_and_exchanges_authorization(self) -> None:
+        calls = []
+
+        def transport(method, path, payload, headers):
+            calls.append((method, path, payload))
+            return {
+                "code": 0,
+                "data": {
+                    "access_token": "u-test",
+                    "refresh_token": "r-test",
+                    "expires_in": 7200,
+                },
+            }
+
+        oauth = FeishuOAuthClient(
+            "cli_test",
+            "secret",
+            "http://localhost:8765/callback",
+            transport=transport,
+        )
+        url, state = oauth.authorization_url(state="fixed-state")
+        self.assertIn("accounts.feishu.cn", url)
+        self.assertIn("docx%3Adocument", url)
+        self.assertEqual(state, "fixed-state")
+        token = oauth.exchange_code("one-time-code")
+        self.assertEqual(token["access_token"], "u-test")
+        self.assertEqual(calls[0][1], "/open-apis/authen/v2/oauth/token")
 
     def test_composite_provider_isolates_failures_and_deduplicates(self) -> None:
         recording = RecordingRetriever()
@@ -935,10 +1044,16 @@ class WorkflowTests(unittest.TestCase):
         )
 
     def test_formats_are_valid(self) -> None:
-        for output_format in ("html", "json", "text", "feishu"):
+        for output_format in (
+            "html", "json", "text", "feishu", "pptx", "slides_html"
+        ):
             child = ResearchReportOrchestrator(
                 self.root / output_format,
-                document_renderer=FakeRenderer() if output_format == "feishu" else None,
+                document_renderer=(
+                    FakeRenderer()
+                    if output_format in {"feishu", "pptx", "slides_html"}
+                    else None
+                ),
             )
             workflow_id = child.create(
                 {
@@ -954,8 +1069,8 @@ class WorkflowTests(unittest.TestCase):
                 self.assertTrue(report.startswith("<!doctype html>"))
             elif output_format == "json":
                 self.assertEqual(json.loads(report)["title"], "格式测试")
-            elif output_format == "feishu":
-                self.assertTrue(report.startswith("base64:feishu:"))
+            elif output_format in {"feishu", "pptx", "slides_html"}:
+                self.assertTrue(report.startswith(f"base64:{output_format}:"))
             else:
                 self.assertNotIn("# ", report)
 
@@ -1006,6 +1121,18 @@ class WorkflowTests(unittest.TestCase):
                 {"topic": "飞书", "output_format": "飞书"}
             ).output_format,
             "feishu",
+        )
+        self.assertEqual(
+            ReportConfig.from_dict(
+                {"topic": "PPT", "output_format": "ppt"}
+            ).output_format,
+            "pptx",
+        )
+        self.assertEqual(
+            ReportConfig.from_dict(
+                {"topic": "Slides", "output_format": "slides"}
+            ).output_format,
+            "slides_html",
         )
 
     def test_writing_standard_profiles_are_versioned_and_triggerable(self) -> None:

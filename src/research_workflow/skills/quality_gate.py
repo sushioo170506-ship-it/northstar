@@ -8,6 +8,7 @@ import re
 from ..contracts import Skill, TextGenerator
 from ..models import SkillRequest, SkillResult
 from ..profiles import WORKFLOW_PROFILES
+from ..renderers import MarkdownTableParser
 
 
 DIMENSIONS = (
@@ -48,7 +49,9 @@ class QualityGateSkill(Skill):
             )
         )
         outline = json.loads(request.inputs["outline"])
-        cited_draft = request.inputs["citation_management"]
+        cited_draft = request.inputs.get(
+            "content_optimization", request.inputs["citation_management"]
+        )
         evidence_text = request.inputs["evidence_governance"]
         processed = json.loads(request.inputs["data_processing"])
         materials = json.loads(request.inputs["material_integration"])
@@ -234,6 +237,8 @@ class QualityGateSkill(Skill):
             problems.append("第三方 Skill 候选或改造草案缺少合规溯源字段")
         if not requirements_policy["citation_integrity"]:
             problems.append("引用锚点、内联引用或文末参考资料不完整")
+        if not requirements_policy["content_structure_compliant"]:
+            problems.append("流程图、表格说明、编号或全量链接索引不符合统一规范")
         if not requirements_policy["writing_standard_compliant"]:
             problems.append("写作规范参照或外部发布安全条件未满足")
         if high_grade_ratio < minimum_high_grade_ratio:
@@ -294,6 +299,9 @@ class QualityGateSkill(Skill):
                 ],
                 "citation_integrity": requirements_policy[
                     "citation_integrity"
+                ],
+                "content_structure_compliant": requirements_policy[
+                    "content_structure_compliant"
                 ],
                 "writing_standard_profile": writing_standard["profile"]["id"],
                 "writing_standard_compliant": requirements_policy[
@@ -466,6 +474,31 @@ class QualityGateSkill(Skill):
         minimum_visual_assets = int(
             requirements.get("minimum_visual_assets", 6)
         )
+        table_count = sum(
+            kind == "table"
+            for kind, _ in MarkdownTableParser.split_document(cited_draft)
+        )
+        table_explanation_count = cited_draft.count("> **表格说明：**")
+        has_external_links = bool(
+            re.search(r"\[[^\]]+\]\(https?://[^)]+\)", cited_draft)
+        )
+        repeated_numbering = bool(
+            re.search(r"(?m)^1\.\s.+\n1\.\s", cited_draft)
+        )
+        plain_flow = bool(
+            re.search(
+                r"```(?:text|txt)\s*\n(?:(?!```).)*(?:→|⇄|<->|->|↓)"
+                r"(?:(?!```).)*```",
+                cited_draft,
+                re.DOTALL,
+            )
+        )
+        content_structure_compliant = (
+            table_explanation_count >= table_count
+            and not repeated_numbering
+            and not plain_flow
+            and (not has_external_links or "## 全量关联链接" in cited_draft)
+        )
         return {
             "missing_source_categories": missing_categories,
             "missing_report_links": missing_report_links,
@@ -485,6 +518,7 @@ class QualityGateSkill(Skill):
             "capability_catalog_traversed": capability_catalog_traversed,
             "skill_provenance_complete": skill_provenance_complete,
             "citation_integrity": citation_integrity,
+            "content_structure_compliant": content_structure_compliant,
             "compliant": (
                 not missing_categories
                 and not missing_report_links
@@ -499,6 +533,7 @@ class QualityGateSkill(Skill):
                 and capability_catalog_traversed
                 and skill_provenance_complete
                 and citation_integrity
+                and content_structure_compliant
             ),
         }
 
