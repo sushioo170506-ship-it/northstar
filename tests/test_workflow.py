@@ -1103,6 +1103,35 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(catalog.license, "NOASSERTION")
         self.assertIn("不复制", catalog.notes)
 
+    def test_incomplete_quant_report_is_blocked_end_to_end(self) -> None:
+        child = ResearchReportOrchestrator(self.root / "quant-e2e")
+        workflow_id = child.create(
+            {
+                "topic": "中证500指数增强因子回测",
+                "output_type": "券商量化金融工程研究报告",
+                "expected_length": 500,
+                "workflow_profile": "quick",
+                "extra": {"sources": compliant_sources("QUANT-E2E")},
+            }
+        )
+        waiting = child.run(workflow_id)
+        self.assertEqual(waiting.waiting_at, "pre_review_confirmation")
+        child.confirm(workflow_id, "pre_review_confirmation")
+        with self.assertRaises(QualityGateRejected):
+            child.run(workflow_id)
+        quant = json.loads(
+            child.state.node_artifact(
+                workflow_id, "quant_finance_research"
+            )["content"]
+        )
+        self.assertEqual(quant["status"], "incomplete")
+        gate = json.loads(
+            child.state.node_artifact(workflow_id, "quality_gate")["content"]
+        )
+        self.assertFalse(
+            gate["requirements_checks"]["quant_finance_compliant"]
+        )
+
     def test_outline_focuses_risk_on_report_subject(self) -> None:
         request = SkillRequest(
             workflow_id="risk-scope",
