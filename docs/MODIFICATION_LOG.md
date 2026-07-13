@@ -130,7 +130,7 @@
 ### Skill 清单统一
 
 - 目录名、frontmatter name、Python Skill.name 和 DAG node 全部使用 canonical underscore 名称。
-- 维护口径统一为 1 个主编排 Skill + 16 个可执行 Skill = 17 个 SKILL.md。
+- 当时维护口径统一为1个主编排Skill+16个可执行Skill；当前数量以SKILL_INVENTORY为准。
 
 ### 竞争性假说改为可选
 
