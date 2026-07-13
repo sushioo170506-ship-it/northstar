@@ -159,4 +159,14 @@ research-workflow --data-dir ./data status WORKFLOW_ID
 research-workflow --data-dir ./data final WORKFLOW_ID > report.md
 ```
 
+CLI会自动为DOCX、PPTX和Slides HTML配置内置渲染器。飞书个人授权后设置：
+
+```bash
+export FEISHU_USER_ACCESS_TOKEN="u-..."
+export FEISHU_DOCUMENT_TITLE="研究报告"
+research-workflow --data-dir ./data create --topic "主题" --format feishu
+```
+
+也可设置`FEISHU_APP_ID/FEISHU_APP_SECRET`使用应用身份；个人文档优先用户OAuth。
+
 所有 CLI 结构化结果为 JSON，错误写入 stderr 并返回退出码 2。

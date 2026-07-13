@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import base64
 import json
 import re
 import shutil
@@ -38,6 +39,8 @@ DOCX = OUTPUT / "gpt-live应用探索研究报告.docx"
 PDF = OUTPUT / "gpt-live应用探索研究报告.pdf"
 FEISHU = OUTPUT / "gpt-live应用探索研究报告-飞书导入.md"
 MANIFEST = OUTPUT / "gpt-live应用探索研究报告-飞书发布清单.json"
+PPTX = OUTPUT / "gpt-live应用探索研究报告-汇报版.pptx"
+SLIDES_HTML = OUTPUT / "gpt-live应用探索研究报告-汇报版.html"
 
 LINK = re.compile(r"\[([^\]]+)\]\((https?://[^)]+)\)")
 INLINE = re.compile(r"(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?://[^)]+\))")
@@ -410,11 +413,31 @@ def render_feishu(markdown: str) -> None:
     )
 
 
+def render_slides(markdown: str) -> None:
+    import sys
+
+    sys.path.insert(0, str(ROOT / "src"))
+    from research_workflow.office_renderers import SlidesRenderer
+
+    renderer = SlidesRenderer()
+    pptx, _ = renderer.render(
+        content=markdown, output_format="pptx", visualizations={"assets": []}
+    )
+    PPTX.write_bytes(base64.b64decode(pptx))
+    slides_html, _ = renderer.render(
+        content=markdown,
+        output_format="slides_html",
+        visualizations={"assets": []},
+    )
+    SLIDES_HTML.write_text(slides_html, encoding="utf-8")
+
+
 def main() -> None:
     markdown = SOURCE.read_text(encoding="utf-8")
     render_docx(markdown)
     render_pdf(markdown)
     render_feishu(markdown)
+    render_slides(markdown)
     print(
         json.dumps(
             {
@@ -423,6 +446,8 @@ def main() -> None:
                 "pdf": str(PDF),
                 "feishu": str(FEISHU),
                 "manifest": str(MANIFEST),
+                "pptx": str(PPTX),
+                "slides_html": str(SLIDES_HTML),
             },
             ensure_ascii=False,
         )
