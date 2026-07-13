@@ -9,6 +9,7 @@ import re
 import shutil
 from pathlib import Path
 from urllib.parse import urlparse
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -43,6 +44,7 @@ PPTX = OUTPUT / "gpt-live应用探索研究报告-汇报版.pptx"
 SLIDES_HTML = OUTPUT / "gpt-live应用探索研究报告-汇报版.html"
 PPTX_ASCII = OUTPUT / "gpt-live-deck.pptx"
 SLIDES_HTML_ASCII = OUTPUT / "gpt-live-deck.html"
+DECK_ZIP = OUTPUT / "gpt-live-deck.zip"
 
 LINK = re.compile(r"\[([^\]]+)\]\((https?://[^)]+)\)")
 INLINE = re.compile(r"(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?://[^)]+\))")
@@ -434,6 +436,14 @@ def render_slides(markdown: str) -> None:
     )
     SLIDES_HTML.write_text(slides_html, encoding="utf-8")
     SLIDES_HTML_ASCII.write_text(slides_html, encoding="utf-8")
+    with ZipFile(DECK_ZIP, "w", compression=ZIP_DEFLATED) as archive:
+        archive.write(SLIDES_HTML_ASCII, "gpt-live-deck.html")
+        archive.write(PPTX_ASCII, "gpt-live-deck.pptx")
+        archive.writestr(
+            "README.txt",
+            "双击 gpt-live-deck.html 在浏览器中演示；方向键/空格翻页，F全屏。"
+            "gpt-live-deck.pptx 可在 PowerPoint/WPS 中编辑。\n",
+        )
 
 
 def main() -> None:
@@ -454,6 +464,7 @@ def main() -> None:
                 "slides_html": str(SLIDES_HTML),
                 "pptx_ascii": str(PPTX_ASCII),
                 "slides_html_ascii": str(SLIDES_HTML_ASCII),
+                "deck_zip": str(DECK_ZIP),
             },
             ensure_ascii=False,
         )
