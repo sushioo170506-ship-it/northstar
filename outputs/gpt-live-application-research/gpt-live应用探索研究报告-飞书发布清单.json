@@ -1,0 +1,8 @@
+{
+  "format": "feishu-ready-markdown",
+  "source": "gpt-live应用探索研究报告-飞书导入.md",
+  "native_sheet_candidates": 7,
+  "inline_links_preserved": true,
+  "publish_status": "pending_user_oauth",
+  "note": "注入FeishuDocumentRenderer后，正文转Docx块，Markdown表格转原生Sheet Block；当前环境没有用户飞书凭证，未生成虚假链接。"
+}
