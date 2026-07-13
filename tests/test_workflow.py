@@ -5,6 +5,7 @@ import re
 import tempfile
 import unittest
 from pathlib import Path
+from zipfile import ZipFile
 
 from research_workflow.contracts import (
     DocumentRenderer,
