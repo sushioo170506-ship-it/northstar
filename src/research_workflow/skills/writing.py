@@ -24,6 +24,7 @@ class WritingSkill(Skill):
         processed_text = request.inputs["data_processing"]
         materials_text = request.inputs["material_integration"]
         visualizations_text = request.inputs["visualization"]
+        standard_text = request.inputs["writing_standards"]
         prompt = WRITING_PROMPT.format(
             topic=request.config.topic,
             expected_length=request.config.expected_length,
@@ -35,6 +36,7 @@ class WritingSkill(Skill):
                 f"\n数据处理与评分：\n{processed_text}"
                 f"\n需求简报：\n{requirements_text}\n章节素材：\n{materials_text}"
                 f"\n可视化资产：\n{visualizations_text}"
+                f"\n强制写作规范：\n{standard_text}"
             )
             content = self.generator.generate(
                 system="你是证据驱动的研究报告作者。", prompt=prompt,
@@ -46,7 +48,14 @@ class WritingSkill(Skill):
         materials = json.loads(materials_text)
         visualizations = json.loads(visualizations_text)
         processed = json.loads(processed_text)
+        standard = json.loads(standard_text)
+        scene = standard["scene"]
         parts = [f"# {outline['title']}\n"]
+        if request.config.confidentiality_level != "public":
+            parts.append(
+                f"> 阅读范围：{request.config.confidentiality_level}；"
+                "按组织信息安全制度处理。\n"
+            )
         for section_index, section in enumerate(outline["sections"]):
             target = max(100, int(section["target_length"]))
             section_materials = materials.get("sections", {}).get(
@@ -96,6 +105,17 @@ class WritingSkill(Skill):
                         + "\n```"
                     )
                 parts.append(f"### {asset['title']}\n\n{rendered}\n")
+        if scene == "technical":
+            parts.append(
+                "## 符号、术语与复现说明\n\n"
+                "公式采用 LaTeX 块格式；术语首现定义。实验参数、数据口径和"
+                "不确定性应随可复现附件补齐。\n"
+            )
+        elif scene == "public_account":
+            parts.append(
+                "## 互动\n\n"
+                "你最希望进一步核验哪一项数据或应用边界？欢迎基于原始来源讨论。\n"
+            )
         if request.feedback:
             parts.append("## 修订说明\n\n" + "；".join(request.feedback))
         content = "\n".join(parts)
@@ -106,5 +126,7 @@ class WritingSkill(Skill):
                 "section_count": len(outline["sections"]),
                 "claim_count": len(processed.get("claims", [])),
                 "scoring_status": processed.get("scoring", {}).get("status"),
+                "writing_standard_profile": standard["profile"]["id"],
+                "writing_scene": scene,
             },
         )

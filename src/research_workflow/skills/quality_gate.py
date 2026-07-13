@@ -54,6 +54,7 @@ class QualityGateSkill(Skill):
         materials = json.loads(request.inputs["material_integration"])
         visualizations = json.loads(request.inputs["visualization"])
         pressure_text = request.inputs["pressure_test"]
+        writing_standard = json.loads(request.inputs["writing_standards"])
         evidence = json.loads(evidence_text)
         evidence_grades = processed.get("evidence_grades", {})
         graded_total = sum(evidence_grades.values())
@@ -69,6 +70,24 @@ class QualityGateSkill(Skill):
         requirements_policy = self._requirements_policy(
             final_report, requirements, evidence, processed, materials,
             visualizations, capability, skill_research, outline, cited_draft,
+        )
+        reference_status = writing_standard["reference_selection"]["status"]
+        reference_required = bool(
+            request.config.extra.get("require_verified_reference_templates", False)
+        )
+        standards_compliant = (
+            (
+                request.config.output_format != "feishu"
+                or writing_standard["security"]["external_delivery_allowed"]
+            )
+            and (
+                not reference_required
+                or reference_status in {"verified", "builtin_authority"}
+            )
+        )
+        requirements_policy["writing_standard_compliant"] = standards_compliant
+        requirements_policy["compliant"] = (
+            requirements_policy["compliant"] and standards_compliant
         )
         if self.generator:
             prompt = (
@@ -215,6 +234,8 @@ class QualityGateSkill(Skill):
             problems.append("第三方 Skill 候选或改造草案缺少合规溯源字段")
         if not requirements_policy["citation_integrity"]:
             problems.append("引用锚点、内联引用或文末参考资料不完整")
+        if not requirements_policy["writing_standard_compliant"]:
+            problems.append("写作规范参照或外部发布安全条件未满足")
         if high_grade_ratio < minimum_high_grade_ratio:
             problems.append(
                 f"A+/A/B 级证据占比 {high_grade_ratio:.1%} 低于"
@@ -274,6 +295,11 @@ class QualityGateSkill(Skill):
                 "citation_integrity": requirements_policy[
                     "citation_integrity"
                 ],
+                "writing_standard_profile": writing_standard["profile"]["id"],
+                "writing_standard_compliant": requirements_policy[
+                    "writing_standard_compliant"
+                ],
+                "reference_template_status": reference_status,
             },
             "decision": "allow_release" if passed else "block_release",
             "feedback_applied": list(request.feedback),

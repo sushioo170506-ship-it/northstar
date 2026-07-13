@@ -94,6 +94,7 @@ BUILTIN_SKILL_ORDER = (
     "capability_sweep",
     "requirements_analysis",
     "skill_research",
+    "writing_standards",
     "issue_tree",
     "outline",
     "research",

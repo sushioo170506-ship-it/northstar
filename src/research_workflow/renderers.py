@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import base64
+import json
+import re
 import shutil
 import subprocess
 import tempfile
+import urllib.error
+import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Callable
 
 from .contracts import DocumentRenderer
 
@@ -73,6 +79,370 @@ class PandocDocumentRenderer(DocumentRenderer):
                 ),
                 "encoding": "base64",
                 "byte_count": len(data),
+                "visual_asset_count": len(visualizations.get("assets", [])),
+            },
+        )
+
+
+@dataclass(frozen=True)
+class MarkdownTable:
+    headers: tuple[str, ...]
+    rows: tuple[tuple[str, ...], ...]
+    alignments: tuple[str, ...]
+
+    @property
+    def values(self) -> list[list[str]]:
+        return [list(self.headers), *(list(row) for row in self.rows)]
+
+
+class MarkdownTableParser:
+    """Parse GFM pipe tables without losing escaped pipes or empty cells."""
+
+    SEPARATOR = re.compile(r"^:?-{3,}:?$")
+
+    @classmethod
+    def split_document(
+        cls, content: str
+    ) -> list[tuple[str, str | MarkdownTable]]:
+        lines = content.splitlines()
+        result: list[tuple[str, str | MarkdownTable]] = []
+        markdown: list[str] = []
+        index = 0
+        while index < len(lines):
+            if index + 1 < len(lines):
+                header = cls._cells(lines[index])
+                separator = cls._cells(lines[index + 1])
+                is_table = (
+                    len(header) > 0
+                    and len(header) == len(separator)
+                    and all(cls.SEPARATOR.fullmatch(cell.strip()) for cell in separator)
+                )
+                if is_table:
+                    if markdown:
+                        result.append(("markdown", "\n".join(markdown).strip()))
+                        markdown = []
+                    rows = []
+                    index += 2
+                    while index < len(lines):
+                        cells = cls._cells(lines[index])
+                        if len(cells) != len(header):
+                            break
+                        rows.append(tuple(cls._clean(cell) for cell in cells))
+                        index += 1
+                    alignments = tuple(cls._alignment(cell) for cell in separator)
+                    result.append(
+                        (
+                            "table",
+                            MarkdownTable(
+                                tuple(cls._clean(cell) for cell in header),
+                                tuple(rows),
+                                alignments,
+                            ),
+                        )
+                    )
+                    continue
+            markdown.append(lines[index])
+            index += 1
+        if markdown:
+            result.append(("markdown", "\n".join(markdown).strip()))
+        return [(kind, value) for kind, value in result if value]
+
+    @staticmethod
+    def _cells(line: str) -> list[str]:
+        if "|" not in line:
+            return []
+        text = line.strip()
+        if text.startswith("|"):
+            text = text[1:]
+        if text.endswith("|") and not text.endswith(r"\|"):
+            text = text[:-1]
+        cells: list[str] = []
+        buffer: list[str] = []
+        escaped = False
+        for char in text:
+            if escaped:
+                buffer.append(char)
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == "|":
+                cells.append("".join(buffer).strip())
+                buffer = []
+            else:
+                buffer.append(char)
+        if escaped:
+            buffer.append("\\")
+        cells.append("".join(buffer).strip())
+        return cells
+
+    @staticmethod
+    def _clean(value: str) -> str:
+        value = value.replace("<br>", "\n").replace("<br/>", "\n")
+        value = re.sub(r"\[([^\]]+)\]\((https?://[^)]+)\)", r"\1 (\2)", value)
+        return re.sub(r"(?<!\\)(\*\*|__|\*|_|`)(.+?)\1", r"\2", value).strip()
+
+    @staticmethod
+    def _alignment(separator: str) -> str:
+        value = separator.strip()
+        if value.startswith(":") and value.endswith(":"):
+            return "center"
+        if value.endswith(":"):
+            return "right"
+        return "left"
+
+
+class FeishuApiClient:
+    """Small stdlib Feishu Open API client with an injectable test transport."""
+
+    def __init__(
+        self,
+        *,
+        app_id: str | None = None,
+        app_secret: str | None = None,
+        access_token: str | None = None,
+        base_url: str = "https://open.feishu.cn",
+        timeout_seconds: int = 30,
+        transport: Callable[
+            [str, str, dict[str, Any] | None, dict[str, str]], dict[str, Any]
+        ] | None = None,
+    ) -> None:
+        if not access_token and not (app_id and app_secret):
+            raise ValueError("飞书客户端需要 access_token 或 app_id/app_secret")
+        self.app_id = app_id
+        self.app_secret = app_secret
+        self.access_token = access_token
+        self.base_url = base_url.rstrip("/")
+        self.timeout_seconds = timeout_seconds
+        self.transport = transport
+
+    def _token(self) -> str:
+        if self.access_token:
+            return self.access_token
+        response = self._raw_request(
+            "POST",
+            "/open-apis/auth/v3/tenant_access_token/internal",
+            {"app_id": self.app_id, "app_secret": self.app_secret},
+            {},
+        )
+        token = response.get("tenant_access_token")
+        if not token:
+            raise RuntimeError("飞书鉴权响应缺少 tenant_access_token")
+        self.access_token = str(token)
+        return self.access_token
+
+    def request(
+        self, method: str, path: str, payload: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        response = self._raw_request(
+            method,
+            path,
+            payload,
+            {
+                "Authorization": f"Bearer {self._token()}",
+                "Content-Type": "application/json; charset=utf-8",
+            },
+        )
+        if response.get("code", 0) != 0:
+            raise RuntimeError(
+                f"飞书 API 失败 code={response.get('code')}: "
+                f"{response.get('msg', 'unknown error')}"
+            )
+        return response
+
+    def _raw_request(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None,
+        headers: dict[str, str],
+    ) -> dict[str, Any]:
+        if self.transport:
+            return self.transport(method, path, payload, headers)
+        data = (
+            json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            if payload is not None else None
+        )
+        request = urllib.request.Request(
+            self.base_url + path, data=data, headers=headers, method=method
+        )
+        try:
+            with urllib.request.urlopen(
+                request, timeout=self.timeout_seconds
+            ) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+            raise RuntimeError(f"飞书 API 请求失败: {path}: {exc}") from exc
+
+    def create_document(self, title: str, folder_token: str | None = None) -> str:
+        payload = {"title": title[:256]}
+        if folder_token:
+            payload["folder_token"] = folder_token
+        response = self.request("POST", "/open-apis/docx/v1/documents", payload)
+        document = response.get("data", {}).get("document", {})
+        document_id = document.get("document_id") or document.get("id")
+        if not document_id:
+            raise RuntimeError("飞书创建文档响应缺少 document_id")
+        return str(document_id)
+
+    def append_markdown(self, document_id: str, markdown: str) -> None:
+        if not markdown.strip():
+            return
+        converted = self.request(
+            "POST",
+            "/open-apis/docx/v1/documents/blocks/convert",
+            {"content_type": "markdown", "content": markdown},
+        ).get("data", {})
+        blocks = converted.get("blocks", [])
+        self._remove_readonly_merge_info(blocks)
+        children = converted.get("first_level_block_ids", [])
+        if blocks and children:
+            self.request(
+                "POST",
+                f"/open-apis/docx/v1/documents/{document_id}/blocks/"
+                f"{document_id}/descendant?document_revision_id=-1",
+                {"children_id": children, "descendants": blocks},
+            )
+
+    def append_sheet(self, document_id: str, table: MarkdownTable) -> dict[str, str]:
+        rows = max(1, min(9, len(table.rows) + 1))
+        columns = max(1, min(9, len(table.headers)))
+        created = self.request(
+            "POST",
+            f"/open-apis/docx/v1/documents/{document_id}/blocks/"
+            f"{document_id}/children?document_revision_id=-1",
+            {
+                "children": [
+                    {
+                        "block_type": 30,
+                        "sheet": {"row_size": rows, "column_size": columns},
+                    }
+                ]
+            },
+        )
+        children = created.get("data", {}).get("children", [])
+        token = children[0].get("sheet", {}).get("token") if children else None
+        if not token or "_" not in token:
+            raise RuntimeError("飞书 Sheet Block 响应缺少可拆分 token")
+        spreadsheet_token, sheet_id = str(token).rsplit("_", 1)
+        end = f"{self._column_name(len(table.headers))}{len(table.rows) + 1}"
+        range_name = f"{sheet_id}!A1:{end}"
+        self.request(
+            "PUT",
+            f"/open-apis/sheets/v2/spreadsheets/{spreadsheet_token}/values",
+            {"valueRange": {"range": range_name, "values": table.values}},
+        )
+        self.request(
+            "PUT",
+            f"/open-apis/sheets/v2/spreadsheets/{spreadsheet_token}/style",
+            {
+                "appendStyle": {
+                    "range": f"{sheet_id}!A1:"
+                    f"{self._column_name(len(table.headers))}1",
+                    "style": {
+                        "bold": True,
+                        "backColor": "#E8F0FE",
+                        "hAlign": 1,
+                    },
+                }
+            },
+        )
+        self.request(
+            "POST",
+            f"/open-apis/sheets/v2/spreadsheets/{spreadsheet_token}/"
+            "sheets_batch_update",
+            {
+                "requests": [
+                    {
+                        "updateSheet": {
+                            "properties": {
+                                "sheetId": sheet_id,
+                                "frozenRowCount": 1,
+                            }
+                        }
+                    }
+                ]
+            },
+        )
+        readback = self.request(
+            "GET",
+            f"/open-apis/sheets/v2/spreadsheets/{spreadsheet_token}/"
+            f"values/{range_name}",
+        )
+        values = readback.get("data", {}).get("valueRange", {}).get("values")
+        if values is not None and values != table.values:
+            raise RuntimeError("飞书电子表格回读校验失败：数据与Markdown表格不一致")
+        return {
+            "spreadsheet_token": spreadsheet_token,
+            "sheet_id": sheet_id,
+            "range": range_name,
+        }
+
+    @staticmethod
+    def _remove_readonly_merge_info(value: Any) -> None:
+        if isinstance(value, dict):
+            value.pop("merge_info", None)
+            for child in value.values():
+                FeishuApiClient._remove_readonly_merge_info(child)
+        elif isinstance(value, list):
+            for child in value:
+                FeishuApiClient._remove_readonly_merge_info(child)
+
+    @staticmethod
+    def _column_name(count: int) -> str:
+        if count < 1:
+            raise ValueError("列数必须大于0")
+        value = count
+        name = ""
+        while value:
+            value, remainder = divmod(value - 1, 26)
+            name = chr(65 + remainder) + name
+        return name
+
+
+class FeishuDocumentRenderer(DocumentRenderer):
+    """Publish Markdown as Docx blocks and embedded native Sheet blocks."""
+
+    def __init__(
+        self,
+        client: FeishuApiClient,
+        *,
+        title: str = "研究报告",
+        folder_token: str | None = None,
+        document_id: str | None = None,
+    ) -> None:
+        self.client = client
+        self.title = title
+        self.folder_token = folder_token
+        self.document_id = document_id
+
+    def render(self, *, content, output_format, visualizations):
+        if output_format != "feishu":
+            raise ValueError(f"Feishu renderer 不支持: {output_format}")
+        document_id = self.document_id or self.client.create_document(
+            self.title, self.folder_token
+        )
+        sheet_refs = []
+        clean = re.sub(r'<a\s+id="[^"]+"></a>', "", content)
+        for kind, value in MarkdownTableParser.split_document(clean):
+            if kind == "markdown":
+                self.client.append_markdown(document_id, str(value))
+            else:
+                assert isinstance(value, MarkdownTable)
+                sheet_refs.append(self.client.append_sheet(document_id, value))
+        return (
+            f"https://feishu.cn/docx/{document_id}",
+            {
+                "rendered": True,
+                "renderer": "feishu_open_api",
+                "output_format": "feishu",
+                "document_id": document_id,
+                "document_url": f"https://feishu.cn/docx/{document_id}",
+                "native_sheet_count": len(sheet_refs),
+                "native_sheets": sheet_refs,
+                "tables_editable": True,
+                "filters_supported": True,
+                "formulas_supported": True,
+                "readback_verified": True,
                 "visual_asset_count": len(visualizations.get("assets", [])),
             },
         )

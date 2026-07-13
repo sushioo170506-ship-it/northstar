@@ -35,7 +35,9 @@ from .skills import (
     SkillResearchSkill,
     VisualizationSkill,
     WritingSkill,
+    WritingStandardsSkill,
 )
+from .standards_store import SQLiteWritingStandardStore, WritingStandardProfile
 from .storage import SQLiteStateStore, SQLiteVectorStore
 
 
@@ -63,17 +65,26 @@ NODES = (
         ("requirements_analysis",),
     ),
     NodeSpec(
-        "issue_tree",
+        "writing_standards",
         ("requirements_analysis", "skill_research"),
+        "writing_standards",
+        ("requirements_analysis",),
+    ),
+    NodeSpec(
+        "issue_tree",
+        ("requirements_analysis", "skill_research", "writing_standards"),
         "issue_tree",
         ("requirements_analysis",),
     ),
     NodeSpec("issue_tree_confirmation", ("issue_tree",), checkpoint=True),
     NodeSpec(
         "outline",
-        ("requirements_analysis", "issue_tree", "issue_tree_confirmation"),
+        (
+            "requirements_analysis", "writing_standards", "issue_tree",
+            "issue_tree_confirmation",
+        ),
         "outline",
-        ("requirements_analysis", "issue_tree"),
+        ("requirements_analysis", "writing_standards", "issue_tree"),
     ),
     NodeSpec("outline_confirmation", ("outline",), checkpoint=True),
     NodeSpec(
@@ -111,13 +122,13 @@ NODES = (
         (
             "requirements_analysis", "issue_tree", "outline", "research",
             "evidence_governance", "data_processing", "material_integration",
-            "visualization",
+            "visualization", "writing_standards",
         ),
         "writing",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
             "evidence_governance", "data_processing", "material_integration",
-            "visualization",
+            "visualization", "writing_standards",
         ),
     ),
     NodeSpec(
@@ -147,9 +158,9 @@ NODES = (
     ),
     NodeSpec(
         "formatting",
-        ("citation_management", "draft_confirmation"),
+        ("citation_management", "writing_standards", "draft_confirmation"),
         "formatting",
-        ("citation_management",),
+        ("citation_management", "writing_standards"),
     ),
     NodeSpec("pre_review_confirmation", ("formatting",), checkpoint=True),
     NodeSpec(
@@ -157,14 +168,14 @@ NODES = (
         (
             "requirements_analysis", "research", "evidence_governance", "outline",
             "data_processing", "material_integration", "visualization",
-            "pressure_test", "formatting",
+            "pressure_test", "writing_standards", "formatting",
             "pre_review_confirmation",
         ),
         "review",
         (
             "requirements_analysis", "research", "evidence_governance", "outline",
             "data_processing", "material_integration", "visualization",
-            "pressure_test", "formatting",
+            "pressure_test", "writing_standards", "formatting",
         ),
     ),
     NodeSpec(
@@ -173,14 +184,14 @@ NODES = (
             "capability_sweep", "skill_research", "requirements_analysis", "outline",
             "evidence_governance",
             "data_processing", "material_integration", "visualization",
-            "citation_management", "pressure_test", "review",
+            "citation_management", "pressure_test", "writing_standards", "review",
         ),
         "quality_gate",
         (
             "capability_sweep", "skill_research", "requirements_analysis", "outline",
             "evidence_governance",
             "data_processing", "material_integration", "visualization",
-            "citation_management", "pressure_test", "review",
+            "citation_management", "pressure_test", "writing_standards", "review",
         ),
         quality_gate=True,
     ),
@@ -188,12 +199,12 @@ NODES = (
         "publish",
         (
             "capability_sweep", "skill_research", "visualization", "review",
-            "quality_gate",
+            "writing_standards", "quality_gate",
         ),
         "publish",
         (
             "capability_sweep", "skill_research", "visualization", "review",
-            "quality_gate",
+            "writing_standards", "quality_gate",
         ),
     ),
     NodeSpec(
@@ -210,10 +221,14 @@ def default_registry(
     *,
     source_retriever: SourceRetriever | None = None,
     document_renderer: DocumentRenderer | None = None,
+    writing_standard_store: SQLiteWritingStandardStore | None = None,
 ) -> SkillRegistry:
+    if writing_standard_store is None:
+        writing_standard_store = SQLiteWritingStandardStore(":memory:")
     registry = SkillRegistry()
     for skill in (
         CapabilitySweepSkill(), RequirementsAnalysisSkill(), SkillResearchSkill(),
+        WritingStandardsSkill(writing_standard_store),
         IssueTreeSkill(),
         OutlineSkill(), ResearchSkill(retriever=source_retriever),
         EvidenceGovernanceSkill(),
@@ -240,16 +255,61 @@ class ResearchReportOrchestrator:
         root = Path(data_dir)
         self.state = SQLiteStateStore(root / "state.db")
         self.context = SQLiteVectorStore(root / "vectors.db")
+        self.writing_standards = SQLiteWritingStandardStore(root / "standards.db")
         self.registry = registry or default_registry(
             source_retriever=source_retriever,
             document_renderer=document_renderer,
+            writing_standard_store=self.writing_standards,
         )
 
     def create(self, raw_config: dict[str, Any], workflow_id: str | None = None) -> str:
         config = ReportConfig.from_dict(raw_config)
+        custom = config.extra.get("writing_standard")
+        if custom is not None:
+            if not isinstance(custom, dict):
+                raise ValueError("extra.writing_standard 必须是对象")
+            profile = self.register_writing_standard(custom)
+            updated = config.to_dict()
+            updated["extra"] = {
+                **config.extra,
+                "writing_standard_profile": profile.id,
+            }
+            config = ReportConfig.from_dict(updated)
         workflow_id = self.state.create_workflow(config, workflow_id)
         self.state.record_operation(workflow_id, "create", {"config": config.to_dict()})
         return workflow_id
+
+    def register_writing_standard(
+        self, definition: dict[str, Any]
+    ) -> WritingStandardProfile:
+        """Persist a custom, triggerable profile and return its immutable version."""
+        required = {"name", "scene", "trigger_keywords", "rules"}
+        if not required <= definition.keys():
+            raise ValueError(
+                "个性化写作标准必须包含 name、scene、trigger_keywords、rules"
+            )
+        triggers = definition["trigger_keywords"]
+        references = definition.get("references", [])
+        if not isinstance(triggers, (list, tuple)):
+            raise ValueError("trigger_keywords 必须是字符串数组")
+        if not isinstance(references, (list, tuple)):
+            raise ValueError("references 必须是对象数组")
+        return self.writing_standards.register_custom(
+            name=str(definition["name"]),
+            scene=str(definition["scene"]),
+            trigger_keywords=list(triggers),
+            rules=definition["rules"],
+            references=list(references),
+            profile_id=(
+                str(definition["id"]) if definition.get("id") else None
+            ),
+        )
+
+    def list_writing_standards(self) -> list[dict[str, Any]]:
+        return [
+            profile.to_dict()
+            for profile in self.writing_standards.list_profiles()
+        ]
 
     def run(self, workflow_id: str) -> RunOutcome:
         config = self.state.config(workflow_id)
@@ -477,6 +537,14 @@ class ResearchReportOrchestrator:
                 ),
             ),
             (
+                "writing_standards",
+                (
+                    ("写作规范", 5), ("写作标准", 5), ("模板", 3),
+                    ("触发词", 4), ("券商模板", 4), ("arxiv格式", 4),
+                    ("蓝v", 4), ("公文规范", 4),
+                ),
+            ),
+            (
                 "outline",
                 (("大纲", 3), ("文章框架", 3), ("章节", 1), ("结构", 1), ("outline", 3)),
             ),
@@ -612,6 +680,20 @@ class ResearchReportOrchestrator:
         allowed = set(self.registry.names) | {"research_report_orchestrator"}
         if target not in allowed:
             raise ValueError(f"提案目标 Skill 不在允许清单: {target}")
+        standard_profile = None
+        if target == "writing_standards":
+            config = self.state.config(workflow_id)
+            standard_profile = self.writing_standards.resolve(
+                " ".join(
+                    (config.topic, config.output_type, config.style, config.audience)
+                ),
+                config.extra.get("writing_standard_profile"),
+            )
+            standard_profile = self.writing_standards.append_managed_rule(
+                standard_profile.id,
+                proposal_id=proposal_id,
+                rule=proposal["rule"],
+            )
         root = Path(skills_root).resolve()
         skill_file = (root / target / "SKILL.md").resolve()
         if root not in skill_file.parents or not skill_file.exists():
@@ -641,6 +723,12 @@ class ResearchReportOrchestrator:
                 "target_skill": target,
                 "approved_by": approved_by,
                 "path": str(skill_file),
+                "writing_standard_profile": (
+                    standard_profile.id if standard_profile else None
+                ),
+                "writing_standard_version": (
+                    standard_profile.version if standard_profile else None
+                ),
             },
             target if target in NODE_MAP else None,
         )

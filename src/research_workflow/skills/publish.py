@@ -20,9 +20,16 @@ class PublishSkill(Skill):
         visualizations = json.loads(request.inputs["visualization"])
         capability = json.loads(request.inputs["capability_sweep"])
         skill_research = json.loads(request.inputs["skill_research"])
+        writing_standard = json.loads(request.inputs["writing_standards"])
         if not quality.get("passed"):
             raise ValueError("质量门未通过，禁止发布")
         output_format = request.config.output_format
+        security = writing_standard["security"]
+        if output_format == "feishu" and not security["external_delivery_allowed"]:
+            raise ValueError(
+                "飞书发布被信息安全策略阻断: "
+                + str(security.get("block_reason") or "未获外部发布许可")
+            )
         renderer_ids = {
             item["id"]: item["status"]
             for item in capability.get("external_integrations", [])
@@ -34,7 +41,7 @@ class PublishSkill(Skill):
             "visual_asset_count": len(visualizations.get("assets", [])),
             "renderers": renderer_ids,
             "self_contained": output_format in {
-                "markdown", "json", "text", "feishu"
+                "markdown", "json", "text"
             },
             "raster_exported": False,
             "third_party_candidates_reviewed": len(
@@ -44,9 +51,11 @@ class PublishSkill(Skill):
                 skill_research.get("adapted_skill_specs", [])
             ),
             "limitations": [],
+            "writing_standard_profile": writing_standard["profile"]["id"],
+            "confidentiality_level": request.config.confidentiality_level,
         }
         published_content = report
-        if output_format in {"docx", "pdf"}:
+        if output_format in {"docx", "pdf", "feishu"}:
             if self.renderer is None:
                 raise ValueError(
                     f"{output_format} 输出需要配置 DocumentRenderer"

@@ -18,6 +18,7 @@ from .review import ReviewSkill
 from .skill_research import SkillResearchSkill
 from .visualization import VisualizationSkill
 from .writing import WritingSkill
+from .writing_standards import WritingStandardsSkill
 
 __all__ = [
     "CapabilitySweepSkill",
@@ -33,6 +34,7 @@ __all__ = [
     "VisualizationSkill",
     "OutlineSkill",
     "WritingSkill",
+    "WritingStandardsSkill",
     "PressureTestSkill",
     "FormattingSkill",
     "ReviewSkill",

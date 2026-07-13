@@ -20,6 +20,10 @@ class ExperienceEvolutionSkill(Skill):
         "research": ("来源", "检索", "社媒", "论文", "数据"),
         "data_processing": ("评分", "claim", "交叉验证", "证据等级"),
         "visualization": ("图表", "可视化", "流程图"),
+        "writing_standards": (
+            "写作规范", "写作标准", "模板", "触发词", "文体", "券商",
+            "蓝v", "公文格式", "公式排版",
+        ),
         "writing": ("写作", "文风", "段落", "风险", "引用"),
         "citation_management": ("引用", "参考文献", "脚注", "格式"),
         "formatting": ("飞书", "word", "pdf", "网页", "排版"),

@@ -27,6 +27,9 @@ SUPPORTED_FORMATS = {
     "markdown", "html", "json", "text", "feishu", "docx", "pdf"
 }
 SUPPORTED_WORKFLOW_PROFILES = {"quick", "standard", "deep", "regulatory"}
+SUPPORTED_CONFIDENTIALITY_LEVELS = {
+    "public", "internal", "secret", "confidential", "top_secret"
+}
 
 
 @dataclass(frozen=True)
@@ -41,6 +44,7 @@ class ReportConfig:
     content_boundaries: tuple[str, ...] = ()
     prior_thoughts: str = ""
     workflow_profile: str = "deep"
+    confidentiality_level: str = "public"
     extra: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
@@ -86,13 +90,40 @@ class ReportConfig:
             raise ValueError(
                 f"workflow_profile 必须是 {sorted(SUPPORTED_WORKFLOW_PROFILES)} 之一"
             )
+        confidentiality_level = str(
+            raw.get("confidentiality_level", "public")
+        ).strip().lower()
+        confidentiality_aliases = {
+            "公开": "public",
+            "内部": "internal",
+            "秘密": "secret",
+            "机密": "confidential",
+            "绝密": "top_secret",
+        }
+        confidentiality_level = confidentiality_aliases.get(
+            confidentiality_level, confidentiality_level
+        )
+        if confidentiality_level not in SUPPORTED_CONFIDENTIALITY_LEVELS:
+            raise ValueError(
+                "confidentiality_level 必须是 "
+                f"{sorted(SUPPORTED_CONFIDENTIALITY_LEVELS)} 之一"
+            )
         extra = raw.get("extra", {})
         if not isinstance(extra, dict):
             raise ValueError("extra 必须是对象")
         return cls(
-            topic, expected_length, style, output_format, language,
-            output_type, audience, content_boundaries, prior_thoughts,
-            workflow_profile, extra,
+            topic=topic,
+            expected_length=expected_length,
+            style=style,
+            output_format=output_format,
+            language=language,
+            output_type=output_type,
+            audience=audience,
+            content_boundaries=content_boundaries,
+            prior_thoughts=prior_thoughts,
+            workflow_profile=workflow_profile,
+            confidentiality_level=confidentiality_level,
+            extra=extra,
         )
 
     def to_dict(self) -> dict[str, Any]:

@@ -65,6 +65,7 @@ class RequirementsAnalysisSkill(Skill):
             "reference_inventory": source_inventory,
             "prior_thoughts": config.prior_thoughts,
             "workflow_profile": config.workflow_profile,
+            "confidentiality_level": config.confidentiality_level,
             "missing_or_defaulted": missing,
             "feedback_applied": list(request.feedback),
         }
@@ -80,7 +81,7 @@ class RequirementsAnalysisSkill(Skill):
         required = {
             "deliverable", "topic", "style", "audience", "content_boundaries",
             "reference_inventory", "prior_thoughts",
-            "workflow_profile",
+            "workflow_profile", "confidentiality_level",
         }
         if not required <= payload.keys():
             raise ValueError("requirements_brief 缺少必要需求维度")

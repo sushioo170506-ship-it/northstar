@@ -18,6 +18,7 @@ class OutlineSkill(Skill):
     def execute(self, request: SkillRequest) -> SkillResult:
         requirements_text = request.inputs["requirements_analysis"]
         issue_tree_text = request.inputs["issue_tree"]
+        standard_text = request.inputs["writing_standards"]
         prompt = OUTLINE_PROMPT.format(
             topic=request.config.topic,
             expected_length=request.config.expected_length,
@@ -26,6 +27,7 @@ class OutlineSkill(Skill):
         if self.generator:
             prompt += (
                 f"\n需求简报：\n{requirements_text}\n议题树：\n{issue_tree_text}"
+                f"\n强制写作规范：\n{standard_text}"
             )
             content = self.generator.generate(
                 system="你是研究报告架构师。", prompt=prompt, max_tokens=3000
@@ -34,6 +36,7 @@ class OutlineSkill(Skill):
 
         issue_tree = json.loads(issue_tree_text)
         requirements = json.loads(requirements_text)
+        standard = json.loads(standard_text)
         topic_context = (
             request.config.topic + " " + request.config.output_type
         ).lower()
@@ -52,9 +55,35 @@ class OutlineSkill(Skill):
             item.get("question", item.get("id", "关键议题"))
             for item in issue_tree.get("issues", [])
         ]
-        titles = ["摘要", *issue_titles, "风险与局限", "结论与建议"]
+        scene = standard["scene"]
+        if scene == "technical":
+            framing = ["摘要", "引言", "相关工作", "方法", "实验设置", "结果与讨论"]
+            closing = ["风险与局限", "结论"]
+        elif scene == "industry_investment":
+            framing = ["核心观点", "行业框架", "市场空间与驱动", "竞争格局"]
+            closing = ["估值分析", "风险与局限", "结论与建议"]
+        elif scene == "public_account":
+            framing = ["标题", "导语"]
+            closing = ["关键数据卡片", "风险与局限", "结语与互动"]
+        else:
+            framing = ["标题", "主送或阅读范围"]
+            closing = ["建议事项", "风险与局限", "署名与日期"]
+        titles = list(dict.fromkeys([*framing, *issue_titles, *closing]))
         issue_count = max(1, len(issue_titles))
-        weights = [0.06, *([0.78 / issue_count] * len(issue_titles)), 0.08, 0.08]
+        first_weight = 0.06
+        risk_weight = 0.08
+        remaining = 1.0 - first_weight - risk_weight
+        other_count = max(1, len(titles) - 2)
+        weights = [
+            first_weight if index == 0
+            else risk_weight if title == "风险与局限"
+            else remaining / other_count
+            for index, title in enumerate(titles)
+        ]
+        issue_by_title = {
+            item.get("question", item.get("id", "关键议题")): item["id"]
+            for item in issue_tree.get("issues", [])
+        }
         sections = [
             {
                 "id": f"SEC-{index + 1:02d}",
@@ -71,8 +100,7 @@ class OutlineSkill(Skill):
                 "entry_summary_budget": 100,
                 "risk_scope": risk_scope if title == "风险与局限" else None,
                 "linked_issue": (
-                    issue_tree["issues"][index - 1]["id"]
-                    if 0 < index <= len(issue_tree.get("issues", [])) else None
+                    issue_by_title.get(title)
                 ),
             }
             for index, title in enumerate(titles)
@@ -111,6 +139,13 @@ class OutlineSkill(Skill):
                 "back_30_percent": "行动含义、边界与闭环",
             },
             "risk_scope": risk_scope,
+            "writing_standard": {
+                "profile_id": standard["profile"]["id"],
+                "profile_version": standard["profile"]["version"],
+                "scene": scene,
+                "required_sections": standard["required_sections"],
+                "reference_status": standard["reference_selection"]["status"],
+            },
         }
         if issue_tree.get("competitive_hypotheses"):
             payload["competitive_hypotheses"] = issue_tree["competitive_hypotheses"]

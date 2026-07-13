@@ -24,6 +24,7 @@ class ReviewSkill(Skill):
         material_integration = json.loads(request.inputs["material_integration"])
         visualizations = json.loads(request.inputs["visualization"])
         pressure_test = json.loads(request.inputs["pressure_test"])
+        writing_standard = json.loads(request.inputs["writing_standards"])
         if self.generator:
             content = self.generator.generate(
                 system="你是独立质量审核员，不得引入未经证实的新事实。",
@@ -34,6 +35,7 @@ class ReviewSkill(Skill):
                     f"\n素材映射：\n{request.inputs['material_integration']}"
                     f"\n可视化：\n{request.inputs['visualization']}"
                     f"\n压力测试：\n{request.inputs['pressure_test']}"
+                    f"\n写作规范：\n{request.inputs['writing_standards']}"
                 ),
                 max_tokens=max(2000, request.config.expected_length * 2),
             )
@@ -70,6 +72,22 @@ class ReviewSkill(Skill):
             issues.append("缺少一级标题")
         if len(formatted) < request.config.expected_length * 0.75:
             issues.append("正文长度低于目标篇幅的 75%")
+        required_sections = writing_standard.get("required_sections", [])
+        structural_aliases = {"正文"} if writing_standard["scene"] == "official_internal" else set()
+        missing_standard_sections = [
+            title for title in required_sections
+            if title not in formatted and title not in structural_aliases
+        ]
+        if missing_standard_sections:
+            issues.append(
+                "缺少场景写作规范要求的结构："
+                + "、".join(missing_standard_sections)
+            )
+        if (
+            request.config.output_format == "feishu"
+            and not writing_standard["security"]["external_delivery_allowed"]
+        ):
+            issues.append("当前密级或审批状态禁止写入飞书")
         content = formatted
         if request.feedback:
             note = "；".join(request.feedback)
@@ -99,6 +117,9 @@ class ReviewSkill(Skill):
                     "visual_asset_count": len(visualizations.get("assets", [])),
                     "audience": requirements.get("audience"),
                     "style": requirements.get("style"),
+                    "writing_standard_profile": writing_standard["profile"]["id"],
+                    "writing_scene": writing_standard["scene"],
+                    "missing_standard_sections": missing_standard_sections,
                 },
             },
         )
