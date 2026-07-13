@@ -112,6 +112,26 @@ def clean(value: str) -> str:
     return re.sub(r"(\*\*|`)", "", value)
 
 
+def mermaid_edges(code: str) -> list[tuple[str, str, str]]:
+    labels = {
+        match.group(1): match.group(2)
+        for line in code.splitlines()
+        if (match := re.search(r'(N\d+)\["(.+)"\]', line))
+    }
+    edges = []
+    for line in code.splitlines():
+        match = re.search(r"(N\d+)\s+-->(?:\|([^|]+)\|)?\s+(N\d+)", line)
+        if match:
+            edges.append(
+                (
+                    labels.get(match.group(1), match.group(1)),
+                    match.group(2) or "",
+                    labels.get(match.group(3), match.group(3)),
+                )
+            )
+    return edges
+
+
 def add_docx_runs(paragraph, text: str) -> None:
     cursor = 0
     for match in INLINE.finditer(text):
@@ -180,6 +200,18 @@ def render_docx(markdown: str) -> None:
             add_docx_runs(paragraph, text)
         elif kind == "code":
             language, code = value
+            if language == "mermaid":
+                document.add_heading("结构化流程图", level=3)
+                for left, label, right in mermaid_edges(code):
+                    table = document.add_table(rows=1, cols=3)
+                    table.style = "Light Shading Accent 1"
+                    table.cell(0, 0).text = left
+                    table.cell(0, 1).text = f"→ {label}" if label else "→"
+                    table.cell(0, 2).text = right
+                    for cell in (table.cell(0, 0), table.cell(0, 2)):
+                        for run in cell.paragraphs[0].runs:
+                            run.bold = True
+                continue
             paragraph = document.add_paragraph()
             paragraph.style = "No Spacing"
             run = paragraph.add_run((language + "\n" if language else "") + code)
@@ -277,6 +309,38 @@ def render_pdf(markdown: str) -> None:
             story.append(Paragraph(pdf_markup(text), normal, bulletText=bullet))
         elif kind == "code":
             language, code = value
+            if language == "mermaid":
+                story.append(Paragraph("结构化流程图", headings[3]))
+                for left, label, right in mermaid_edges(code):
+                    flow = Table(
+                        [
+                            [
+                                Paragraph(pdf_markup(left), normal),
+                                Paragraph(
+                                    pdf_markup(f"→ {label}" if label else "→"),
+                                    normal,
+                                ),
+                                Paragraph(pdf_markup(right), normal),
+                            ]
+                        ],
+                        colWidths=[6.2 * cm, 2.0 * cm, 6.2 * cm],
+                    )
+                    flow.setStyle(
+                        TableStyle(
+                            [
+                                ("BOX", (0, 0), (0, 0), 0.8, colors.HexColor("#2F75B5")),
+                                ("BOX", (2, 0), (2, 0), 0.8, colors.HexColor("#2F75B5")),
+                                ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#D9EAF7")),
+                                ("BACKGROUND", (2, 0), (2, 0), colors.HexColor("#D9EAF7")),
+                                ("ALIGN", (1, 0), (1, 0), "CENTER"),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                            ]
+                        )
+                    )
+                    story.extend((flow, Spacer(1, 0.12 * cm)))
+                continue
             story.append(
                 Paragraph(
                     pdf_markup((language + "\n" if language else "") + code).replace(
