@@ -122,11 +122,11 @@ BUILTIN_PROFILES = (
     ),
     WritingStandardProfile(
         id="official_internal",
-        version=1,
+        version=2,
         scene="official_internal",
         name="官方公文 / 企业内参",
         trigger_keywords=(
-            "公文", "内参", "政务", "报告", "请示", "通知", "函", "纪要",
+            "公文", "内参", "政务", "决策研究", "请示", "通知", "函", "纪要",
             "监管", "领导", "official", "internal memo",
         ),
         rules={

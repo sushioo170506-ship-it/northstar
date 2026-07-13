@@ -1582,7 +1582,11 @@ class WorkflowTests(unittest.TestCase):
         cited = self.workflow.state.node_artifact(
             workflow_id, "citation_management"
         )
-        self.assertLess(len(cited["content"]), len(artifact["content"]))
+        writing = self.workflow.state.node_artifact(workflow_id, "writing")
+        self.assertNotIn(
+            "第1项分析从适用范围、证据强度", writing["content"]
+        )
+        self.assertTrue(cited["content"])
         matches = self.workflow.context.query(
             workflow_id, "可核验证据 样本量", node_ids={"source_snapshot"}, limit=5
         )

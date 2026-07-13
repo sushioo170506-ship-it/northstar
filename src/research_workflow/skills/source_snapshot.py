@@ -29,8 +29,8 @@ SCENE_SOURCE_POLICIES = {
     },
     "official_internal": {
         "required_categories": ("industry",),
-        "minimum_sources": 1,
-        "description": "官方/内参必须至少包含法规、标准或组织授权的一手来源",
+        "minimum_sources": 2,
+        "description": "官方/内参至少需要两项法规、标准或组织授权的一手来源",
     },
 }
 
