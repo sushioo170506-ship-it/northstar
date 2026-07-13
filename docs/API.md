@@ -14,6 +14,7 @@
 | `content_boundaries` | string[] | 内容禁止项、范围和合规边界 |
 | `prior_thoughts` | string | 用户对问题的前置判断或假设 |
 | `workflow_profile` | enum | quick/standard/deep/regulatory，默认deep |
+| `confidentiality_level` | enum | public/internal/secret/confidential/top_secret；支持公开/内部/秘密/机密/绝密 |
 | `extra` | object | 可包含 `sources` 等适配器参数 |
 
 `extra.enable_competitive_hypotheses` 默认 false。只有因果研究、争议命题检验等用户明确要求的
@@ -31,6 +32,8 @@ affected = orchestrator.update_sources(workflow_id, new_sources, "修复证据�
 target, affected = orchestrator.request_revision(workflow_id, "补充图表并调整架构图")
 orchestrator.add_comment(workflow_id, "outline", "关注章节比例", actor_id="reviewer")
 comments = orchestrator.list_comments(workflow_id, "outline")
+profiles = orchestrator.list_writing_standards()
+profile = orchestrator.register_writing_standard(custom_profile)
 path = orchestrator.apply_approved_learning(
     workflow_id, proposal_id, approved_by="owner", skills_root="skills"
 )
@@ -42,7 +45,7 @@ report = orchestrator.final_report(workflow_id)
 `run` 返回 `RunOutcome(workflow_id, status, waiting_at, final_artifact_id)`。确认节点依次为
 `issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation`、
 `pre_review_confirmation`。允许修改的产物节点：
-`capability_sweep`、`requirements_analysis`、`skill_research`、`issue_tree`、`outline`、`research`、
+`capability_sweep`、`requirements_analysis`、`skill_research`、`writing_standards`、`issue_tree`、`outline`、`research`、
 `evidence_governance`、`data_processing`、`material_integration`、`visualization`、`writing`、
 `citation_management`、`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`、
 `experience_evolution`。
@@ -83,12 +86,13 @@ class SkillResult:
 Skill 实现 `name`、`version`、`execute(request)`，经 `SkillRegistry.register()` 注入。远程部署
 时可实现一个 RPC Proxy Skill：序列化同一请求，调用独立服务并反序列化同一结果。
 
-飞书和网页由内置格式器直接支持。DOCX/PDF 必须向 PublishSkill 注入 DocumentRenderer；
-未配置或未返回 `rendered=true` 时发布失败，不会把Markdown中间稿冒充Word/PDF。
+网页由内置格式器直接支持。飞书、DOCX、PDF必须向PublishSkill注入DocumentRenderer；
+未配置或未返回`rendered=true`时发布失败，不会把Markdown中间稿冒充远程文档或二进制文件。
 
 ```python
 from research_workflow import (
     CompositeSourceRetriever, OpenAlexRetriever,
+    FeishuApiClient, FeishuDocumentRenderer,
     PandocDocumentRenderer, ResearchReportOrchestrator,
 )
 
@@ -102,6 +106,11 @@ workflow = ResearchReportOrchestrator(
     document_renderer=PandocDocumentRenderer(),
 )
 ```
+
+飞书使用`FeishuDocumentRenderer(FeishuApiClient(...))`，将GFM表格转换为Docx内嵌原生
+Sheet Block。个性化规范通过`extra.writing_standard`注册并版本化，或用
+`extra.writing_standard_profile`一键调用。完整权限、OAuth/应用身份、表格映射和验收见
+`docs/WRITING_STANDARDS_AND_FEISHU.md`。
 
 调研适配器实现 `SourceRetriever.retrieve(topic, questions, categories)`；research 会分别以
 industry、academic、social_media 单类别调用三次。每个返回项至少应含 id、title、category、url、

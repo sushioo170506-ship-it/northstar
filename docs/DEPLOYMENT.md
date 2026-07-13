@@ -11,8 +11,8 @@ python3 -m pip install -e .
 research-workflow --help
 ```
 
-将 `--data-dir` 指向持久卷。目录中 `state.db` 保存关系状态，`vectors.db` 保存向量上下文；
-两者均启用 WAL。备份时应同时备份数据库及其 WAL 文件，或在停止写入后使用 SQLite backup
+将 `--data-dir` 指向持久卷。目录中 `state.db` 保存关系状态，`vectors.db` 保存向量上下文，
+`standards.db`保存版本化写作Profile与应用记录；三者均启用 WAL。备份时应同时备份数据库及其 WAL 文件，或在停止写入后使用 SQLite backup
 API。目录包含用户研究资料，必须启用磁盘加密、最小权限和备份访问审计。
 
 ## 模型与外部检索
@@ -23,8 +23,10 @@ social_media 三类来源，且每项必须有原始 URL。可选 Crawl4AI、GPT
 Semantic Scholar、Mermaid、Vega-Lite 和 Pandoc 适配边界见开源目录。密钥由部署平台的 Secret 注入，
 不得写入配置、操作日志或产物元数据。
 
-飞书/HTML可使用内置文本格式路径；Word/PDF必须部署 DocumentRenderer。推荐把Typst、Pandoc或
-经审查的Word适配器作为独立进程，返回真实payload/URI和`rendered=true`元数据。
+HTML可使用内置文本格式路径；飞书/Word/PDF必须部署DocumentRenderer。飞书应用至少申请
+`docx:document`、`docx:document.block:convert`、`sheets:spreadsheet`，个人空间优先使用
+OAuth `user_access_token`，组织自动化可用受限`tenant_access_token`。Secret只由部署平台注入。
+飞书完整配置和真实租户验收见`WRITING_STANDARDS_AND_FEISHU.md`。
 
 生产检索通过CompositeSourceRetriever组合Provider。仓库自带OpenAlex学术Provider；产业、
 金融和社媒Provider必须使用组织授权API。Provider应设置超时、限流、缓存、来源快照和删除策略。

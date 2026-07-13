@@ -166,6 +166,21 @@
 - validated_candidate须人工approved_by后才能写入Skill受控区。
 - 新增季度自进化复盘，汇总工作流、提案、已验证候选和平均质量分。
 
+### writing_standards 1.0.0（2026-07-13）
+
+- 新增技术/arXiv-compatible、行业投研、公众号、官方内参四类Profile。
+- 新增`standards.db`不可变版本、触发词匹配、一键Profile ID和应用审计。
+- 个性化规范在创建工作流时同步入库；审批学习可形成下一版本managed_learnings。
+- 细分领域券商“前三”、arXiv样文和蓝V参照必须带可核验来源，不足时明确标记。
+- 新增公开/内部/秘密/机密/绝密级别；涉密禁止外部飞书，内部资料要求租户和驻留审批。
+
+### 飞书原生电子表格适配（2026-07-13）
+
+- 新增FeishuApiClient与FeishuDocumentRenderer，不依赖第三方SDK。
+- Markdown正文转Docx块；GFM表格按原位置创建Sheet Block并写入完整二维数据。
+- 公式和URL使用飞书结构化数据类型；批量保留表头、边框、对齐和整单元格样式，冻结首行。
+- 发布后回读范围并比较；不一致、权限不足或渲染器缺失时失败，不静默降级。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

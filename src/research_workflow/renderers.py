@@ -89,10 +89,27 @@ class MarkdownTable:
     headers: tuple[str, ...]
     rows: tuple[tuple[str, ...], ...]
     alignments: tuple[str, ...]
+    cell_styles: tuple[tuple[dict[str, bool], ...], ...] = ()
 
     @property
     def values(self) -> list[list[str]]:
         return [list(self.headers), *(list(row) for row in self.rows)]
+
+    @property
+    def feishu_values(self) -> list[list[Any]]:
+        return [
+            [self._feishu_value(value) for value in row]
+            for row in self.values
+        ]
+
+    @staticmethod
+    def _feishu_value(value: str) -> Any:
+        if value.startswith("="):
+            return {"type": "formula", "text": value}
+        link = re.fullmatch(r"(.+?) \((https?://[^)]+)\)", value)
+        if link:
+            return {"type": "url", "text": link.group(1), "link": link.group(2)}
+        return value
 
 
 class MarkdownTableParser:
@@ -122,14 +139,21 @@ class MarkdownTableParser:
                         result.append(("markdown", "\n".join(markdown).strip()))
                         markdown = []
                     rows = []
+                    raw_body_rows = []
                     index += 2
                     while index < len(lines):
                         cells = cls._cells(lines[index])
                         if len(cells) != len(header):
                             break
+                        raw_body_rows.append(cells)
                         rows.append(tuple(cls._clean(cell) for cell in cells))
                         index += 1
                     alignments = tuple(cls._alignment(cell) for cell in separator)
+                    raw_rows = [header, *raw_body_rows]
+                    styles = tuple(
+                        tuple(cls._style(cell) for cell in row)
+                        for row in raw_rows
+                    )
                     result.append(
                         (
                             "table",
@@ -137,6 +161,7 @@ class MarkdownTableParser:
                                 tuple(cls._clean(cell) for cell in header),
                                 tuple(rows),
                                 alignments,
+                                styles,
                             ),
                         )
                     )
@@ -180,6 +205,25 @@ class MarkdownTableParser:
         value = value.replace("<br>", "\n").replace("<br/>", "\n")
         value = re.sub(r"\[([^\]]+)\]\((https?://[^)]+)\)", r"\1 (\2)", value)
         return re.sub(r"(?<!\\)(\*\*|__|\*|_|`)(.+?)\1", r"\2", value).strip()
+
+    @staticmethod
+    def _style(value: str) -> dict[str, bool]:
+        stripped = value.strip()
+        return {
+            "bold": (
+                (stripped.startswith("**") and stripped.endswith("**"))
+                or (stripped.startswith("__") and stripped.endswith("__"))
+            ),
+            "italic": (
+                (stripped.startswith("*") and stripped.endswith("*")
+                 and not stripped.startswith("**"))
+                or (
+                    stripped.startswith("_") and stripped.endswith("_")
+                    and not stripped.startswith("__")
+                )
+            ),
+            "code": stripped.startswith("`") and stripped.endswith("`"),
+        }
 
     @staticmethod
     def _alignment(separator: str) -> str:
@@ -329,22 +373,61 @@ class FeishuApiClient:
         self.request(
             "PUT",
             f"/open-apis/sheets/v2/spreadsheets/{spreadsheet_token}/values",
-            {"valueRange": {"range": range_name, "values": table.values}},
+            {"valueRange": {"range": range_name, "values": table.feishu_values}},
         )
+        last_column = self._column_name(len(table.headers))
+        last_row = len(table.rows) + 1
+        style_data = [
+            {
+                "ranges": [f"{sheet_id}!A1:{last_column}{last_row}"],
+                "style": {
+                    "borderType": "FULL_BORDER",
+                    "borderColor": "#D9D9D9",
+                },
+            },
+            {
+                "ranges": [f"{sheet_id}!A1:{last_column}1"],
+                "style": {
+                    "font": {"bold": True},
+                    "backColor": "#E8F0FE",
+                    "hAlign": 1,
+                },
+            },
+        ]
+        alignment_codes = {"left": 0, "center": 1, "right": 2}
+        for index, alignment in enumerate(table.alignments, start=1):
+            column = self._column_name(index)
+            style_data.append(
+                {
+                    "ranges": [f"{sheet_id}!{column}2:{column}{last_row}"],
+                    "style": {"hAlign": alignment_codes[alignment]},
+                }
+            )
+        for row_index, row in enumerate(table.cell_styles, start=1):
+            for column_index, style in enumerate(row, start=1):
+                if not any(style.values()):
+                    continue
+                column = self._column_name(column_index)
+                style_data.append(
+                    {
+                        "ranges": [
+                            f"{sheet_id}!{column}{row_index}:"
+                            f"{column}{row_index}"
+                        ],
+                        "style": {
+                            "font": {
+                                "bold": style["bold"],
+                                "italic": style["italic"],
+                            },
+                            "backColor": "#F5F5F5" if style["code"] else "#FFFFFF",
+                        },
+                    }
+                )
         self.request(
             "PUT",
-            f"/open-apis/sheets/v2/spreadsheets/{spreadsheet_token}/style",
-            {
-                "appendStyle": {
-                    "range": f"{sheet_id}!A1:"
-                    f"{self._column_name(len(table.headers))}1",
-                    "style": {
-                        "bold": True,
-                        "backColor": "#E8F0FE",
-                        "hAlign": 1,
-                    },
-                }
-            },
+            f"/open-apis/sheets/v2/spreadsheets/{spreadsheet_token}/"
+            "styles_batch_update",
+            {"data": style_data},
         )
         self.request(
             "POST",
@@ -369,7 +452,7 @@ class FeishuApiClient:
             f"values/{range_name}",
         )
         values = readback.get("data", {}).get("valueRange", {}).get("values")
-        if values is not None and values != table.values:
+        if values is not None and values != table.feishu_values:
             raise RuntimeError("飞书电子表格回读校验失败：数据与Markdown表格不一致")
         return {
             "spreadsheet_token": spreadsheet_token,

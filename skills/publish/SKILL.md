@@ -14,7 +14,7 @@ version: 1.0.0
 ## 输入与输出
 
 - WHEN：quality_gate=completed 且 passed=true。
-- INPUT：review、quality_gate、visualization、capability_sweep、skill_research。
+- INPUT：review、quality_gate、visualization、capability_sweep、skill_research、writing_standards。
 - OUTPUT：`published_report`，正文保持不变；metadata.publish_manifest 描述交付状态。
 
 ## 发布清单
@@ -31,11 +31,13 @@ self_contained、raster_exported、第三方候选审查数、待人工审批改
 
 ## 多格式发布
 
-- 飞书：发布飞书兼容 Markdown/块结构，保留正文内联 URL。
+- 飞书：必须注入FeishuDocumentRenderer；正文转Docx块，GFM表格转内嵌原生Sheet Block，
+  写值、样式、冻结首行并回读。返回文档URL和Sheet token，不返回伪造Markdown。
 - 网页：输出 HTML；只有图表资源真实内联后才能标记 self_contained=true。
 - Word：必须注入 DocumentRenderer（如经审查的 Pandoc/Word适配器），保存 DOCX payload/URI。
 - PDF：必须注入 DocumentRenderer（如 Typst/Pandoc适配器），保存 PDF payload/URI。
-- renderer 缺失或未返回 `rendered=true` 时，DOCX/PDF发布失败，不得静默改成Markdown。
+- renderer 缺失或未返回 `rendered=true` 时，Feishu/DOCX/PDF发布失败，不得静默改成Markdown。
+- secret/confidential/top_secret禁止飞书发布；internal必须有目标租户和数据驻留审批。
 
 仓库提供 `PandocDocumentRenderer`：以固定参数和超时调用本机Pandoc，成功后返回base64
 payload、MIME、字节数和renderer元数据；Pandoc或PDF engine缺失时明确失败。

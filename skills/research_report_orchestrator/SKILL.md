@@ -40,21 +40,22 @@ outcome = workflow.run(workflow_id)
 1. `capability_sweep`：遍历全部内置 Skill 和外部集成目录
 2. `requirements_analysis`
 3. `skill_research`：第三方 Skill 检索、许可筛选、适配草案和溯源
-4. `issue_tree` → `issue_tree_confirmation`
-5. `outline` → `outline_confirmation`
-6. `research`：产业、学术、实景/社媒三 pass
-7. `evidence_governance`
-8. `data_processing`：claim ledger、交叉验证、可信度、条件评分
-9. `material_integration`
-10. `visualization`：6–10 项可视化规范
-11. `writing`
-12. `citation_management`
-13. `pressure_test` → `draft_confirmation`
-14. `formatting` → `pre_review_confirmation`
-15. `review`
-16. `quality_gate`
-17. `publish`
-18. `experience_evolution`
+4. `writing_standards`：场景Profile、触发词、参照核验和信息安全策略
+5. `issue_tree` → `issue_tree_confirmation`
+6. `outline` → `outline_confirmation`
+7. `research`：产业、学术、实景/社媒三 pass
+8. `evidence_governance`
+9. `data_processing`：claim ledger、交叉验证、可信度、条件评分
+10. `material_integration`
+11. `visualization`：6–10 项可视化规范
+12. `writing`
+13. `citation_management`
+14. `pressure_test` → `draft_confirmation`
+15. `formatting` → `pre_review_confirmation`
+16. `review`
+17. `quality_gate`
+18. `publish`
+19. `experience_evolution`
 
 `run()` 在确认点返回 `waiting_confirmation`。调用
 `confirm(workflow_id, checkpoint_id, comment)` 后再次 `run()`。不得跳过确认。
@@ -62,7 +63,7 @@ outcome = workflow.run(workflow_id)
 
 ## 遍历规则
 
-- 18 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
+- 19 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
 - 外部集成先由 capability_sweep 全量遍历；已配置者交给对应节点调用，未配置者记录
   `reviewed_not_configured` 和原因。禁止静默跳过。
 - 条件能力仍必须执行其包装 Skill：不适用时输出结构化 `not_applicable`，不得伪造结果。

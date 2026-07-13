@@ -6,11 +6,12 @@
 - 配置中心：`ReportConfig` 校验并冻结主题、篇幅、风格、格式和扩展参数。
 - Profile中心：Quick/Standard/Deep/Regulatory控制确认点和质量阈值。
 - Provider层：CompositeSourceRetriever组合OpenAlex及组织产业/金融/社媒数据源。
-- Renderer层：DocumentRenderer隔离Pandoc/Typst/Word/PDF二进制发布。
+- 写作标准库：`standards.db` 保存四类内置Profile、个性化版本、触发词和应用审计。
+- Renderer层：DocumentRenderer隔离Pandoc/Typst/Word/PDF及飞书远程发布。
 - 关系存储：SQLite WAL 保存工作流、节点运行、输入/输出 ID、分片产物、确认和用户操作。
 - 向量存储：独立 SQLite WAL 数据库保存 2000 字符分片、200 字符重叠、稀疏哈希向量及
   元数据；查询先按 workflow/node/type 精确过滤，再做相似度排序。
-- 十八个可执行 Skill：能力遍历、需求、Skill 研究、议题树、大纲、三支柱调研、证据治理、
+- 十九个可执行 Skill：能力遍历、需求、Skill 研究、写作标准、议题树、大纲、三支柱调研、证据治理、
   数据处理/评分、素材整合、可视化、写作、压力测试、排版、审核、质量门、发布；另有一个
   引用管理和自进化节点；`research_report_orchestrator` 主编排 Skill不计入DAG执行节点。
 
@@ -20,7 +21,8 @@ ID 从关系库无损读取，向量召回不替代精确依赖，因此不会�
 ## DAG 与影响范围
 
 ```text
-capability_sweep -> requirements_analysis -> skill_research -> issue_tree -> [确认主题与议题树]
+capability_sweep -> requirements_analysis -> skill_research -> writing_standards
+  -> issue_tree -> [确认主题与议题树]
   -> outline -> [确认大纲] -> research(产业/学术/实景三 pass)
   -> evidence_governance -> data_processing -> material_integration -> visualization
   -> writing -> citation_management -> pressure_test -> [确认初稿] -> formatting
@@ -29,14 +31,15 @@ capability_sweep -> requirements_analysis -> skill_research -> issue_tree -> [�
 精确依赖补充：
 outline              <- requirements_analysis + issue_tree
 skill_research       <- requirements_analysis
+writing_standards    <- requirements_analysis + skill_research
 research             <- requirements_analysis + issue_tree + confirmed outline
 data_processing      <- research + evidence_governance + issue_tree + outline
 material_integration <- outline + research + evidence_governance + data_processing
 visualization        <- issue_tree + material_integration + data_processing
 citation_management  <- writing + evidence_governance + material_integration
-review               <- requirements + research + evidence + processed data + materials + visuals + pressure + formatting
-quality_gate         <- capability + requirements + evidence + processed data + materials + visuals + pressure + review
-publish              <- capability + visuals + review + quality_gate
+review               <- requirements + writing_standards + research + evidence + processed data + materials + visuals + pressure + formatting
+quality_gate         <- capability + requirements + writing_standards + evidence + processed data + materials + visuals + pressure + review
+publish              <- capability + writing_standards + visuals + review + quality_gate
 experience_evolution <- user operations + skill_research + quality_gate + publish
 ```
 
@@ -51,7 +54,7 @@ issue_tree、evidence_governance、material_integration、visualization 和 outl
 随后节点才写入输出 ID。进程中断后，重新构造编排器并用相同 data directory 调用 `run()`；
 completed 节点跳过，failed/running 节点安全重试。读取产物时重新计算 SHA-256。
 
-当前单机实现使用两个独立 SQLite 数据库，适合本地和单副本容器。多实例部署时应保持接口，
+当前单机实现使用三个独立 SQLite 数据库，适合本地和单副本容器。多实例部署时应保持接口，
 将状态库替换为 PostgreSQL、向量库替换为 pgvector/Qdrant，并为节点执行增加租约或分布式锁。
 本项目没有把单机 SQLite 描述成真正的分布式存储。
 

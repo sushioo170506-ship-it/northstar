@@ -9,7 +9,7 @@ version: 1.0.0
 
 独立实现：`research_workflow.skills.review.ReviewSkill`。
 
-输入 requirements_analysis、formatting、research、evidence_governance、data_processing、
+输入 requirements_analysis、writing_standards、formatting、research、evidence_governance、data_processing、
 outline、material_integration、visualization、pressure_test，输出候选
 `artifact_type="final_report"`。元数据包含 `review_checks_passed`、issues 和逐项检查。
 没有来源时保留资料缺口风险，不以虚构引文“修复”问题。
@@ -32,6 +32,7 @@ Review 是编辑性复核和问题汇总，不是最终发布裁决。它可做�
   厂商/社区立场已标注。
 - 需求：受众、文风、篇幅、格式、禁止边界。
 - 结构：大纲章节、核心判断、局限和结论闭合。
+- 场景规范：技术/投研/公众号/官方内参的必需结构、参照核验状态和外发安全条件。
 - 数据：数字三要素、claim grade、评分状态与正文一致。
 - 外发：图表引用、标题、来源、Markdown/HTML/JSON/text 结构。
 - 风险：风险章节必须对应研究对象；模型、ETF、产业报告分别检查其专属风险，不接受泛化声明。

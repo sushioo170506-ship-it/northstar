@@ -9,7 +9,7 @@ version: 1.0.0
 
 独立实现：`research_workflow.skills.writing.WritingSkill`。
 
-输入需求简报、议题树、最终大纲、调研包、证据账本、章节素材和可视化资产，输出
+输入需求简报、writing_standards、议题树、最终大纲、调研包、证据账本、章节素材和可视化资产，输出
 `SkillResult(artifact_type="draft")`。写作必须区分事实、分析和建议，只使用治理后的来源；
 每个事实章节附原始 URL，以 Mermaid/Vega-Lite 代码块嵌入可视化规范。资料不足使用显式缺口
 标记。实现按章节生成，可处理十万字级目标。
@@ -25,6 +25,8 @@ result = WritingSkill(generator=my_generator).execute(request)
 
 只负责“怎么写”。章节和核心判断来自 outline；可用论断、分级、评分来自 data_processing；
 图表来自 visualization。不得新增来源、改分、改图中数据或重排已确认章节。
+技术、投研、公众号、官方内参的结构、术语、公式、估值、互动和公文规则来自版本化
+writing_standards产物，不得仅依赖自由文本style猜测。
 
 ## 判断驱动写作规则
 

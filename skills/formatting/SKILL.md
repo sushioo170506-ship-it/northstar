@@ -10,8 +10,8 @@ version: 1.0.0
 独立实现：`research_workflow.skills.formatting.FormattingSkill`。
 
 输入 `inputs["citation_management"]` 和全局 `style`、`output_format`，输出
-`artifact_type="formatted_draft"`。内置格式为 `markdown`、`html/webpage`、`feishu`、
-`json`、`text`；`docx/word` 与 `pdf` 输出 canonical Markdown 并交给发布渲染器。
+`artifact_type="formatted_draft"`。内置格式为 `markdown`、`html/webpage`、`json`、`text`；
+`feishu`、`docx/word` 与 `pdf` 输出canonical Markdown并交给发布渲染器。
 
 ```python
 result = FormattingSkill(generator=None).execute(request)
@@ -32,8 +32,9 @@ result = FormattingSkill(generator=None).execute(request)
 - HTML：转义不可信文本；代码块保持可识别；自包含状态由 publish 判断。
 - JSON：保留 title/style/content_markdown。
 - text：仅移除 Markdown 标题标记，URL 不得丢失。
-- feishu：保留飞书文档可导入的标题、列表、表格和内联链接，不引用本地文件路径。
+- feishu：保持标题、列表、GFM表格和内联链接；publish必须将表格创建为内嵌Sheet Block，
+  不得把Markdown或截图冒充原生电子表格。
 - docx/pdf：只生成规范化中间稿；不得冒充已完成的二进制文件。
 
-格式解析失败节点 failed；目标格式改变从 formatting 失效。DOCX/PDF/PNG 属于 publish 外部
+格式解析失败节点 failed；目标格式改变从 formatting 失效。Feishu/DOCX/PDF/PNG 属于 publish 外部
 适配器，不在此处执行。

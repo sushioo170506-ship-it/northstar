@@ -1125,8 +1125,12 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(metadata["tables_editable"])
         self.assertTrue(metadata["readback_verified"])
         self.assertEqual(transport.values[0], ["指标", "数值", "备注"])
+        self.assertEqual(
+            transport.values[1][1], {"type": "formula", "text": "=SUM(1,2)"}
+        )
+        self.assertEqual(transport.values[2][2]["type"], "url")
         paths = [call[1] for call in transport.calls]
-        self.assertTrue(any(path.endswith("/style") for path in paths))
+        self.assertTrue(any(path.endswith("/styles_batch_update") for path in paths))
         self.assertTrue(any(path.endswith("/sheets_batch_update") for path in paths))
 
     def test_classified_content_is_blocked_from_feishu(self) -> None:
