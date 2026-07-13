@@ -200,6 +200,18 @@ def render_docx(markdown: str) -> None:
 
 
 def pdf_markup(text: str) -> str:
+    text = text.translate(
+        str.maketrans(
+            {
+                "\u2011": "-",
+                "\u2013": "-",
+                "\u2014": "-",
+                "→": "->",
+                "⇄": "<->",
+                "↓": "v",
+            }
+        )
+    )
     escaped = html.escape(text)
     escaped = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", escaped)
     escaped = re.sub(r"`([^`]+)`", r"<font name='Courier'>\1</font>", escaped)
