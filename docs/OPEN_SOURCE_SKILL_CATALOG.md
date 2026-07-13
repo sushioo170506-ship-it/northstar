@@ -17,7 +17,8 @@
 | Vega-Lite | vega | main@2026-07-12 | 5,404 | BSD-3-Clause | https://github.com/vega/vega-lite | 统计图渲染 |
 | Pandoc | jgm/John MacFarlane | main@2026-07-12 | 45,344 | GPL-2.0 | https://github.com/jgm/pandoc | 仅外部 CLI |
 | MiniMax DOCX Skill | MiniMax-AI | main@2026-07-13 | 13,030 | MIT | https://github.com/MiniMax-AI/skills/tree/main/skills/minimax-docx | 参考OOXML模板/校验方法；clean-room Python适配 |
-| Frontend Slides | Zara Zhang（张咋啦） | main@2026-07-13 | 25,376 | MIT | https://github.com/zarazhangrui/frontend-slides | 参考单HTML、自包含和视觉发现；clean-room SlidesRenderer |
+| Frontend Slides | Zara Zhang（张咋啦） | 9906a34d640d2111f724544cbc50f7f130569ae1 | 25,388 | MIT | https://github.com/zarazhangrui/frontend-slides | 固定1920×1080画布、Swiss Modern预设、单HTML；clean-room SlidesRenderer |
+| HTML PPT Skill | lewislulu | main@2026-07-13 | 7,099 | MIT | https://github.com/lewislulu/html-ppt-skill | token主题、页面预算和键盘运行时参考 |
 | Marp | marp-team | main@2026-07-13 | 12,172 | MIT | https://github.com/marp-team/marp | 可选CLI；PPTX/HTML多格式参照 |
 | OpenClaw Deep Research Agent | MilleniumGenAI | main@2026-03-10 | 2 | MIT-0 | https://github.com/MilleniumGenAI/deep-research-openclaw-agent | claim-verified research |
 | OpenClaw Deep Research Pro | parags | main@2026-02-03 | 7 | MIT | https://github.com/parags/deep-research-pro | 低优先级 fallback |

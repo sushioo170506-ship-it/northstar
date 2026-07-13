@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import base64
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -820,6 +821,24 @@ class ResearchReportOrchestrator:
         if not artifact:
             raise ValueError("工作流尚未生成终稿")
         return artifact["content"]
+
+    def export_final(
+        self, workflow_id: str, output_path: str | Path
+    ) -> Path:
+        """Write the completed deliverable directly to its requested file format."""
+        artifact = self.state.node_artifact(workflow_id, "publish")
+        if self.state.workflow_status(workflow_id) != WorkflowStatus.COMPLETED or not artifact:
+            raise ValueError("工作流尚未生成可导出的终稿")
+        target = Path(output_path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        manifest = artifact["metadata"].get("publish_manifest", {})
+        render_metadata = manifest.get("render_metadata", {})
+        encoding = render_metadata.get("encoding")
+        if encoding == "base64":
+            target.write_bytes(base64.b64decode(artifact["content"]))
+        else:
+            target.write_text(artifact["content"], encoding="utf-8")
+        return target
 
 
 class QualityGateRejected(RuntimeError):

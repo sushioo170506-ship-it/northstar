@@ -596,14 +596,45 @@ class WorkflowTests(unittest.TestCase):
             visualizations={"assets": []},
         )
         self.assertTrue(html_content.startswith("<!doctype html>"))
-        self.assertIn('id="stage"', html_content)
+        self.assertIn('id="deckStage"', html_content)
         self.assertIn("width:1920px;height:1080px", html_content)
         self.assertIn('class="slide cover is-active"', html_content)
         self.assertIn("class='card'", html_content)
         self.assertIn(".slide:target", html_content)
         self.assertIn('href="#slide-2"', html_content)
         self.assertIn('id="slide-1"', html_content)
+        self.assertIn("--bg:#f4f1e8", html_content)
+        self.assertNotIn("--bg:#07111f", html_content)
+        self.assertEqual(
+            html_meta["design_system"], "frontend_slides_swiss_modern"
+        )
         self.assertTrue(html_meta["self_contained"])
+
+    def test_slides_html_exports_as_direct_file(self) -> None:
+        child = ResearchReportOrchestrator(
+            self.root / "direct-html",
+            document_renderer=SlidesRenderer(),
+        )
+        workflow_id = child.create(
+            {
+                "topic": "直接HTML汇报",
+                "expected_length": 500,
+                "output_format": "slides_html",
+                "workflow_profile": "quick",
+                "extra": {"sources": compliant_sources("DIRECT-HTML")},
+            }
+        )
+        outcome = child.run(workflow_id)
+        self.assertEqual(outcome.waiting_at, "pre_review_confirmation")
+        child.confirm(workflow_id, "pre_review_confirmation")
+        self.assertEqual(child.run(workflow_id).status, WorkflowStatus.COMPLETED)
+        target = self.root / "direct-html-report.html"
+        exported = child.export_final(workflow_id, target)
+        self.assertEqual(exported, target)
+        content = target.read_text(encoding="utf-8")
+        self.assertTrue(content.startswith("<!doctype html>"))
+        self.assertIn('id="deckStage"', content)
+        self.assertIn("width:1920px", content)
 
     def test_slides_do_not_treat_ids_or_years_as_business_metrics(self) -> None:
         report = (

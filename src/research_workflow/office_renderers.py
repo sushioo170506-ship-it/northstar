@@ -254,15 +254,15 @@ class SlidesRenderer(DocumentRenderer):
     """Generate designed fixed-stage HTML slides or editable PPTX."""
 
     THEME = {
-        "bg": "07111f",
-        "surface": "10243c",
-        "surface2": "163451",
-        "text": "F4F8FC",
-        "muted": "9AB2C8",
-        "cyan": "46D6C8",
-        "blue": "55A7FF",
-        "amber": "FFBE55",
-        "red": "FF6B6B",
+        "bg": "F4F1E8",
+        "surface": "FFFFFF",
+        "surface2": "E8E3D8",
+        "text": "151515",
+        "muted": "62666A",
+        "cyan": "E6462E",
+        "blue": "176B87",
+        "amber": "D39A28",
+        "red": "A82D23",
     }
 
     def render(self, *, content, output_format, visualizations):
@@ -278,8 +278,10 @@ class SlidesRenderer(DocumentRenderer):
                     "encoding": "utf-8",
                     "slide_count": len(_slide_sections(content)),
                     "self_contained": True,
+                    "design_system": "frontend_slides_swiss_modern",
+                    "frontend_slides_commit": "9906a34d640d2111f724544cbc50f7f130569ae1",
                     "provenance": [
-                        "https://github.com/zarazhangrui/frontend-slides",
+                        "https://github.com/zarazhangrui/frontend-slides/tree/9906a34d640d2111f724544cbc50f7f130569ae1",
                         "https://github.com/marp-team/marp",
                     ],
                 },
@@ -298,65 +300,67 @@ class SlidesRenderer(DocumentRenderer):
         return """<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GPT-Live 应用探索 · 汇报版</title><style>
-:root{--bg:#07111f;--surface:#10243c;--surface2:#163451;--text:#f4f8fc;
---muted:#9ab2c8;--cyan:#46d6c8;--blue:#55a7ff;--amber:#ffbe55;--red:#ff6b6b}
+:root{--bg:#f4f1e8;--surface:#fff;--surface2:#e8e3d8;--text:#151515;
+--muted:#62666a;--cyan:#e6462e;--blue:#176b87;--amber:#d39a28;--red:#a82d23}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;
-background:#020711;color:var(--text);font-family:"Microsoft YaHei","Noto Sans SC",sans-serif}
-#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-#stage{width:1920px;height:1080px;position:relative;transform-origin:center center;
-background:var(--bg);overflow:hidden;box-shadow:0 30px 100px #000b}
+background:#d8d3c8;color:var(--text);font-family:"Nunito","Aptos","Microsoft YaHei",sans-serif}
+.deck-viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.deck-stage{width:1920px;height:1080px;position:relative;transform-origin:center center;
+background:var(--bg);overflow:hidden;box-shadow:0 30px 100px #0004}
 .slide{position:absolute;inset:0;padding:72px 92px 70px;opacity:0;visibility:hidden;
-transform:translateY(24px) scale(.992);transition:.45s ease;background:
-radial-gradient(circle at 82% 12%,#174b6d88 0,transparent 30%),
-linear-gradient(135deg,#07111f 0%,#0a1b2f 68%,#07111f 100%)}
+transform:translateY(24px) scale(.992);transition:.35s ease;background:
+linear-gradient(90deg,transparent 0 95%,#e6462e 95% 96%,transparent 96%),
+linear-gradient(#0000000c 1px,transparent 1px),
+linear-gradient(90deg,#0000000c 1px,transparent 1px),var(--bg);
+background-size:auto,96px 96px,96px 96px,auto}
 .slide.is-active,.slide:target{opacity:1;visibility:visible;transform:none;z-index:2}
-#stage:has(.slide:target) .slide.is-active:not(:target){opacity:0;visibility:hidden}
+.deck-stage:has(.slide:target) .slide.is-active:not(:target){opacity:0;visibility:hidden}
 .chrome{display:flex;
-justify-content:space-between;align-items:center;font:600 18px/1.2 "Arial";letter-spacing:.18em;
-color:var(--cyan);text-transform:uppercase}.section-no{color:var(--muted);letter-spacing:.08em}
-h1{font-size:58px;line-height:1.12;letter-spacing:-.035em;margin:32px 0 24px;
-max-width:1500px}.lead{font-size:27px;line-height:1.55;color:#c8d8e6;max-width:1450px}
-.accent{width:112px;height:8px;background:linear-gradient(90deg,var(--cyan),var(--blue));
-border-radius:8px;margin:18px 0 30px}.grid{display:grid;gap:24px}.grid-3{grid-template-columns:repeat(3,1fr)}
-.grid-2{grid-template-columns:repeat(2,1fr)}.card{background:linear-gradient(145deg,#122a45,#0d2036);
-border:1px solid #2a4c69;border-radius:20px;padding:30px;min-height:210px;position:relative}
-.card:before{content:"";position:absolute;left:0;top:28px;width:5px;height:48px;
-background:var(--cyan);border-radius:0 5px 5px 0}.card h3{font-size:25px;margin:0 0 16px;
-color:#fff}.card p,.card li{font-size:21px;line-height:1.52;color:#bed0df}.card ul{margin:0;padding-left:24px}
-.metric{font:700 62px/1 "Arial";color:var(--cyan);letter-spacing:-.04em}
+justify-content:space-between;align-items:center;font:800 17px/1.2 "Arial";letter-spacing:.16em;
+color:var(--red);text-transform:uppercase}.section-no{color:var(--text);letter-spacing:.08em}
+h1{font-family:"Arial Black","Aptos Display","Microsoft YaHei",sans-serif;font-size:60px;
+line-height:1.08;letter-spacing:-.045em;margin:32px 0 24px;max-width:1500px}
+.lead{font-size:27px;line-height:1.55;color:var(--muted);max-width:1450px}
+.accent{width:112px;height:9px;background:var(--red);margin:18px 0 30px}
+.grid{display:grid;gap:26px}.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}.card{background:#ffffffb8;
+border:0;border-top:4px solid var(--text);padding:27px 6px 20px;min-height:200px;position:relative}
+.card:before{display:none}.card h3{font-size:23px;margin:0 0 16px;color:var(--red)}
+.card p,.card li{font-size:20px;line-height:1.5;color:#333}.card ul{margin:0;padding-left:24px}
+.metric{font:900 66px/1 "Arial";color:var(--red);letter-spacing:-.055em}
 .metric-label{font-size:19px;color:var(--muted);margin-top:12px}.metric-card{min-height:170px}
 .flow-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px 34px}.flow{display:grid;
 grid-template-columns:1fr 76px 1fr;align-items:center;gap:8px;margin:4px 0}
-.node{padding:12px 15px;border:2px solid #3b85bd;background:#102c48;border-radius:10px;
+.node{padding:12px 15px;border:2px solid #151515;background:#fff;
 font-size:17px;font-weight:700}.arrow{text-align:center;color:var(--cyan);font-size:19px}
 .risk .card:nth-child(2n):before{background:var(--amber)}.risk .card:nth-child(3n):before{background:var(--red)}
 .timeline{display:grid;grid-template-columns:160px 1fr;gap:14px 24px;align-items:start}
 .step{color:var(--cyan);font:700 24px/1.4 Arial}.step-body{border-left:3px solid #2d5576;
 padding:0 0 28px 26px;font-size:22px;line-height:1.5;color:#c4d5e3}
-.cover{display:flex;flex-direction:column;justify-content:center}.cover h1{font-size:88px;
+.cover{display:flex;flex-direction:column;justify-content:center}.cover h1{font-size:90px;
 max-width:1350px;margin:20px 0}.cover .kicker{color:var(--cyan);font:700 22px Arial;
-letter-spacing:.22em}.cover .subtitle{font-size:30px;color:#abc1d4;max-width:1100px}
-.cover .orb{position:absolute;width:520px;height:520px;border:2px solid #46d6c855;
-border-radius:50%;right:-80px;top:190px;box-shadow:0 0 90px #46d6c829 inset}
+letter-spacing:.22em}.cover .subtitle{font-size:30px;color:var(--muted);max-width:1100px}
+.cover .orb{position:absolute;width:500px;height:500px;border:34px solid #e6462e;
+border-radius:0;right:-120px;top:160px;transform:rotate(12deg)}
 .cover .orb:after{content:"LIVE";position:absolute;inset:0;display:grid;place-items:center;
-font:800 88px Arial;color:#46d6c822}.page{position:absolute;right:92px;bottom:32px;
+font:900 88px Arial;color:#15151522}.page{position:absolute;right:92px;bottom:32px;
 font:600 17px Arial;color:var(--muted)}.progress{position:absolute;left:0;bottom:0;height:5px;
 background:linear-gradient(90deg,var(--cyan),var(--blue))}.notes{display:none}
 #controls{position:fixed;right:24px;bottom:20px;z-index:5;display:flex;gap:8px}
-#controls button{width:44px;height:44px;border:1px solid #ffffff44;background:#07111fdd;
-color:white;border-radius:50%;font-size:20px;cursor:pointer}.tag{display:inline-block;
+#controls button{width:44px;height:44px;border:1px solid #151515;background:#f4f1e8ee;
+color:#151515;border-radius:0;font-size:20px;cursor:pointer}.tag{display:inline-block;
 padding:8px 14px;border:1px solid #46d6c866;border-radius:999px;color:var(--cyan);
 font-size:17px;margin:8px 8px 0 0}
 .slide-nav{position:absolute;right:22px;bottom:18px;display:flex;gap:8px;z-index:8}
 .slide-nav a{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;
-border:1px solid #8ab5d455;background:#07111fcc;color:#fff;text-decoration:none;
+border:1px solid #151515;background:#f4f1e8ee;color:#151515;text-decoration:none;
 font-size:22px}.slide-nav a:hover{border-color:var(--cyan);color:var(--cyan)}
-</style></head><body><div id="viewport"><main id="stage">""" + "".join(slides) + """
+</style></head><body><div class="deck-viewport"><main class="deck-stage" id="deckStage">""" + "".join(slides) + """
 </main></div><div id="controls"><button onclick="move(-1)">‹</button>
 <button onclick="move(1)">›</button></div><script>
 const slides=[...document.querySelectorAll('.slide')];let current=0;
 function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080);
-document.querySelector('#stage').style.transform=`scale(${s})`}
+document.querySelector('#deckStage').style.transform=`scale(${s})`}
 function show(n){slides[current].classList.remove('is-active');current=(n+slides.length)%slides.length;
 slides[current].classList.add('is-active');location.hash=`/${current+1}`}
 function move(d){show(current+d)}addEventListener('resize',fit);addEventListener('keydown',e=>{
@@ -654,8 +658,10 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
                 "byte_count": len(data),
                 "slide_count": len(sections),
                 "editable": True,
+                "design_system": "frontend_slides_swiss_modern",
+                "frontend_slides_commit": "9906a34d640d2111f724544cbc50f7f130569ae1",
                 "provenance": [
-                    "https://github.com/zarazhangrui/frontend-slides",
+                    "https://github.com/zarazhangrui/frontend-slides/tree/9906a34d640d2111f724544cbc50f7f130569ae1",
                     "https://github.com/lewislulu/html-ppt-skill",
                     "https://github.com/marp-team/marp",
                 ],

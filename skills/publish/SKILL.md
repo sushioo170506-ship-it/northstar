@@ -38,6 +38,8 @@ self_contained、raster_exported、第三方候选审查数、待人工审批改
 - PDF：必须注入 DocumentRenderer（如 Typst/Pandoc适配器），保存 PDF payload/URI。
 - PPTX：注入SlidesRenderer，输出可编辑16:9 PowerPoint和slide_count。
 - Slides HTML：注入SlidesRenderer，输出自包含HTML、键盘翻页和页码。
+- Slides HTML必须是可直接保存/打开的单文件，不得要求先解压ZIP；采用frontend-slides固定
+  1920×1080画布整体缩放、预设化视觉系统、内容预算、无溢出/重叠和键盘/触摸导航规范。
 - renderer 缺失或未返回 `rendered=true` 时，Feishu/DOCX/PDF发布失败，不得静默改成Markdown。
 - secret/confidential/top_secret禁止飞书发布；internal必须有目标租户和数据驻留审批。
 

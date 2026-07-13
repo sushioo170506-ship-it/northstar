@@ -190,6 +190,9 @@
 - 核验并记录MiniMax DOCX Skill、张咋啦Frontend Slides、Marp的MIT许可证和星数快照；
   只参考方法并clean-room实现，不复制外部代码。
 - 新增FeishuOAuthClient，支持个人用户OAuth授权码交换和refresh_token刷新。
+- SlidesRenderer固定采用Frontend Slides提交
+  `9906a34d640d2111f724544cbc50f7f130569ae1`的1920×1080画布与Swiss Modern方法，
+  工作流可通过`export_final`/CLI `export`直接输出单个HTML文件，不以ZIP为前置。
 
 ## 存储实现
 

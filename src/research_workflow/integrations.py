@@ -88,12 +88,23 @@ DEFAULT_INTEGRATIONS = (
     IntegrationSpec(
         "frontend-slides", "html_slides_design",
         "https://github.com/zarazhangrui/frontend-slides",
-        "MIT", 25_376,
+        "MIT", 25_388,
         notes=(
             "张咋啦发布的HTML Slides Skill；参考单文件、自包含和视觉层级方法，"
             "本项目使用独立渲染器。"
         ),
-        author="zarazhangrui", version_checked="main@2026-07-13",
+        author="zarazhangrui",
+        version_checked="9906a34d640d2111f724544cbc50f7f130569ae1",
+    ),
+    IntegrationSpec(
+        "html-ppt-skill", "html_slides_templates",
+        "https://github.com/lewislulu/html-ppt-skill",
+        "MIT", 7_099,
+        notes=(
+            "参考固定画布、token化主题、布局预算和键盘运行时；"
+            "内置HTML保持单文件并独立实现。"
+        ),
+        author="lewislulu", version_checked="main@2026-07-13",
     ),
     IntegrationSpec(
         "marp", "slides_multi_format",

@@ -40,6 +40,7 @@ path = orchestrator.apply_approved_learning(
 quarterly = orchestrator.quarterly_evolution_report(2026, 3)
 snapshot = orchestrator.state.snapshot(workflow_id)
 report = orchestrator.final_report(workflow_id)
+html_file = orchestrator.export_final(workflow_id, "report.html")
 ```
 
 `run` 返回 `RunOutcome(workflow_id, status, waiting_at, final_artifact_id)`。确认节点依次为
@@ -157,7 +158,11 @@ research-workflow --data-dir ./data update-sources WORKFLOW_ID sources.json \
   --reason "替换不可追溯来源"
 research-workflow --data-dir ./data status WORKFLOW_ID
 research-workflow --data-dir ./data final WORKFLOW_ID > report.md
+research-workflow --data-dir ./data export WORKFLOW_ID report.html
 ```
+
+`export`按发布元数据直接写文件：`slides_html`写单个自包含HTML，DOCX/PPTX/PDF解码为二进制；
+无需先生成或解压ZIP。
 
 CLI会自动为DOCX、PPTX和Slides HTML配置内置渲染器。飞书个人授权后设置：
 

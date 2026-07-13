@@ -67,6 +67,10 @@ def _parser() -> argparse.ArgumentParser:
         command = sub.add_parser(name)
         command.add_argument("workflow_id")
 
+    export = sub.add_parser("export")
+    export.add_argument("workflow_id")
+    export.add_argument("output_path")
+
     confirm = sub.add_parser("confirm")
     confirm.add_argument("workflow_id")
     confirm.add_argument("checkpoint")
@@ -189,6 +193,11 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(orchestrator.state.snapshot(args.workflow_id), ensure_ascii=False))
         elif args.command == "final":
             print(orchestrator.final_report(args.workflow_id))
+        elif args.command == "export":
+            path = orchestrator.export_final(
+                args.workflow_id, args.output_path
+            )
+            print(json.dumps({"exported": str(path)}, ensure_ascii=False))
         return 0
     except (ValueError, KeyError, RuntimeError) as exc:
         print(json.dumps({"error": str(exc)}, ensure_ascii=False), file=sys.stderr)
