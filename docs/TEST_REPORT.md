@@ -6,7 +6,7 @@
 
 ## 结果
 
-43个自动化测试全部通过，最近一次耗时22.282秒：
+45个自动化测试全部通过：
 
 | 验收项 | 自动化证据 | 结果 |
 |---|---|---|
@@ -23,8 +23,8 @@
 | 三支柱门 | official 兼容为 industry；缺 academic/social_media 时阻断 | 通过 |
 | 三 pass 遍历 | SourceRetriever 按 industry/academic/social_media 分别调用且记录状态 | 通过 |
 | 数据处理评分 | 生成 claim ledger；5 候选×4 锚定维度按公式计算并追溯 | 通过 |
-| 能力遍历 | 22个内置Skill全部completed；15个外部集成全部记录状态 | 通过 |
-| Skill 文档一致性 | 1个主编排+22个可执行Skill；目录/name/Registry/DAG完全一致 | 通过 |
+| 能力遍历 | 23个内置Skill全部completed；16个外部集成全部记录状态 | 通过 |
+| Skill 文档一致性 | 1个主编排+23个可执行Skill；目录/name/Registry/DAG完全一致 | 通过 |
 | Skill 合规研究 | MIT 候选生成含完整溯源的适配草案；NOASSERTION 候选被拒绝 | 通过 |
 | Skill 星标门槛 | GitHub 499星、OpenClaw 299星候选均进入观察名单且不生成草案 | 通过 |
 | 假说按需启用 | 默认行业报告无假说字段；显式配置后才生成3条竞争性假说 | 通过 |
@@ -42,6 +42,8 @@
 | 来源快照 | 原文、URL、抓取时间、Provider和SHA-256冻结；场景来源策略可阻断 | 通过 |
 | 逐论断验证 | 原文片段、数字锚点、独立来源与冲突检查；错误数字进入blocked | 通过 |
 | 无填充写作 | 删除循环模板句；长上下文改由真实来源快照验证，不伪造十万字正文 | 通过 |
+| 量化金工硬门 | 完整回测配置通过；缺指标来源/样本外检查时Skill incomplete且端到端发布阻断 | 通过 |
+| QuantsPlaybook许可证 | NOASSERTION/observe_only、固定提交、未执行外部代码 | 通过 |
 | 社媒来源 | 微信公众号与Hacker News URL自动归一化platform | 通过 |
 | 主题风险 | ETF报告risk_scope聚焦折溢价、估值、流动性和跟踪误差 | 通过 |
 | 章节内联来源 | 链接只放文末时inline_source_coverage=0并阻断 | 通过 |
