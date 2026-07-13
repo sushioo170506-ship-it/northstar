@@ -20,6 +20,11 @@ from research_workflow.models import (
 )
 from research_workflow.providers import CompositeSourceRetriever, OpenAlexRetriever
 from research_workflow.renderers import PandocDocumentRenderer
+from research_workflow.renderers import (
+    FeishuApiClient,
+    FeishuDocumentRenderer,
+    MarkdownTableParser,
+)
 from research_workflow.orchestrator import (
     NODES,
     QualityGateRejected,
@@ -34,6 +39,8 @@ from research_workflow.skills.outline import OutlineSkill
 from research_workflow.skills.publish import PublishSkill
 from research_workflow.skills.research import ResearchSkill
 from research_workflow.skills.skill_research import SkillResearchSkill
+from research_workflow.skills.writing_standards import WritingStandardsSkill
+from research_workflow.standards_store import SQLiteWritingStandardStore
 
 
 CHECKPOINTS = (
@@ -119,6 +126,73 @@ class FakeRenderer(DocumentRenderer):
         )
 
 
+def writing_standard_payload(
+    *,
+    profile_id: str = "industry_investment",
+    scene: str = "industry_investment",
+    external_delivery_allowed: bool = True,
+) -> str:
+    return json.dumps(
+        {
+            "profile": {"id": profile_id, "version": 1},
+            "scene": scene,
+            "required_sections": ["核心观点"],
+            "reference_selection": {"status": "verified"},
+            "security": {
+                "external_delivery_allowed": external_delivery_allowed,
+                "block_reason": None,
+            },
+        },
+        ensure_ascii=False,
+    )
+
+
+class FakeFeishuTransport:
+    def __init__(self) -> None:
+        self.calls = []
+        self.values = []
+
+    def __call__(self, method, path, payload, headers):
+        self.calls.append((method, path, payload))
+        if path == "/open-apis/docx/v1/documents":
+            return {"code": 0, "data": {"document": {"document_id": "DOC1"}}}
+        if path.endswith("/blocks/convert"):
+            return {
+                "code": 0,
+                "data": {
+                    "first_level_block_ids": ["B1"],
+                    "blocks": [
+                        {
+                            "block_id": "B1",
+                            "block_type": 2,
+                            "text": {"elements": []},
+                            "children": [],
+                        }
+                    ],
+                },
+            }
+        if "/descendant" in path:
+            return {"code": 0, "data": {}}
+        if "/children" in path:
+            return {
+                "code": 0,
+                "data": {
+                    "children": [
+                        {"sheet": {"token": "SPREADSHEET1_SHEET1"}}
+                    ]
+                },
+            }
+        if method == "PUT" and path.endswith("/values"):
+            self.values = payload["valueRange"]["values"]
+            return {"code": 0, "data": {}}
+        if method == "GET" and "/values/" in path:
+            return {
+                "code": 0,
+                "data": {"valueRange": {"values": self.values}},
+            }
+        return {"code": 0, "data": {}}
+
+
 class WorkflowTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
@@ -178,7 +252,7 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(set(default_registry().names), set(BUILTIN_SKILL_ORDER))
         self.assertEqual(orchestrator_names, {"research_report_orchestrator"})
-        self.assertEqual(len(names) + len(orchestrator_names), 19)
+        self.assertEqual(len(names) + len(orchestrator_names), 20)
         architecture = (
             Path(__file__).parents[1] / "docs" / "ARCHITECTURE.md"
         ).read_text(encoding="utf-8")
@@ -337,6 +411,7 @@ class WorkflowTests(unittest.TestCase):
                         ]
                     }
                 ),
+                "writing_standards": writing_standard_payload(),
             },
         )
         result = skill.execute(request)
@@ -620,6 +695,7 @@ class WorkflowTests(unittest.TestCase):
                         ]
                     }
                 ),
+                "writing_standards": writing_standard_payload(),
             },
         )
         result = OutlineSkill().execute(request)
@@ -860,7 +936,10 @@ class WorkflowTests(unittest.TestCase):
 
     def test_formats_are_valid(self) -> None:
         for output_format in ("html", "json", "text", "feishu"):
-            child = ResearchReportOrchestrator(self.root / output_format)
+            child = ResearchReportOrchestrator(
+                self.root / output_format,
+                document_renderer=FakeRenderer() if output_format == "feishu" else None,
+            )
             workflow_id = child.create(
                 {
                     "topic": "格式测试",
@@ -876,7 +955,7 @@ class WorkflowTests(unittest.TestCase):
             elif output_format == "json":
                 self.assertEqual(json.loads(report)["title"], "格式测试")
             elif output_format == "feishu":
-                self.assertIn("# 格式测试", report)
+                self.assertTrue(report.startswith("base64:feishu:"))
             else:
                 self.assertNotIn("# ", report)
 
@@ -900,6 +979,7 @@ class WorkflowTests(unittest.TestCase):
                     "skill_research": json.dumps(
                         {"candidates": [], "adapted_skill_specs": []}
                     ),
+                    "writing_standards": writing_standard_payload(),
                 },
             )
             with self.assertRaises(ValueError):
@@ -927,6 +1007,156 @@ class WorkflowTests(unittest.TestCase):
             ).output_format,
             "feishu",
         )
+
+    def test_writing_standard_profiles_are_versioned_and_triggerable(self) -> None:
+        store = SQLiteWritingStandardStore(self.root / "profile-store.db")
+        self.assertEqual(len(store.list_profiles()), 4)
+        first = store.register_custom(
+            profile_id="custom_policy",
+            name="公司政策简报",
+            scene="official_internal",
+            trigger_keywords=["政策简报", "董事会"],
+            rules={"required_sections": ["结论", "行动项"]},
+        )
+        second = store.register_custom(
+            profile_id="custom_policy",
+            name="公司政策简报",
+            scene="official_internal",
+            trigger_keywords=["政策简报", "董事会"],
+            rules={"required_sections": ["结论", "行动项", "责任人"]},
+        )
+        self.assertEqual((first.version, second.version), (1, 2))
+        reloaded = SQLiteWritingStandardStore(self.root / "profile-store.db")
+        selected = reloaded.resolve("董事会政策简报")
+        self.assertEqual(selected.id, "custom_policy")
+        self.assertEqual(selected.version, 2)
+
+    def test_workflow_persists_custom_standard_and_selects_it(self) -> None:
+        workflow_id = self.workflow.create(
+            {
+                "topic": "董事会政策简报",
+                "expected_length": 500,
+                "extra": {
+                    "sources": compliant_sources("CUSTOM-STANDARD"),
+                    "writing_standard": {
+                        "id": "board_memo",
+                        "name": "董事会简报",
+                        "scene": "official_internal",
+                        "trigger_keywords": ["董事会", "政策简报"],
+                        "rules": {
+                            "required_sections": [
+                                "标题", "主送或阅读范围", "正文", "建议事项", "署名与日期"
+                            ]
+                        },
+                    },
+                },
+            }
+        )
+        self.workflow.run(workflow_id)
+        standard = json.loads(
+            self.workflow.state.node_artifact(
+                workflow_id, "writing_standards"
+            )["content"]
+        )
+        self.assertEqual(standard["profile"]["id"], "board_memo")
+        self.assertEqual(standard["selected_by"], "explicit")
+        self.assertIn(
+            "board_memo",
+            {item["id"] for item in self.workflow.list_writing_standards()},
+        )
+
+    def test_sector_reference_policy_does_not_invent_top_three_brokers(self) -> None:
+        store = SQLiteWritingStandardStore(":memory:")
+        request = SkillRequest(
+            workflow_id="broker-policy",
+            node_id="writing_standards",
+            config=ReportConfig.from_dict(
+                {
+                    "topic": "半导体行业投研",
+                    "output_type": "行业研究报告",
+                    "extra": {
+                        "broker_references": [
+                            {
+                                "name": "示例券商",
+                                "report_url": "https://example.org/report",
+                                "ranking_source": "https://example.org/ranking",
+                                "ranking_date": "2026-01-01",
+                                "specialty": "半导体",
+                            }
+                        ]
+                    },
+                }
+            ),
+            inputs={"requirements_analysis": "{}"},
+        )
+        result = WritingStandardsSkill(store).execute(request)
+        payload = json.loads(result.content)
+        self.assertEqual(payload["scene"], "industry_investment")
+        self.assertEqual(
+            payload["reference_selection"]["status"], "verification_required"
+        )
+        self.assertEqual(payload["reference_selection"]["missing"], 2)
+
+    def test_markdown_table_becomes_editable_native_feishu_sheet(self) -> None:
+        content = (
+            "# 表格报告\n\n"
+            "| 指标 | 数值 | 备注 |\n"
+            "|:---|---:|:---:|\n"
+            "| 收入 | =SUM(1,2) | **可编辑** |\n"
+            "| 渗透率 | 42% | [来源](https://example.org) |\n"
+        )
+        segments = MarkdownTableParser.split_document(content)
+        table = next(value for kind, value in segments if kind == "table")
+        self.assertEqual(table.headers, ("指标", "数值", "备注"))
+        self.assertEqual(table.alignments, ("left", "right", "center"))
+        self.assertEqual(table.rows[0][1], "=SUM(1,2)")
+        self.assertEqual(table.rows[1][2], "来源 (https://example.org)")
+
+        transport = FakeFeishuTransport()
+        client = FeishuApiClient(access_token="test-token", transport=transport)
+        result = FeishuDocumentRenderer(client, title="表格报告").render(
+            content=content,
+            output_format="feishu",
+            visualizations={"assets": []},
+        )
+        self.assertEqual(result[0], "https://feishu.cn/docx/DOC1")
+        metadata = result[1]
+        self.assertEqual(metadata["native_sheet_count"], 1)
+        self.assertTrue(metadata["tables_editable"])
+        self.assertTrue(metadata["readback_verified"])
+        self.assertEqual(transport.values[0], ["指标", "数值", "备注"])
+        paths = [call[1] for call in transport.calls]
+        self.assertTrue(any(path.endswith("/style") for path in paths))
+        self.assertTrue(any(path.endswith("/sheets_batch_update") for path in paths))
+
+    def test_classified_content_is_blocked_from_feishu(self) -> None:
+        request = SkillRequest(
+            workflow_id="classified-feishu",
+            node_id="publish",
+            config=ReportConfig.from_dict(
+                {
+                    "topic": "涉密内参",
+                    "output_format": "feishu",
+                    "confidentiality_level": "秘密",
+                }
+            ),
+            inputs={
+                "review": "# 涉密内参",
+                "quality_gate": json.dumps({"passed": True, "total_score": 30}),
+                "visualization": json.dumps({"assets": []}),
+                "capability_sweep": json.dumps({"external_integrations": []}),
+                "skill_research": json.dumps(
+                    {"candidates": [], "adapted_skill_specs": []}
+                ),
+                "writing_standards": writing_standard_payload(
+                    profile_id="official_internal",
+                    scene="official_internal",
+                    external_delivery_allowed=False,
+                ),
+            },
+        )
+        with self.assertRaisesRegex(ValueError, "信息安全策略阻断"):
+            PublishSkill(FakeRenderer()).execute(request)
 
     def test_revision_router_returns_to_precise_stage(self) -> None:
         workflow_id = self.create()
@@ -1109,6 +1339,7 @@ class WorkflowTests(unittest.TestCase):
                 ),
                 "visualization": json.dumps({"assets": []}),
                 "pressure_test": json.dumps({"repair_actions": []}),
+                "writing_standards": writing_standard_payload(),
             },
         )
         result = skill.execute(request)

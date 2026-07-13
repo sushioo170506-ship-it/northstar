@@ -61,6 +61,10 @@ class WritingSkill(Skill):
             section_materials = materials.get("sections", {}).get(
                 section["id"], {}
             ).get("materials", [])
+            if not section.get("linked_issue"):
+                # Framing/format sections follow the selected profile but must not
+                # duplicate every source mounted for substantive issue sections.
+                section_materials = []
             citations = [
                 f"[{item['source_id']}]({item['original_url']})"
                 for item in section_materials if item.get("original_url")
