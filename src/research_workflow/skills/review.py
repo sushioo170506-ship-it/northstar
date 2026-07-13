@@ -17,23 +17,33 @@ class ReviewSkill(Skill):
         self.generator = generator
 
     def execute(self, request: SkillRequest) -> SkillResult:
+        from .input_adapters import (
+            claim_verification_text,
+            evidence_governance_text,
+            source_snapshot_text,
+        )
+
         formatted = request.inputs["formatting"]
         requirements = json.loads(request.inputs["requirements_analysis"])
         evidence = json.loads(request.inputs["research"])
-        evidence_ledger = json.loads(request.inputs["evidence_governance"])
+        ledger_text = evidence_governance_text(request.inputs)
+        evidence_ledger = json.loads(ledger_text)
         material_integration = json.loads(request.inputs["material_integration"])
         visualizations = json.loads(request.inputs["visualization"])
         pressure_test = json.loads(request.inputs["pressure_test"])
         writing_standard = json.loads(request.inputs["writing_standards"])
-        snapshot = json.loads(request.inputs.get("source_snapshot", "{}"))
-        verification = json.loads(request.inputs.get("claim_verification", "{}"))
+        try:
+            snapshot = json.loads(source_snapshot_text(request.inputs))
+        except KeyError:
+            snapshot = {}
+        verification = json.loads(claim_verification_text(request.inputs))
         quant = json.loads(request.inputs.get("quant_finance_research", "{}"))
         if self.generator:
             content = self.generator.generate(
                 system="你是独立质量审核员，不得引入未经证实的新事实。",
                 prompt=(
                     f"{REVIEW_PROMPT}\n待审报告：\n{formatted}"
-                    f"\n证据账本：\n{request.inputs['evidence_governance']}"
+                    f"\n证据账本：\n{ledger_text}"
                     f"\n需求简报：\n{request.inputs['requirements_analysis']}"
                     f"\n素材映射：\n{request.inputs['material_integration']}"
                     f"\n可视化：\n{request.inputs['visualization']}"

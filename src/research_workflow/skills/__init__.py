@@ -6,6 +6,7 @@ from .claim_verification import ClaimVerificationSkill
 from .content_optimization import ContentOptimizationSkill
 from .data_processing import DataProcessingSkill
 from .evidence_governance import EvidenceGovernanceSkill
+from .evidence_pipeline import EvidencePipelineSkill
 from .experience_evolution import ExperienceEvolutionSkill
 from .formatting import FormattingSkill
 from .issue_tree import IssueTreeSkill
@@ -22,6 +23,7 @@ from .skill_research import SkillResearchSkill
 from .source_snapshot import SourceSnapshotSkill
 from .visualization import VisualizationSkill
 from .writing import WritingSkill
+from .writing_finalize import WritingFinalizeSkill
 from .writing_standards import WritingStandardsSkill
 
 __all__ = [
@@ -35,12 +37,14 @@ __all__ = [
     "SourceSnapshotSkill",
     "IssueTreeSkill",
     "EvidenceGovernanceSkill",
+    "EvidencePipelineSkill",
     "ExperienceEvolutionSkill",
     "DataProcessingSkill",
     "MaterialIntegrationSkill",
     "VisualizationSkill",
     "OutlineSkill",
     "WritingSkill",
+    "WritingFinalizeSkill",
     "WritingStandardsSkill",
     "PressureTestSkill",
     "FormattingSkill",

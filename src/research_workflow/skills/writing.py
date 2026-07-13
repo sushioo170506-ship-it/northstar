@@ -16,16 +16,18 @@ class WritingSkill(Skill):
         self.generator = generator
 
     def execute(self, request: SkillRequest) -> SkillResult:
+        from .input_adapters import claim_verification_text, evidence_governance_text
+
         outline_text = request.inputs["outline"]
         evidence_text = request.inputs["research"]
         requirements_text = request.inputs["requirements_analysis"]
         issue_tree_text = request.inputs["issue_tree"]
-        evidence_ledger_text = request.inputs["evidence_governance"]
+        evidence_ledger_text = evidence_governance_text(request.inputs)
         processed_text = request.inputs["data_processing"]
         materials_text = request.inputs["material_integration"]
         visualizations_text = request.inputs["visualization"]
         standard_text = request.inputs["writing_standards"]
-        verification_text = request.inputs.get("claim_verification", "{}")
+        verification_text = claim_verification_text(request.inputs)
         quant_text = request.inputs.get("quant_finance_research", "{}")
         prompt = WRITING_PROMPT.format(
             topic=request.config.topic,

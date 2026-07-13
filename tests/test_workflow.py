@@ -267,7 +267,7 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(set(default_registry().names), set(BUILTIN_SKILL_ORDER))
         self.assertEqual(orchestrator_names, {"research_report_orchestrator"})
-        self.assertEqual(len(names) + len(orchestrator_names), 24)
+        self.assertEqual(len(names) + len(orchestrator_names), 21)
         architecture = (
             Path(__file__).parents[1] / "docs" / "ARCHITECTURE.md"
         ).read_text(encoding="utf-8")
@@ -475,6 +475,37 @@ class WorkflowTests(unittest.TestCase):
             all(item["snapshot_complete"] for item in payload["sources"])
         )
 
+    def test_evidence_pipeline_runs_snapshot_and_governance(self) -> None:
+        sources = compliant_sources("PIPELINE")
+        request = SkillRequest(
+            workflow_id="evidence-pipeline",
+            node_id="evidence_pipeline",
+            config=ReportConfig.from_dict({"topic": "技术模型研究"}),
+            inputs={
+                "research": json.dumps(
+                    {
+                        "sources": ResearchSkill._normalize_sources(sources),
+                        "retrieval_summary": {},
+                    }
+                ),
+                "writing_standards": json.dumps({"scene": "technical"}),
+                "issue_tree": json.dumps({"issues": []}),
+                "outline": "{}",
+            },
+        )
+        from research_workflow.skills.evidence_pipeline import EvidencePipelineSkill
+
+        skill = EvidencePipelineSkill()
+        result = skill.execute(request)
+        skill.validate(result)
+        payload = json.loads(result.content)
+        self.assertEqual(
+            payload["pipeline_steps"],
+            ["source_snapshot", "evidence_governance"],
+        )
+        self.assertTrue(payload["source_snapshot"]["policy_compliance"]["passed"])
+        self.assertIn("sources", payload["evidence_governance"])
+
     def test_claim_verification_aligns_spans_and_numbers(self) -> None:
         content = "官方数据显示样本量为1200，准确率为42%。"
         request = SkillRequest(
@@ -630,6 +661,48 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('id="ref-S1"', result.content)
         self.assertIn("[↩1](#cite-S1-1)", result.content)
         self.assertEqual(result.metadata["coverage"], 1.0)
+
+    def test_writing_finalize_cites_and_optimizes(self) -> None:
+        from research_workflow.skills.writing_finalize import WritingFinalizeSkill
+
+        request = SkillRequest(
+            workflow_id="writing-finalize",
+            node_id="writing_finalize",
+            config=ReportConfig.from_dict({"topic": "成文定稿"}),
+            inputs={
+                "writing": (
+                    "# 报告\n\n```text\n用户 → ASR → 输出\n```\n\n"
+                    "| 指标 | 数值 |\n|---|---:|\n| 成功率 | 80% |\n\n"
+                    "1. 第一项\n1. [官方材料](https://example.org/source)\n"
+                ),
+                "evidence_pipeline": json.dumps(
+                    {
+                        "evidence_governance": {
+                            "sources": [
+                                {
+                                    "id": "S1",
+                                    "title": "官方材料",
+                                    "original_url": "https://example.org/source",
+                                }
+                            ]
+                        }
+                    }
+                ),
+                "material_integration": json.dumps({"sections": {}}),
+                "writing_standards": writing_standard_payload(),
+            },
+        )
+        skill = WritingFinalizeSkill()
+        result = skill.execute(request)
+        skill.validate(result)
+        self.assertIn("```mermaid\nflowchart TD", result.content)
+        self.assertIn("> **表格说明：**", result.content)
+        self.assertIn("## 全量关联链接", result.content)
+        self.assertIn('id="cite-S1-1"', result.content)
+        self.assertEqual(
+            result.metadata["pipeline_steps"],
+            ["citation_management", "content_optimization"],
+        )
 
     def test_content_optimization_standardizes_visual_structure(self) -> None:
         source = """# 报告
@@ -1060,9 +1133,8 @@ class WorkflowTests(unittest.TestCase):
                 }
             ),
             inputs={
-                "claim_verification": "{}",
                 "data_processing": "{}",
-                "source_snapshot": "{}",
+                "evidence_pipeline": "{}",
                 "writing_standards": "{}",
                 "outline": "{}",
             },
@@ -1330,8 +1402,8 @@ class WorkflowTests(unittest.TestCase):
         published = reloaded.state.node_artifact(workflow_id, "publish")
         self.assertEqual(published["artifact_type"], "published_report")
         ledger = json.loads(
-            reloaded.state.node_artifact(workflow_id, "evidence_governance")["content"]
-        )
+            reloaded.state.node_artifact(workflow_id, "evidence_pipeline")["content"]
+        )["evidence_governance"]
         self.assertEqual(ledger["issue_coverage"]["ISSUE-01"], ["S-OFFICIAL"])
         issue_tree = json.loads(
             reloaded.state.node_artifact(workflow_id, "issue_tree")["content"]
@@ -1695,12 +1767,12 @@ class WorkflowTests(unittest.TestCase):
         report = self.workflow.final_report(workflow_id)
         self.assertIn("## 参考资料", report)
         artifact = self.workflow.state.node_artifact(
-            workflow_id, "source_snapshot"
+            workflow_id, "evidence_pipeline"
         )
         self.assertGreater(len(artifact["content"]), 100_000)
         self.assertGreater(artifact["chunk_count"], 6)
         cited = self.workflow.state.node_artifact(
-            workflow_id, "citation_management"
+            workflow_id, "writing_finalize"
         )
         writing = self.workflow.state.node_artifact(workflow_id, "writing")
         self.assertNotIn(
@@ -1708,11 +1780,11 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertTrue(cited["content"])
         matches = self.workflow.context.query(
-            workflow_id, "可核验证据 样本量", node_ids={"source_snapshot"}, limit=5
+            workflow_id, "可核验证据 样本量", node_ids={"evidence_pipeline"}, limit=5
         )
         self.assertTrue(matches)
         self.assertTrue(
-            all(item.node_id == "source_snapshot" for item in matches)
+            all(item.node_id == "evidence_pipeline" for item in matches)
         )
 
     def test_evidence_red_line_blocks_release(self) -> None:
@@ -1838,14 +1910,29 @@ class WorkflowTests(unittest.TestCase):
                         ]
                     }
                 ),
-                "citation_management": "# 报告\n\n## 参考资料\n",
-                "evidence_governance": json.dumps(
-                    {"metrics": {"source_count": 0}, "red_lines": []}
+                "writing_finalize": "# 报告\n\n## 参考资料\n",
+                "evidence_pipeline": json.dumps(
+                    {
+                        "source_snapshot": {
+                            "policy_compliance": {"passed": True},
+                            "sources": [],
+                        },
+                        "evidence_governance": {
+                            "metrics": {"source_count": 0},
+                            "red_lines": [],
+                        },
+                    }
                 ),
                 "data_processing": json.dumps(
                     {
                         "claims": [],
                         "evidence_grades": {},
+                        "claim_verification": {
+                            "all_claims_verified": True,
+                            "unsupported_claim_ids": [],
+                            "red_lines": [],
+                            "metrics": {},
+                        },
                         "triangulation": {
                             "critical_claim_count": 0,
                             "critical_verified_count": 0,

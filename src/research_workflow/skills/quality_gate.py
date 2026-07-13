@@ -49,19 +49,27 @@ class QualityGateSkill(Skill):
             )
         )
         outline = json.loads(request.inputs["outline"])
-        cited_draft = request.inputs.get(
-            "content_optimization", request.inputs["citation_management"]
+        from .input_adapters import (
+            claim_verification_text,
+            evidence_governance_text,
+            finalized_draft_text,
+            source_snapshot_text,
         )
-        evidence_text = request.inputs["evidence_governance"]
+
+        cited_draft = finalized_draft_text(request.inputs)
+        if not cited_draft.strip():
+            cited_draft = request.inputs.get("citation_management", "")
+        evidence_text = evidence_governance_text(request.inputs)
         processed = json.loads(request.inputs["data_processing"])
         materials = json.loads(request.inputs["material_integration"])
         visualizations = json.loads(request.inputs["visualization"])
         pressure_text = request.inputs["pressure_test"]
         writing_standard = json.loads(request.inputs["writing_standards"])
-        snapshot = json.loads(request.inputs.get("source_snapshot", "{}"))
-        verification = json.loads(
-            request.inputs.get("claim_verification", "{}")
-        )
+        try:
+            snapshot = json.loads(source_snapshot_text(request.inputs))
+        except KeyError:
+            snapshot = {}
+        verification = json.loads(claim_verification_text(request.inputs))
         quant = json.loads(request.inputs.get("quant_finance_research", "{}"))
         evidence = json.loads(evidence_text)
         evidence_grades = processed.get("evidence_grades", {})

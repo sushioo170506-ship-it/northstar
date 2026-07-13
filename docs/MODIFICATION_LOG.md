@@ -213,6 +213,14 @@
 - 新增券商量化金工Profile，覆盖数据样本、因子公式、回测设计、绩效归因、稳健性和合规声明。
 - 量化硬门要求基准/样本/交易成本、七项绩效指标及来源、样本外、前视与幸存者偏差检查。
 
+### Skill 主路径瘦身（2026-07-13）
+
+- 新增`evidence_pipeline`：对外一个节点，内部串联`source_snapshot`与`evidence_governance`。
+- `claim_verification`并入`data_processing`输出的`claim_verification`字段，不再单独占 DAG。
+- 新增`writing_finalize`：对外一个节点，内部串联`citation_management`与`content_optimization`。
+- `quant_finance_research`标记为条件节点；非量化场景记录`conditional_skip`并快速返回。
+- 可执行 Skill 从 23 个收至 20 个（主路径 19 + 1 条件）；编排器对管道产物做兼容输入展开。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

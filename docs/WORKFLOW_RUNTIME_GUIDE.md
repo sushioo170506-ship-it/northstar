@@ -35,9 +35,9 @@ ResearchReportOrchestrator
   |   capability_sweep -> requirements_analysis -> skill_research
   |      -> issue_tree -> [主题与议题树确认]
   |      -> outline -> [大纲确认] -> research(场景化来源)
-  |      -> source_snapshot -> evidence_governance -> data_processing
-  |      -> claim_verification -> quant_finance_research -> material_integration
-  |      -> visualization -> writing -> citation_management -> content_optimization
+  |      -> evidence_pipeline -> data_processing
+  |      -> quant_finance_research(条件) -> material_integration
+  |      -> visualization -> writing -> writing_finalize
   |      -> pressure_test -> [初稿确认]
   |      -> formatting -> [终审前确认] -> review -> quality_gate -> publish
   |      -> experience_evolution

@@ -18,21 +18,24 @@ class ExperienceEvolutionSkill(Skill):
     ROUTES = {
         "outline": ("大纲", "章节", "比例", "摘要"),
         "research": ("来源", "检索", "社媒", "论文", "数据"),
-        "source_snapshot": ("来源快照", "网页快照", "内容哈希", "抓取时间"),
-        "claim_verification": (
-            "论断验证", "原文片段", "数字核验", "证据对齐", "冲突仲裁"
+        "evidence_pipeline": (
+            "来源快照", "网页快照", "内容哈希", "抓取时间",
+            "证据治理", "可追溯", "利益相关方", "证据红线",
+        ),
+        "data_processing": (
+            "评分", "claim", "交叉验证", "证据等级",
+            "论断验证", "原文片段", "数字核验", "证据对齐", "冲突仲裁",
         ),
         "quant_finance_research": (
             "量化", "金工", "因子", "回测", "交易成本", "样本外", "Sharpe"
         ),
-        "data_processing": ("评分", "claim", "交叉验证", "证据等级"),
         "visualization": ("图表", "可视化", "流程图"),
         "writing_standards": (
             "写作规范", "写作标准", "模板", "触发词", "文体", "券商",
             "蓝v", "公文格式", "公式排版",
         ),
-        "writing": ("写作", "文风", "段落", "风险", "引用"),
-        "citation_management": ("引用", "参考文献", "脚注", "格式"),
+        "writing": ("写作", "文风", "段落", "风险"),
+        "writing_finalize": ("引用", "参考文献", "脚注", "格式", "内容优化", "链接索引"),
         "formatting": ("飞书", "word", "pdf", "网页", "排版"),
         "quality_gate": ("质量门", "复核", "校验", "红线"),
         "research_report_orchestrator": ("流程", "确认", "工作流", "节点"),

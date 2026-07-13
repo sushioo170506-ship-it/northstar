@@ -47,9 +47,9 @@ html_file = orchestrator.export_final(workflow_id, "report.html")
 `issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation`、
 `pre_review_confirmation`。允许修改的产物节点：
 `capability_sweep`、`requirements_analysis`、`skill_research`、`writing_standards`、`issue_tree`、`outline`、`research`、
-`source_snapshot`、`evidence_governance`、`data_processing`、`claim_verification`、
+`evidence_pipeline`、`data_processing`、`quant_finance_research`、
 `material_integration`、`visualization`、`writing`、
-`citation_management`、`content_optimization`、`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`、
+`writing_finalize`、`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`、
 `experience_evolution`。
 
 质量门缺少产业/学术/实景任一支柱、原始链接/claim/素材/图表不足、触发红线、需求不合规
@@ -131,7 +131,8 @@ Sheet Block。个性化规范通过`extra.writing_standard`注册并版本化，
 当前场景要求的类别调用。每个返回项至少应含id、title、category、url、
 published_at、content、issue_ids；内置模式没有检索器时仅整理用户 sources。
 
-`source_snapshot`随后冻结正文、Provider、抓取时间与SHA-256；`claim_verification`要求每项
+`evidence_pipeline`随后冻结正文、Provider、抓取时间与SHA-256，并生成证据账本；
+`data_processing`内嵌`claim_verification`，要求每项
 论断包含可定位原文片段，数字/单位在来源中一致，关键论断达到双独立来源且无未解决冲突。
 
 量化金融工程报告使用`output_type="券商量化金融工程研究报告"`并配置

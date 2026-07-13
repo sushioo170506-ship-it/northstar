@@ -19,11 +19,8 @@ from .models import (
 from .profiles import WORKFLOW_PROFILES
 from .skills import (
     CapabilitySweepSkill,
-    CitationManagementSkill,
-    ClaimVerificationSkill,
-    ContentOptimizationSkill,
     DataProcessingSkill,
-    EvidenceGovernanceSkill,
+    EvidencePipelineSkill,
     ExperienceEvolutionSkill,
     FormattingSkill,
     IssueTreeSkill,
@@ -37,8 +34,8 @@ from .skills import (
     RequirementsAnalysisSkill,
     ReviewSkill,
     SkillResearchSkill,
-    SourceSnapshotSkill,
     VisualizationSkill,
+    WritingFinalizeSkill,
     WritingSkill,
     WritingStandardsSkill,
 )
@@ -54,6 +51,7 @@ class NodeSpec:
     input_nodes: tuple[str, ...] = ()
     checkpoint: bool = False
     quality_gate: bool = False
+    conditional: bool = False
 
 
 NODES = (
@@ -99,49 +97,32 @@ NODES = (
         ("requirements_analysis", "issue_tree", "outline", "writing_standards"),
     ),
     NodeSpec(
-        "source_snapshot",
-        ("research", "writing_standards", "outline"),
-        "source_snapshot",
-        ("research", "writing_standards", "outline"),
-    ),
-    NodeSpec(
-        "evidence_governance",
-        ("source_snapshot", "issue_tree", "outline"),
-        "evidence_governance",
-        ("source_snapshot", "issue_tree"),
+        "evidence_pipeline",
+        ("research", "writing_standards", "issue_tree", "outline"),
+        "evidence_pipeline",
+        ("research", "writing_standards", "issue_tree", "outline"),
     ),
     NodeSpec(
         "data_processing",
-        ("source_snapshot", "evidence_governance", "issue_tree", "outline"),
+        ("evidence_pipeline", "issue_tree", "outline"),
         "data_processing",
-        ("source_snapshot", "evidence_governance", "issue_tree", "outline"),
-    ),
-    NodeSpec(
-        "claim_verification",
-        ("data_processing", "source_snapshot", "evidence_governance", "outline"),
-        "claim_verification",
-        ("data_processing", "source_snapshot", "evidence_governance", "outline"),
+        ("evidence_pipeline", "issue_tree", "outline"),
     ),
     NodeSpec(
         "quant_finance_research",
-        (
-            "claim_verification", "data_processing", "source_snapshot",
-            "writing_standards", "outline",
-        ),
+        ("data_processing", "evidence_pipeline", "writing_standards", "outline"),
         "quant_finance_research",
-        (
-            "claim_verification", "data_processing", "source_snapshot",
-            "writing_standards", "outline",
-        ),
+        ("data_processing", "evidence_pipeline", "writing_standards", "outline"),
+        conditional=True,
     ),
     NodeSpec(
         "material_integration",
         (
-            "outline", "research", "source_snapshot", "evidence_governance",
-            "data_processing", "claim_verification", "quant_finance_research",
+            "outline", "research", "evidence_pipeline", "data_processing",
+            "quant_finance_research",
         ),
         "material_integration",
-        ("outline", "research", "evidence_governance", "data_processing"),
+        ("outline", "research", "evidence_pipeline", "data_processing"),
     ),
     NodeSpec(
         "visualization",
@@ -159,94 +140,79 @@ NODES = (
         "writing",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_governance", "data_processing", "material_integration",
-            "visualization", "writing_standards", "source_snapshot",
-            "claim_verification", "quant_finance_research",
+            "evidence_pipeline", "data_processing", "material_integration",
+            "visualization", "writing_standards", "quant_finance_research",
         ),
         "writing",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_governance", "data_processing", "material_integration",
-            "visualization", "writing_standards", "source_snapshot",
-            "claim_verification", "quant_finance_research",
+            "evidence_pipeline", "data_processing", "material_integration",
+            "visualization", "writing_standards", "quant_finance_research",
         ),
     ),
     NodeSpec(
-        "citation_management",
-        ("writing", "evidence_governance", "material_integration"),
-        "citation_management",
-        ("writing", "evidence_governance", "material_integration"),
-    ),
-    NodeSpec(
-        "content_optimization",
-        ("citation_management", "writing_standards"),
-        "content_optimization",
-        ("citation_management", "writing_standards"),
+        "writing_finalize",
+        ("writing", "evidence_pipeline", "material_integration", "writing_standards"),
+        "writing_finalize",
+        ("writing", "evidence_pipeline", "material_integration", "writing_standards"),
     ),
     NodeSpec(
         "pressure_test",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_governance", "data_processing", "material_integration",
-            "visualization", "writing", "citation_management",
-            "content_optimization", "source_snapshot", "claim_verification",
+            "evidence_pipeline", "data_processing", "material_integration",
+            "visualization", "writing", "writing_finalize",
             "quant_finance_research",
         ),
         "pressure_test",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_governance", "data_processing", "material_integration",
-            "visualization", "content_optimization", "source_snapshot",
-            "claim_verification", "quant_finance_research",
+            "evidence_pipeline", "data_processing", "material_integration",
+            "visualization", "writing_finalize", "quant_finance_research",
         ),
     ),
     NodeSpec(
         "draft_confirmation",
-        ("writing", "citation_management", "content_optimization", "pressure_test"),
+        ("writing", "writing_finalize", "pressure_test"),
         checkpoint=True,
     ),
     NodeSpec(
         "formatting",
-        ("content_optimization", "writing_standards", "draft_confirmation"),
+        ("writing_finalize", "writing_standards", "draft_confirmation"),
         "formatting",
-        ("content_optimization", "writing_standards"),
+        ("writing_finalize", "writing_standards"),
     ),
     NodeSpec("pre_review_confirmation", ("formatting",), checkpoint=True),
     NodeSpec(
         "review",
         (
-            "requirements_analysis", "research", "evidence_governance", "outline",
+            "requirements_analysis", "research", "evidence_pipeline", "outline",
             "data_processing", "material_integration", "visualization",
             "pressure_test", "writing_standards", "formatting",
-            "source_snapshot", "claim_verification", "quant_finance_research",
-            "pre_review_confirmation",
+            "quant_finance_research", "pre_review_confirmation",
         ),
         "review",
         (
-            "requirements_analysis", "research", "evidence_governance", "outline",
+            "requirements_analysis", "research", "evidence_pipeline", "outline",
             "data_processing", "material_integration", "visualization",
             "pressure_test", "writing_standards", "formatting",
-            "source_snapshot", "claim_verification", "quant_finance_research",
+            "quant_finance_research",
         ),
     ),
     NodeSpec(
         "quality_gate",
         (
             "capability_sweep", "skill_research", "requirements_analysis", "outline",
-            "evidence_governance",
-            "data_processing", "material_integration", "visualization",
-            "citation_management", "content_optimization", "pressure_test",
-            "writing_standards", "review", "source_snapshot",
-            "claim_verification", "quant_finance_research",
+            "evidence_pipeline", "data_processing", "material_integration",
+            "visualization", "writing_finalize", "pressure_test",
+            "writing_standards", "review", "quant_finance_research",
         ),
         "quality_gate",
         (
             "capability_sweep", "skill_research", "requirements_analysis", "outline",
-            "evidence_governance",
-            "data_processing", "material_integration", "visualization",
-            "citation_management", "content_optimization", "pressure_test",
-            "writing_standards", "review", "source_snapshot",
-            "claim_verification", "quant_finance_research",
+            "evidence_pipeline", "data_processing", "material_integration",
+            "visualization", "writing_finalize", "pressure_test",
+            "writing_standards", "review", "quant_finance_research",
         ),
         quality_gate=True,
     ),
@@ -286,11 +252,11 @@ def default_registry(
         WritingStandardsSkill(writing_standard_store),
         IssueTreeSkill(),
         OutlineSkill(), ResearchSkill(retriever=source_retriever),
-        SourceSnapshotSkill(), EvidenceGovernanceSkill(),
-        DataProcessingSkill(), ClaimVerificationSkill(),
+        EvidencePipelineSkill(),
+        DataProcessingSkill(),
         QuantFinanceResearchSkill(),
         MaterialIntegrationSkill(), VisualizationSkill(),
-        WritingSkill(), CitationManagementSkill(), ContentOptimizationSkill(),
+        WritingSkill(), WritingFinalizeSkill(),
         PressureTestSkill(),
         FormattingSkill(), ReviewSkill(), QualityGateSkill(),
         PublishSkill(renderer=document_renderer), ExperienceEvolutionSkill(),
@@ -452,6 +418,7 @@ class ResearchReportOrchestrator:
             node_id: artifact["content"] for node_id, artifact in input_artifacts.items()
             if artifact is not None
         }
+        inputs = self._expand_pipeline_inputs(inputs)
         if spec.id == "experience_evolution":
             inputs["_user_operations"] = json.dumps(
                 self.state.operations(workflow_id), ensure_ascii=False
@@ -477,6 +444,32 @@ class ResearchReportOrchestrator:
             increment_attempt=True,
         )
         skill = self.registry.get(spec.skill)
+        if spec.conditional and hasattr(skill, "applicable") and not skill.applicable(
+            request
+        ):
+            result = skill.execute(request)
+            skill.validate(result)
+            artifact_id = self.state.add_artifact(
+                workflow_id, spec.id, result.artifact_type, result.content,
+                {
+                    **result.metadata,
+                    "skill": skill.name,
+                    "skill_version": skill.version,
+                    "conditional_skipped": True,
+                },
+            )
+            self.context.upsert_chunks(
+                workflow_id=workflow_id, node_id=spec.id,
+                artifact_type=result.artifact_type, artifact_id=artifact_id,
+                content=result.content,
+            )
+            self.state.record_operation(
+                workflow_id,
+                "conditional_skip",
+                {"node_id": spec.id, "skill": skill.name},
+                spec.id,
+            )
+            return artifact_id
         result = skill.execute(request)
         skill.validate(result)
         artifact_id = self.state.add_artifact(
@@ -497,6 +490,33 @@ class ResearchReportOrchestrator:
             if artifact:
                 result[node_id] = artifact["id"]
         return result
+
+    @staticmethod
+    def _expand_pipeline_inputs(inputs: dict[str, str]) -> dict[str, str]:
+        """Expose nested pipeline payloads under legacy input keys for skills."""
+        expanded = dict(inputs)
+        if "evidence_pipeline" in expanded:
+            pipeline = json.loads(expanded["evidence_pipeline"])
+            if "source_snapshot" not in expanded and "source_snapshot" in pipeline:
+                expanded["source_snapshot"] = json.dumps(
+                    pipeline["source_snapshot"], ensure_ascii=False
+                )
+            if (
+                "evidence_governance" not in expanded
+                and "evidence_governance" in pipeline
+            ):
+                expanded["evidence_governance"] = json.dumps(
+                    pipeline["evidence_governance"], ensure_ascii=False
+                )
+        if "data_processing" in expanded:
+            processed = json.loads(expanded["data_processing"])
+            nested = processed.get("claim_verification")
+            if "claim_verification" not in expanded and isinstance(nested, dict):
+                expanded["claim_verification"] = json.dumps(nested, ensure_ascii=False)
+        if "writing_finalize" in expanded:
+            expanded.setdefault("content_optimization", expanded["writing_finalize"])
+            expanded.setdefault("citation_management", expanded["writing_finalize"])
+        return expanded
 
     def _dependencies_complete(self, workflow_id: str, spec: NodeSpec) -> bool:
         return all(
@@ -615,26 +635,18 @@ class ResearchReportOrchestrator:
                 ),
             ),
             (
-                "source_snapshot",
+                "evidence_pipeline",
                 (
                     ("来源快照", 5), ("网页快照", 4), ("内容哈希", 4),
-                    ("source snapshot", 5),
+                    ("source snapshot", 5), ("证据治理", 4), ("可追溯", 3),
+                    ("利益相关方", 3), ("证据红线", 3), ("证据流水线", 5),
                 ),
-            ),
-            (
-                "evidence_governance",
-                (("证据治理", 4), ("可追溯", 3), ("利益相关方", 3), ("证据红线", 3)),
             ),
             (
                 "data_processing",
                 (
                     ("数据处理", 4), ("评分模型", 4), ("交叉验证", 3),
                     ("论断账本", 4), ("claim ledger", 4),
-                ),
-            ),
-            (
-                "claim_verification",
-                (
                     ("论断验证", 5), ("原文片段", 5), ("数字核验", 5),
                     ("证据对齐", 4), ("claim verification", 5),
                 ),
@@ -658,10 +670,11 @@ class ResearchReportOrchestrator:
                 ),
             ),
             (
-                "content_optimization",
+                "writing_finalize",
                 (
-                    ("流程图", 5), ("表格说明", 5), ("编号", 4),
-                    ("链接索引", 5), ("内容优化", 4),
+                    ("引用", 4), ("参考文献", 4), ("流程图", 5),
+                    ("表格说明", 5), ("编号", 4), ("链接索引", 5),
+                    ("内容优化", 4), ("成文定稿", 5),
                 ),
             ),
             (

@@ -15,9 +15,11 @@ class MaterialIntegrationSkill(Skill):
         self.generator = generator
 
     def execute(self, request: SkillRequest) -> SkillResult:
+        from .input_adapters import evidence_governance_text
+
         outline_text = request.inputs["outline"]
         research_text = request.inputs["research"]
-        ledger_text = request.inputs["evidence_governance"]
+        ledger_text = evidence_governance_text(request.inputs)
         processed_text = request.inputs["data_processing"]
         if self.generator:
             content = self.generator.generate(

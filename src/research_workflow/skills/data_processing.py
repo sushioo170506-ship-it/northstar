@@ -1,4 +1,4 @@
-"""Claim ledger, triangulation, data grading and optional comparative scoring."""
+"""Claim ledger, triangulation, data grading, claim verification and scoring."""
 
 from __future__ import annotations
 
@@ -8,16 +8,14 @@ from collections import Counter, defaultdict
 
 from ..contracts import Skill
 from ..models import SkillRequest, SkillResult
+from .claim_verification import ClaimVerificationSkill
 
 
 class DataProcessingSkill(Skill):
     name = "data_processing"
 
     def execute(self, request: SkillRequest) -> SkillResult:
-        research = json.loads(
-            request.inputs.get("source_snapshot", request.inputs.get("research", "{}"))
-        )
-        evidence = json.loads(request.inputs["evidence_governance"])
+        research, evidence = self._unpack_evidence(request.inputs)
         outline = json.loads(request.inputs["outline"])
         governed = {item["id"]: item for item in evidence.get("sources", [])}
         issue_sections = {
@@ -131,6 +129,9 @@ class DataProcessingSkill(Skill):
             "scoring": scoring,
             "feedback_applied": list(request.feedback),
         }
+        verification = self._verify_claims(request, payload, research, evidence)
+        payload["claims"] = verification.get("claims", claims)
+        payload["claim_verification"] = verification
         return SkillResult(
             json.dumps(payload, ensure_ascii=False, indent=2),
             "processed_research_data",
@@ -139,8 +140,48 @@ class DataProcessingSkill(Skill):
                 "data_point_count": len(data_points),
                 "conflicted_claim_count": conflict_count,
                 "scoring_status": scoring["status"],
+                "verified_claim_count": verification.get("metrics", {}).get(
+                    "verified_claim_count", 0
+                ),
+                "pipeline_steps": ["claim_ledger", "claim_verification"],
             },
         )
+
+    @staticmethod
+    def _unpack_evidence(inputs: dict[str, str]) -> tuple[dict, dict]:
+        if "evidence_pipeline" in inputs:
+            pipeline = json.loads(inputs["evidence_pipeline"])
+            return pipeline["source_snapshot"], pipeline["evidence_governance"]
+        research = json.loads(
+            inputs.get("source_snapshot", inputs.get("research", "{}"))
+        )
+        evidence = json.loads(inputs["evidence_governance"])
+        return research, evidence
+
+    @staticmethod
+    def _verify_claims(
+        request: SkillRequest,
+        payload: dict,
+        research: dict,
+        evidence: dict,
+    ) -> dict:
+        verifier = ClaimVerificationSkill()
+        verification_request = SkillRequest(
+            workflow_id=request.workflow_id,
+            node_id=request.node_id,
+            config=request.config,
+            inputs={
+                "data_processing": json.dumps(payload, ensure_ascii=False),
+                "source_snapshot": json.dumps(research, ensure_ascii=False),
+                "evidence_governance": json.dumps(evidence, ensure_ascii=False),
+                "outline": request.inputs["outline"],
+            },
+            context=request.context,
+            feedback=request.feedback,
+        )
+        result = verifier.execute(verification_request)
+        verifier.validate(result)
+        return json.loads(result.content)
 
     def _score(self, request: SkillRequest) -> dict:
         candidates = request.config.extra.get("comparison_candidates", [])
@@ -230,5 +271,7 @@ class DataProcessingSkill(Skill):
     def validate(self, result: SkillResult) -> None:
         super().validate(result)
         payload = json.loads(result.content)
-        if not {"claims", "data_points", "triangulation", "scoring"} <= payload.keys():
+        if not {
+            "claims", "data_points", "triangulation", "scoring", "claim_verification",
+        } <= payload.keys():
             raise ValueError("processed_research_data 缺少必要字段")
