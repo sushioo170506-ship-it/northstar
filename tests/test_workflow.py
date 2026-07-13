@@ -398,7 +398,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("low-github", adapted_names)
         self.assertNotIn("low-openclaw", adapted_names)
 
-    def test_research_traverses_all_three_source_passes(self) -> None:
+    def test_research_uses_scene_specific_source_passes(self) -> None:
         retriever = RecordingRetriever()
         skill = ResearchSkill(retriever=retriever)
         request = SkillRequest(
@@ -432,9 +432,12 @@ class WorkflowTests(unittest.TestCase):
         skill.validate(result)
         self.assertEqual(
             retriever.calls,
-            [("industry",), ("academic",), ("social_media",)],
+            [("industry",), ("academic",)],
         )
         summary = json.loads(result.content)["retrieval_summary"]
+        self.assertEqual(
+            summary["required_categories"], ["industry", "academic"]
+        )
         self.assertTrue(
             all(item["status"] == "completed" for item in summary["passes"].values())
         )
@@ -1058,7 +1061,10 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(risk_section["risk_scope"], outline["risk_scope"])
 
     def test_missing_source_categories_block_release(self) -> None:
-        workflow_id = self.create(extra={"sources": [compliant_sources()[0]]})
+        workflow_id = self.create(
+            output_type="行业研究报告",
+            extra={"sources": [compliant_sources()[0]]},
+        )
         for checkpoint in CHECKPOINTS:
             outcome = self.workflow.run(workflow_id)
             self.assertEqual(outcome.waiting_at, checkpoint)
@@ -1070,7 +1076,7 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(
             gate["requirements_checks"]["missing_source_categories"],
-            ["academic", "social_media"],
+            ["academic"],
         )
 
     def test_competitive_hypotheses_are_opt_in(self) -> None:
@@ -1554,23 +1560,36 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(target, "research")
 
     def test_long_context_is_chunked_losslessly_and_retrievable(self) -> None:
-        workflow_id = self.create(expected_length=105_000)
+        sources = compliant_sources("LONG")
+        for index, source in enumerate(sources):
+            source["content"] = (
+                f"来源{index + 1}的可核验证据，样本量为{1200 + index}。"
+                * 2200
+            )
+        workflow_id = self.create(
+            expected_length=500,
+            extra={"sources": sources},
+        )
         outcome = complete(self.workflow, workflow_id)
         self.assertEqual(outcome.status, WorkflowStatus.COMPLETED)
         report = self.workflow.final_report(workflow_id)
-        self.assertGreater(len(report), 100_000)
-        artifact = self.workflow.state.node_artifact(workflow_id, "writing")
+        self.assertIn("## 参考资料", report)
+        artifact = self.workflow.state.node_artifact(
+            workflow_id, "source_snapshot"
+        )
+        self.assertGreater(len(artifact["content"]), 100_000)
         self.assertGreater(artifact["chunk_count"], 6)
         cited = self.workflow.state.node_artifact(
             workflow_id, "citation_management"
         )
-        self.assertGreater(len(cited["content"]), len(artifact["content"]))
-        self.assertIn("## 参考资料", report)
+        self.assertLess(len(cited["content"]), len(artifact["content"]))
         matches = self.workflow.context.query(
-            workflow_id, "风险 局限 潜在偏差", node_ids={"writing"}, limit=5
+            workflow_id, "可核验证据 样本量", node_ids={"source_snapshot"}, limit=5
         )
         self.assertTrue(matches)
-        self.assertTrue(all(item.node_id == "writing" for item in matches))
+        self.assertTrue(
+            all(item.node_id == "source_snapshot" for item in matches)
+        )
 
     def test_evidence_red_line_blocks_release(self) -> None:
         workflow_id = self.create(

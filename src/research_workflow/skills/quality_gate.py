@@ -83,7 +83,7 @@ class QualityGateSkill(Skill):
         reference_required = bool(
             request.config.extra.get(
                 "require_verified_reference_templates",
-                request.config.workflow_profile in {"deep", "regulatory"}
+                request.config.workflow_profile == "regulatory"
                 and writing_standard["scene"] in {
                     "technical", "industry_investment", "public_account"
                 },
