@@ -9,6 +9,7 @@ from ..models import SkillRequest, SkillResult
 from .quality_gate import QualityGateSkill
 from .quant_finance_research import QuantFinanceResearchSkill
 from .review import ReviewSkill
+from .writing_standards import delivery_security_policy
 
 
 class QualityAssuranceSkill(Skill):
@@ -21,14 +22,32 @@ class QualityAssuranceSkill(Skill):
         self.gate = QualityGateSkill()
 
     def execute(self, request: SkillRequest) -> SkillResult:
-        quant = self.quant.execute(request)
+        inputs = dict(request.inputs)
+        standards = json.loads(inputs["writing_standards"])
+        standards["security"] = delivery_security_policy(
+            request.config.confidentiality_level,
+            request.config.output_format,
+            request.config.extra,
+        )
+        inputs["writing_standards"] = json.dumps(
+            standards, ensure_ascii=False
+        )
+        current_request = SkillRequest(
+            workflow_id=request.workflow_id,
+            node_id=request.node_id,
+            config=request.config,
+            inputs=inputs,
+            context=request.context,
+            feedback=request.feedback,
+        )
+        quant = self.quant.execute(current_request)
         self.quant.validate(quant)
         review_request = SkillRequest(
             workflow_id=request.workflow_id,
             node_id=request.node_id,
             config=request.config,
             inputs={
-                **request.inputs,
+                **inputs,
                 "quant_finance_research": quant.content,
             },
             context=request.context,

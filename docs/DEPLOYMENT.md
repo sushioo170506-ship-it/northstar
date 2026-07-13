@@ -53,7 +53,8 @@ arXiv与Crossref无密钥Provider；产业、金融和社媒Provider必须使用
 超时、限流和缓存。所有返回内容由source_snapshot冻结原文、抓取时间、Provider和SHA-256，
 再由claim_verification完成原文片段、数字、独立来源与冲突硬验证。
 
-根据任务风险选择Profile：quick仅1次确认，standard 2次，deep/regulatory 4次。监管、投资
+根据任务风险选择Profile：quick 2次确认，standard 3次，deep/regulatory 5次；所有Profile
+都必须在排版前确认最终输出格式。监管、投资
 和高风险报告不得由调用方偷偷降为quick；API层应按角色限制Profile。
 
 ## 多实例

@@ -41,7 +41,7 @@ frontmatter `name`、Python `Skill.name`、DAG node id 四者一致。
 | 11 | `publish` | 11 | `skills/publish/SKILL.md` |
 | 12 | `experience_evolution` | 12（条件） | `skills/experience_evolution/SKILL.md` |
 
-四个确认节点不是 Skill，不计入上表：
+五个确认节点不是 Skill，不计入上表：
 
 `issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation`、
-`pre_review_confirmation`。
+`output_format_confirmation`、`pre_review_confirmation`。

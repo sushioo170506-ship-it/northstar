@@ -62,6 +62,7 @@ CHECKPOINTS = (
     "issue_tree_confirmation",
     "outline_confirmation",
     "draft_confirmation",
+    "output_format_confirmation",
     "pre_review_confirmation",
 )
 
@@ -823,6 +824,11 @@ class WorkflowTests(unittest.TestCase):
             }
         )
         outcome = child.run(workflow_id)
+        self.assertEqual(
+            outcome.waiting_at, "output_format_confirmation"
+        )
+        child.confirm(workflow_id, "output_format_confirmation")
+        outcome = child.run(workflow_id)
         self.assertEqual(outcome.waiting_at, "pre_review_confirmation")
         child.confirm(workflow_id, "pre_review_confirmation")
         self.assertEqual(child.run(workflow_id).status, WorkflowStatus.COMPLETED)
@@ -848,6 +854,12 @@ class WorkflowTests(unittest.TestCase):
             }
         )
         waiting = private.run(private_id)
+        self.assertEqual(
+            waiting.waiting_at, "output_format_confirmation"
+        )
+        private.confirm(private_id, waiting.waiting_at)
+        waiting = private.run(private_id)
+        self.assertEqual(waiting.waiting_at, "pre_review_confirmation")
         private.confirm(private_id, waiting.waiting_at)
         self.assertEqual(
             private.run(private_id).status, WorkflowStatus.COMPLETED
@@ -1187,6 +1199,11 @@ class WorkflowTests(unittest.TestCase):
             }
         )
         waiting = child.run(workflow_id)
+        self.assertEqual(
+            waiting.waiting_at, "output_format_confirmation"
+        )
+        child.confirm(workflow_id, "output_format_confirmation")
+        waiting = child.run(workflow_id)
         self.assertEqual(waiting.waiting_at, "pre_review_confirmation")
         child.confirm(workflow_id, "pre_review_confirmation")
         with self.assertRaises(QualityGateRejected):
@@ -1293,6 +1310,11 @@ class WorkflowTests(unittest.TestCase):
             }
         )
         outcome = quick.run(quick_id)
+        self.assertEqual(
+            outcome.waiting_at, "output_format_confirmation"
+        )
+        quick.confirm(quick_id, "output_format_confirmation")
+        outcome = quick.run(quick_id)
         self.assertEqual(outcome.waiting_at, "pre_review_confirmation")
         quick.confirm(quick_id, "pre_review_confirmation")
         self.assertEqual(quick.run(quick_id).status, WorkflowStatus.COMPLETED)
@@ -1315,6 +1337,13 @@ class WorkflowTests(unittest.TestCase):
         first = standard.run(standard_id)
         self.assertEqual(first.waiting_at, "outline_confirmation")
         standard.confirm(standard_id, "outline_confirmation")
+        second = standard.run(standard_id)
+        self.assertEqual(
+            second.waiting_at, "output_format_confirmation"
+        )
+        standard.confirm(
+            standard_id, "output_format_confirmation"
+        )
         second = standard.run(standard_id)
         self.assertEqual(second.waiting_at, "pre_review_confirmation")
 
@@ -1364,6 +1393,11 @@ class WorkflowTests(unittest.TestCase):
         second = reloaded.run(workflow_id)
         self.assertEqual(second.waiting_at, "draft_confirmation")
         reloaded.confirm(workflow_id, "draft_confirmation")
+        third = reloaded.run(workflow_id)
+        self.assertEqual(
+            third.waiting_at, "output_format_confirmation"
+        )
+        reloaded.confirm(workflow_id, "output_format_confirmation")
         third = reloaded.run(workflow_id)
         self.assertEqual(third.waiting_at, "pre_review_confirmation")
         reloaded.confirm(workflow_id, "pre_review_confirmation")
@@ -1466,6 +1500,13 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.workflow.run(workflow_id).waiting_at, "draft_confirmation")
         self.workflow.confirm(workflow_id, "draft_confirmation")
         self.assertEqual(
+            self.workflow.run(workflow_id).waiting_at,
+            "output_format_confirmation",
+        )
+        self.workflow.confirm(
+            workflow_id, "output_format_confirmation"
+        )
+        self.assertEqual(
             self.workflow.run(workflow_id).waiting_at, "pre_review_confirmation"
         )
         self.workflow.confirm(workflow_id, "pre_review_confirmation")
@@ -1517,6 +1558,108 @@ class WorkflowTests(unittest.TestCase):
                 self.assertTrue(report.startswith(f"base64:{output_format}:"))
             else:
                 self.assertNotIn("# ", report)
+
+    def test_user_selects_output_format_before_formatting(self) -> None:
+        child = ResearchReportOrchestrator(
+            self.root / "format-confirmation",
+            document_renderer=FakeRenderer(),
+        )
+        workflow_id = child.create(
+            {
+                "topic": "最终格式确认测试",
+                "expected_length": 500,
+                "output_format": "markdown",
+                "workflow_profile": "deep",
+                "extra": {"sources": compliant_sources("FORMAT-CONFIRM")},
+            }
+        )
+        for checkpoint in (
+            "issue_tree_confirmation",
+            "outline_confirmation",
+            "draft_confirmation",
+        ):
+            outcome = child.run(workflow_id)
+            self.assertEqual(outcome.waiting_at, checkpoint)
+            child.confirm(workflow_id, checkpoint, "确认内容")
+        waiting = child.run(workflow_id)
+        self.assertEqual(
+            waiting.waiting_at, "output_format_confirmation"
+        )
+        options = child.output_format_options(workflow_id)
+        self.assertEqual(options["current_format"], "markdown")
+        self.assertTrue(options["waiting_for_confirmation"])
+        self.assertIn(
+            "docx", {item["format"] for item in options["options"]}
+        )
+
+        selected = child.confirm_output_format(
+            workflow_id, "word", comment="最终选择Word"
+        )
+        self.assertEqual(selected, "docx")
+        self.assertEqual(
+            child.state.config(workflow_id).output_format, "docx"
+        )
+        self.assertTrue(
+            child.state.config(workflow_id).extra[
+                "output_format_confirmed"
+            ]
+        )
+        outcome = child.run(workflow_id)
+        self.assertEqual(
+            outcome.waiting_at, "pre_review_confirmation"
+        )
+        formatting = child.state.node_artifact(
+            workflow_id, "formatting"
+        )
+        self.assertEqual(formatting["metadata"]["format"], "docx")
+        child.confirm(
+            workflow_id, "pre_review_confirmation", "确认终审"
+        )
+        self.assertEqual(
+            child.run(workflow_id).status, WorkflowStatus.COMPLETED
+        )
+        self.assertTrue(
+            child.final_report(workflow_id).startswith("base64:docx:")
+        )
+        manifest = child.state.node_artifact(
+            workflow_id, "publish"
+        )["metadata"]["publish_manifest"]
+        self.assertTrue(manifest["format_confirmed"])
+
+    def test_feishu_selection_rechecks_delivery_security(self) -> None:
+        child = ResearchReportOrchestrator(
+            self.root / "format-security"
+        )
+        workflow_id = child.create(
+            {
+                "topic": "内部报告格式确认",
+                "expected_length": 500,
+                "output_format": "markdown",
+                "workflow_profile": "deep",
+                "confidentiality_level": "internal",
+                "extra": {"sources": compliant_sources("FORMAT-SECURITY")},
+            }
+        )
+        for checkpoint in (
+            "issue_tree_confirmation",
+            "outline_confirmation",
+            "draft_confirmation",
+        ):
+            outcome = child.run(workflow_id)
+            self.assertEqual(outcome.waiting_at, checkpoint)
+            child.confirm(workflow_id, checkpoint)
+        self.assertEqual(
+            child.run(workflow_id).waiting_at,
+            "output_format_confirmation",
+        )
+        with self.assertRaisesRegex(ValueError, "目标租户"):
+            child.confirm_output_format(workflow_id, "feishu")
+        self.assertEqual(
+            child.state.node(
+                workflow_id, "output_format_confirmation"
+            )["status"],
+            NodeStatus.WAITING_CONFIRMATION,
+        )
 
     def test_docx_and_pdf_require_real_renderer(self) -> None:
         for output_format in ("docx", "pdf"):

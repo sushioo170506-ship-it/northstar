@@ -17,14 +17,19 @@ class WorkflowProfile:
 WORKFLOW_PROFILES = {
     "quick": WorkflowProfile(
         "quick",
-        frozenset({"pre_review_confirmation"}),
+        frozenset({
+            "output_format_confirmation", "pre_review_confirmation"
+        }),
         quality_pass_score=22.0,
         minimum_high_grade_ratio=0.6,
         minimum_visual_assets=3,
     ),
     "standard": WorkflowProfile(
         "standard",
-        frozenset({"outline_confirmation", "pre_review_confirmation"}),
+        frozenset({
+            "outline_confirmation", "output_format_confirmation",
+            "pre_review_confirmation",
+        }),
         quality_pass_score=24.0,
         minimum_high_grade_ratio=0.75,
         minimum_visual_assets=4,
@@ -36,6 +41,7 @@ WORKFLOW_PROFILES = {
                 "issue_tree_confirmation",
                 "outline_confirmation",
                 "draft_confirmation",
+                "output_format_confirmation",
                 "pre_review_confirmation",
             }
         ),
@@ -50,6 +56,7 @@ WORKFLOW_PROFILES = {
                 "issue_tree_confirmation",
                 "outline_confirmation",
                 "draft_confirmation",
+                "output_format_confirmation",
                 "pre_review_confirmation",
             }
         ),

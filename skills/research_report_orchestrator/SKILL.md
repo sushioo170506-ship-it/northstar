@@ -46,10 +46,11 @@ outcome = workflow.run(workflow_id)
 7. `data_processing`（内部执行claim ledger与逐论断验证）
 8. `compose`（内部执行素材、可视化、写作、引用、内容优化和压力测试）
    → `draft_confirmation`
-9. `formatting` → `pre_review_confirmation`
-10. `quality_assurance`（内部执行量化条件校验、review与quality_gate）
-11. `publish`
-12. `experience_evolution`（无反馈操作时条件跳过）
+9. `output_format_confirmation`：用户选择最终文件/远程文档格式
+10. `formatting` → `pre_review_confirmation`
+11. `quality_assurance`（内部执行量化条件校验、review与quality_gate）
+12. `publish`
+13. `experience_evolution`（无反馈操作时条件跳过；不计入常驻主路径）
 
 `run()` 在确认点返回 `waiting_confirmation`。调用
 `confirm(workflow_id, checkpoint_id, comment)` 后再次 `run()`。不得跳过确认。
@@ -67,10 +68,10 @@ outcome = workflow.run(workflow_id)
 
 | Profile | 人工确认 | 质量分 | 高等级证据 | 最少图表 |
 |---|---:|---:|---:|---:|
-| quick | 1 | 22 | 60% | 3 |
-| standard | 2 | 24 | 75% | 4 |
-| deep（默认） | 4 | 24 | 80% | 6 |
-| regulatory | 4 | 30 | 90% | 6 |
+| quick | 2 | 22 | 60% | 3 |
+| standard | 3 | 24 | 75% | 4 |
+| deep（默认） | 5 | 24 | 80% | 6 |
+| regulatory | 5 | 30 | 90% | 6 |
 
 未启用的确认节点仍写入 completed，并记录 auto_skip_checkpoint 和Profile，不得直接消失。
 
@@ -117,12 +118,13 @@ outcome = workflow.run(workflow_id)
 1. 只运行依赖已完成且当前未完成的节点；
 2. 所有 Skill 只接收标准 SkillRequest，不读取隐式会话状态；
 3. 在 issue_tree_confirmation、outline_confirmation、draft_confirmation、
-   pre_review_confirmation 停止并等待人工确认；
-4. 修改 {target_node} 时，仅失效该节点及其 DAG 后代，保留其他有效产物；
-5. 每次调用前按 workflow_id、依赖节点、主题检索上下文，并校验产物 checksum；
-6. requirements_analysis必须遍历内置能力与外部集成目录，跳过必须有理由；
-7. quality_assurance触发证据红线时必须阻断publish；
-8. 失败时记录错误，恢复后从失败节点继续，禁止重复已完成节点。
+   output_format_confirmation、pre_review_confirmation 停止并等待人工确认；
+4. 输出格式确认必须展示允许格式和渲染要求，不得沿用默认值代替用户选择；
+5. 修改 {target_node} 时，仅失效该节点及其 DAG 后代，保留其他有效产物；
+6. 每次调用前按 workflow_id、依赖节点、主题检索上下文，并校验产物 checksum；
+7. requirements_analysis必须遍历内置能力与外部集成目录，跳过必须有理由；
+8. quality_assurance触发证据红线时必须阻断publish；
+9. 失败时记录错误，恢复后从失败节点继续，禁止重复已完成节点。
 统一参数：{config_json}
 ```
 

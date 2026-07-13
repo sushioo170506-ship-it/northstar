@@ -45,7 +45,9 @@ html_file = orchestrator.export_final(workflow_id, "report.html")
 
 `run` 返回 `RunOutcome(workflow_id, status, waiting_at, final_artifact_id)`。确认节点依次为
 `issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation`、
-`pre_review_confirmation`。允许修改的产物节点：
+`output_format_confirmation`、`pre_review_confirmation`。在输出格式节点先调用
+`output_format_options(workflow_id)`展示选项，再调用
+`confirm_output_format(workflow_id, "docx")`确认；格式确认后才执行排版与终审。允许修改的产物节点：
 `requirements_analysis`、`writing_standards`、`issue_tree`、`outline`、`research`、
 `evidence_pipeline`、`data_processing`、`compose`、`formatting`、`quality_assurance`、
 `publish`、`experience_evolution`。
@@ -174,6 +176,9 @@ research-workflow --data-dir ./data export WORKFLOW_ID report.html
 research-workflow --data-dir ./data create-config config.json
 research-workflow --data-dir ./data artifact WORKFLOW_ID outline
 research-workflow --data-dir ./data artifact WORKFLOW_ID quality_assurance --json
+research-workflow --data-dir ./data format-options WORKFLOW_ID
+research-workflow --data-dir ./data confirm-format WORKFLOW_ID docx \
+  --comment "用户最终选择Word"
 ```
 
 `export`按发布元数据直接写文件：`slides_html`写单个自包含HTML，DOCX/PPTX/PDF解码为二进制；

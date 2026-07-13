@@ -23,13 +23,14 @@ requirements_analysis(内含 capability_sweep)
   -> outline -> [确认大纲]
   -> research -> evidence_pipeline -> data_processing
   -> compose(内含 material/visualization/writing/finalize/pressure)
-  -> [确认初稿] -> formatting
+  -> [确认初稿] -> [选择并确认输出格式] -> formatting
   -> [审核前确认] -> quality_assurance(内含 quant/review/quality_gate)
   -> publish -> experience_evolution(条件) -> completed
 ```
 
 修改节点时，编排器计算传递后代。例如修改 `compose` 只失效 compose、draft_confirmation、
-formatting、pre_review_confirmation、quality_assurance、publish 与条件进化节点；
+output_format_confirmation、formatting、pre_review_confirmation、quality_assurance、
+publish 与条件进化节点；
 research / evidence_pipeline / outline 产物保持不变。
 
 ## 一致性与恢复

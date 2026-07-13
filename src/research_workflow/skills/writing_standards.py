@@ -10,6 +10,44 @@ from ..models import SkillRequest, SkillResult
 from ..standards_store import SQLiteWritingStandardStore
 
 
+def delivery_security_policy(
+    confidentiality_level: str,
+    output_format: str,
+    extra: dict[str, Any],
+) -> dict[str, Any]:
+    """Evaluate delivery controls against the format selected at draft review."""
+    classified = confidentiality_level in {
+        "secret", "confidential", "top_secret"
+    }
+    internal_approved = (
+        confidentiality_level == "internal"
+        and extra.get("feishu_target_tenant_confirmed") is True
+        and extra.get("feishu_data_residency_approved") is True
+    )
+    external_allowed = not classified and (
+        confidentiality_level == "public"
+        or output_format != "feishu"
+        or internal_approved
+    )
+    reason = None
+    if classified:
+        reason = "国家秘密或涉密内容禁止进入本工作流的外部发布适配器"
+    elif (
+        confidentiality_level == "internal"
+        and output_format == "feishu"
+        and not internal_approved
+    ):
+        reason = "内部材料写入飞书前必须确认目标租户与数据驻留审批"
+    return {
+        "confidentiality_level": confidentiality_level,
+        "external_delivery_allowed": external_allowed,
+        "block_reason": reason,
+        "required_controls": [
+            "最小权限", "目标租户确认", "访问审计", "保留与删除策略"
+        ],
+    }
+
+
 class WritingStandardsSkill(Skill):
     name = "writing_standards"
     version = "1.0.0"
@@ -134,36 +172,9 @@ class WritingStandardsSkill(Skill):
         output_format: str,
         extra: dict[str, Any],
     ) -> dict[str, Any]:
-        classified = confidentiality_level in {
-            "secret", "confidential", "top_secret"
-        }
-        internal_approved = (
-            confidentiality_level == "internal"
-            and extra.get("feishu_target_tenant_confirmed") is True
-            and extra.get("feishu_data_residency_approved") is True
+        return delivery_security_policy(
+            confidentiality_level, output_format, extra
         )
-        external_allowed = not classified and (
-            confidentiality_level == "public"
-            or output_format != "feishu"
-            or internal_approved
-        )
-        reason = None
-        if classified:
-            reason = "国家秘密或涉密内容禁止进入本工作流的外部发布适配器"
-        elif (
-            confidentiality_level == "internal"
-            and output_format == "feishu"
-            and not internal_approved
-        ):
-            reason = "内部材料写入飞书前必须确认目标租户与数据驻留审批"
-        return {
-            "confidentiality_level": confidentiality_level,
-            "external_delivery_allowed": external_allowed,
-            "block_reason": reason,
-            "required_controls": [
-                "最小权限", "目标租户确认", "访问审计", "保留与删除策略"
-            ],
-        }
 
     def validate(self, result: SkillResult) -> None:
         super().validate(result)

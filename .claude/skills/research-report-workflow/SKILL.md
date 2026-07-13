@@ -61,6 +61,7 @@ When `waiting_at` is returned, inspect the corresponding artifact:
 | `issue_tree_confirmation` | `issue_tree` |
 | `outline_confirmation` | `outline` |
 | `draft_confirmation` | `compose` |
+| `output_format_confirmation` | show format options; do not inspect an artifact |
 | `pre_review_confirmation` | `formatting` |
 
 ```bash
@@ -77,6 +78,20 @@ python3 "$SKILL_DIR/scripts/workflow.py" run WORKFLOW_ID
 ```
 
 Repeat until completed or blocked.
+
+At `output_format_confirmation`, always ask the user to choose. Do not silently
+keep the initial/default format:
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" format-options WORKFLOW_ID
+python3 "$SKILL_DIR/scripts/workflow.py" \
+  confirm-format WORKFLOW_ID docx --comment "用户最终选择Word"
+```
+
+Offer only options whose `allowed` field is true. Explain that renderer-backed
+formats (`docx`, `pdf`, `pptx`, `slides_html`, `slides_zip`, `feishu`) require
+the corresponding local renderer or credentials. After selection, run again;
+formatting and quality review use the confirmed format.
 
 ## Revise or repair
 

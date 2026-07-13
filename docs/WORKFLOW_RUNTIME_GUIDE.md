@@ -32,16 +32,14 @@ ResearchReportOrchestrator
   |-- DAG 调度、状态机、确认门、影响分析
   |-- SkillRegistry -------------------------------+
   |                                                |
-  |   capability_sweep -> requirements_analysis -> skill_research
+  |   requirements_analysis(内含能力遍历)
+  |      -> writing_standards(内含Skill研究)
   |      -> issue_tree -> [主题与议题树确认]
   |      -> outline -> [大纲确认] -> research(场景化来源)
   |      -> evidence_pipeline -> data_processing
-  |      -> compose -> [确认初稿] -> formatting
+  |      -> compose -> [确认初稿] -> [确认输出格式] -> formatting
   |      -> [审核前确认] -> quality_assurance -> publish
   |      -> experience_evolution(条件)
-  |      -> pressure_test -> [初稿确认]
-  |      -> formatting -> [终审前确认] -> review -> quality_gate -> publish
-  |      -> experience_evolution
   |
   |-- SQLiteStateStore  -> state.db
   |      配置、节点状态、产物分片、确认、用户操作
@@ -72,7 +70,7 @@ ResearchReportOrchestrator
 | `topic` | string | 必填，1–500 字符，合并多余空白 | 全部 |
 | `expected_length` | integer | 500–500000，默认 5000 | outline、writing、review |
 | `style` | string | 专业、客观、证据驱动 | 模型 outline、formatting 元数据/模型 |
-| `output_format` | enum | markdown/html/json/text | formatting、review |
+| `output_format` | enum | markdown/html/json/text/feishu/docx/pdf/pptx/slides | 输出格式确认、formatting、publish |
 | `language` | string | zh-CN | 已持久化；当前内置 Skill 尚未消费 |
 | `output_type` | string | research_report | requirements_analysis、outline |
 | `audience` | string | 通用专业读者 | requirements_analysis、outline、review |
@@ -83,17 +81,18 @@ ResearchReportOrchestrator
 `md/htm/txt` 分别标准化为 `markdown/html/text`。离线 outline 不根据 style 改写结构，
 离线 formatting 主要做格式转换并记录 style；实际风格生成依赖 TextGenerator。运行过程中
 Skill 不能私自更改配置。来源可通过 `update_sources()` 合法替换，该操作更新配置并从
-requirements_analysis 开始失效全部后代，用于修复证据红线；topic、篇幅、风格和格式仍需创建新工作流。已实现与
+requirements_analysis 开始失效全部后代；最终格式可在`output_format_confirmation`通过
+`confirm_output_format()`选择，并在排版前重新校验交付安全策略。topic、篇幅和风格仍需创建新工作流。已实现与
 尚未验证的边界见 6.4。
 
 ### 1.5 流程Profile
 
 | Profile | 确认节点 | 质量分 | 高等级证据 | 最少图表 |
 |---|---:|---:|---:|---:|
-| quick | 1 | 22 | 60% | 3 |
-| standard | 2 | 24 | 75% | 4 |
-| deep | 4 | 24 | 80% | 6 |
-| regulatory | 4 | 30 | 90% | 6 |
+| quick | 2 | 22 | 60% | 3 |
+| standard | 3 | 24 | 75% | 4 |
+| deep | 5 | 24 | 80% | 6 |
+| regulatory | 5 | 30 | 90% | 6 |
 
 未启用的确认节点仍以completed和auto_skip_checkpoint审计事件存在。商业、投资和监管调用方
 应在API权限层限制Profile降级。
@@ -363,7 +362,7 @@ Skill 必须是显式输入到不可变输出的转换器。远程服务可以�
 | `artifacts` | 产物类型、checksum、元数据、分片数 |
 | `artifact_chunks` | 16384 字符无损分片 |
 | `user_operations` | create/confirm/modify 操作审计 |
-| `confirmations` | 四个确认节点的批准和意见 |
+| `confirmations` | 五个确认节点的批准和意见 |
 
 产物读取时按分片序号重组，并重新计算 SHA-256；不一致立即报错。历史产物不物理删除。
 当前没有历史产物列举 API；节点失效后 `output_artifact_id` 会清空，若要读取旧版本须已知
@@ -394,7 +393,7 @@ Skill 尚未消费召回结果，因此十万字测试主要验证的是关系�
 标准化示范模板，当前运行路径没有 import 或执行它。模板描述的约束包括：
 
 - 只运行依赖已完成的节点；
-- 四个确认点必须暂停；
+- 五个确认点必须暂停，其中输出格式确认对所有Profile强制；
 - 修改时仅失效 DAG 后代；
 - 调用前校验上下文和 checksum；
 - 失败后从失败节点恢复；
@@ -422,17 +421,12 @@ CLI 是薄适配层，不保存会话状态；所有恢复均依赖显式 workfl
 | requirements_analysis | 全部后续节点和确认 |
 | issue_tree | 议题树及全部后代；保留需求简报 |
 | outline | outline 及全部后代；保留需求和已确认议题树 |
-| research | 调研、证据、数据处理、素材、可视化及全部写作/复核后代 |
-| evidence_governance | 证据治理、数据处理及下游；保留需求、议题树、大纲和原始调研 |
-| data_processing | claim/评分、素材、可视化及写作/复核后代 |
-| material_integration | 素材整合、可视化及写作/复核后代 |
-| visualization | 可视化及写作/复核后代，不重跑素材整合 |
-| writing | writing、citation_management、pressure_test、初稿确认及全部发布后代 |
-| citation_management | 引用、压力测试、排版、审核、质量门、发布和自进化 |
-| pressure_test | pressure_test、初稿确认及全部发布后代；不重跑 writing |
-| formatting | formatting、终审前确认、review、quality_gate、publish、experience_evolution |
-| review | review、quality_gate、publish、experience_evolution |
-| quality_gate | quality_gate、publish、experience_evolution |
+| research | 调研、证据、数据处理、成文及全部复核后代 |
+| evidence_pipeline | 来源快照、证据治理、数据处理及全部下游 |
+| data_processing | claim/评分/验证、成文及全部复核后代 |
+| compose | 素材、可视化、写作、引用、压力测试、初稿/格式确认及全部发布后代 |
+| formatting | formatting、终审前确认、quality_assurance、publish、experience_evolution |
+| quality_assurance | 量化校验、复核、质量门、publish、experience_evolution |
 | publish | publish、experience_evolution |
 | experience_evolution | 仅重新生成经验提案 |
 
@@ -455,12 +449,12 @@ modify 当前不限制工作流整体状态；在 waiting/failed/completed 状�
 
 证据红线修复使用 `update_sources(workflow_id, sources, reason)`：新来源先经过 ReportConfig
 校验并持久化，再记录不含正文的 update_sources 审计事件，随后以 requirements_analysis 为目标执行同一
-影响分析。议题树等四个确认会重新打开，质量门通过前终稿始终不可读取。
+影响分析。议题树等五个确认会重新打开，质量门通过前终稿始终不可读取。
 
 自然语言修改使用 `request_revision()`/CLI `revise`，通过加权关键词而非首词匹配：主题、
 受众、边界路由到需求节点；议题树/子问题到 issue_tree；大纲/框架到 outline；来源、事实、
-数据、链接到 research；证据治理、素材整合、图表、压力测试、格式、复核、质量门均有独立
-目标；篇幅、文风和论证路由到 writing。混合意见选择总权重最高且最早必要的节点，路由结果
+数据、链接到 research；证据治理路由到evidence_pipeline，素材、图表、压力测试和文风路由
+到compose，格式路由到formatting，复核与质量门路由到quality_assurance。混合意见选择总权重最高且最早必要的节点，路由结果
 和原始反馈写入审计表，再由 DAG 计算全部后代。
 
 ### 4.3 中断恢复
@@ -574,7 +568,7 @@ duration_ms, error_type, retryable, trace_id, actor_id
   检索或生产环境 SLA；
 - 105000 字目标端到端完成，最新基线终稿 120383 字（含引用和参考资料）；
 - 进程重启后从大纲确认点恢复；
-- 四个确认门全部验证；
+- 五个确认门全部验证；
 - 23个内置Skill全部完成，16个外部集成项全部遍历并记录未执行原因；
 - 三支柱分别调用、claim ledger、锚点评分、7 项可视化和独立 publish 均进入真实 DAG；
 - 显式编造关键来源会阻断发布并禁止读取终稿；

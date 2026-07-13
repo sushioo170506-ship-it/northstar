@@ -13,6 +13,7 @@ from .models import (
     NodeStatus,
     ReportConfig,
     RunOutcome,
+    SUPPORTED_FORMATS,
     SkillRequest,
     WorkflowStatus,
 )
@@ -107,8 +108,16 @@ NODES = (
         checkpoint=True,
     ),
     NodeSpec(
+        "output_format_confirmation",
+        ("draft_confirmation",),
+        checkpoint=True,
+    ),
+    NodeSpec(
         "formatting",
-        ("compose", "writing_standards", "draft_confirmation"),
+        (
+            "compose", "writing_standards", "draft_confirmation",
+            "output_format_confirmation",
+        ),
         "formatting",
         ("compose", "writing_standards"),
     ),
@@ -491,6 +500,13 @@ class ResearchReportOrchestrator:
         )
 
     def confirm(self, workflow_id: str, checkpoint_id: str, comment: str = "") -> None:
+        if checkpoint_id == "output_format_confirmation":
+            self.confirm_output_format(
+                workflow_id,
+                self.state.config(workflow_id).output_format,
+                comment=comment,
+            )
+            return
         spec = NODE_MAP.get(checkpoint_id)
         if not spec or not spec.checkpoint:
             raise ValueError(f"不是有效确认节点: {checkpoint_id}")
@@ -500,6 +516,116 @@ class ResearchReportOrchestrator:
         self.state.confirm(workflow_id, checkpoint_id, comment)
         self.state.set_node(workflow_id, checkpoint_id, NodeStatus.COMPLETED)
         self.state.set_workflow_status(workflow_id, WorkflowStatus.RUNNING)
+
+    def confirm_output_format(
+        self,
+        workflow_id: str,
+        output_format: str,
+        *,
+        comment: str = "",
+    ) -> str:
+        """Select the delivery format after draft approval and resume safely."""
+        checkpoint_id = "output_format_confirmation"
+        current = self.state.node(workflow_id, checkpoint_id)
+        if not current or current["status"] != NodeStatus.WAITING_CONFIRMATION:
+            raise ValueError("输出格式确认节点当前不可确认")
+        config = self.state.config(workflow_id)
+        raw = config.to_dict()
+        raw["output_format"] = output_format
+        raw["extra"] = {
+            **config.extra,
+            "output_format_confirmed": True,
+        }
+        updated = ReportConfig.from_dict(raw)
+        if updated.output_format == "feishu":
+            from .skills.writing_standards import delivery_security_policy
+
+            security = delivery_security_policy(
+                updated.confidentiality_level,
+                updated.output_format,
+                updated.extra,
+            )
+            if not security["external_delivery_allowed"]:
+                raise ValueError(
+                    "飞书输出格式不可用: "
+                    + str(security.get("block_reason") or "安全策略阻断")
+                )
+        self.state.update_config(workflow_id, updated)
+        self.state.confirm(
+            workflow_id,
+            checkpoint_id,
+            comment or f"确认输出格式: {updated.output_format}",
+        )
+        self.state.set_node(
+            workflow_id, checkpoint_id, NodeStatus.COMPLETED
+        )
+        self.state.record_operation(
+            workflow_id,
+            "confirm_output_format",
+            {
+                "previous_format": config.output_format,
+                "selected_format": updated.output_format,
+                "comment": comment,
+            },
+            checkpoint_id,
+        )
+        self.state.set_workflow_status(
+            workflow_id, WorkflowStatus.RUNNING
+        )
+        return updated.output_format
+
+    def output_format_options(self, workflow_id: str) -> dict[str, Any]:
+        """Return user-facing format choices and delivery requirements."""
+        config = self.state.config(workflow_id)
+        checkpoint = self.state.node(
+            workflow_id, "output_format_confirmation"
+        )
+        extensions = {
+            "markdown": ".md",
+            "html": ".html",
+            "json": ".json",
+            "text": ".txt",
+            "feishu": "remote_document",
+            "docx": ".docx",
+            "pdf": ".pdf",
+            "pptx": ".pptx",
+            "slides_html": ".html",
+            "slides_zip": ".zip",
+        }
+        requires_renderer = {
+            "feishu", "docx", "pdf", "pptx", "slides_html", "slides_zip"
+        }
+        from .skills.writing_standards import delivery_security_policy
+
+        options = []
+        for name in sorted(SUPPORTED_FORMATS):
+            security = delivery_security_policy(
+                config.confidentiality_level, name, config.extra
+            )
+            options.append(
+                {
+                    "format": name,
+                    "extension": extensions[name],
+                    "requires_renderer": name in requires_renderer,
+                    "allowed": (
+                        name != "feishu"
+                        or security["external_delivery_allowed"]
+                    ),
+                    "block_reason": (
+                        security.get("block_reason")
+                        if name == "feishu" else None
+                    ),
+                }
+            )
+        return {
+            "workflow_id": workflow_id,
+            "waiting_for_confirmation": bool(
+                checkpoint
+                and checkpoint["status"] == NodeStatus.WAITING_CONFIRMATION
+            ),
+            "current_format": config.output_format,
+            "options": options,
+        }
 
     def modify(self, workflow_id: str, target_node: str, feedback: str) -> set[str]:
         if target_node not in NODE_MAP or NODE_MAP[target_node].checkpoint:

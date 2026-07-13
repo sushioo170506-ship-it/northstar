@@ -8,7 +8,8 @@ DAG保留12个可执行节点（11个常驻、1个条件节点）；原23项研�
 并通过DocumentRenderer适配PDF和飞书Docx内嵌原生电子表格；
 私有Slides默认交付离线ZIP（HTML+PPTX+README），不生成Cursor预览或公开托管链接。
 未配置真实渲染器时不会伪报二进制导出成功。
-Quick/Standard/Deep/Regulatory Profile分别提供1/2/4/4次确认；生产调研可注入
+Quick/Standard/Deep/Regulatory Profile分别提供2/3/5/5次确认（各Profile均强制确认最终
+输出格式）；生产调研可注入
 CompositeSourceRetriever、OpenAlex和组织授权的产业/社媒Provider。
 
 ```bash

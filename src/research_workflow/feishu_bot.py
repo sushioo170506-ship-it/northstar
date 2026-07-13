@@ -41,6 +41,7 @@ class FeishuWorkflowBot:
         "研究报告机器人命令：\n"
         "研究 <主题>：创建并运行报告\n"
         "确认 <workflow_id>：确认当前节点并继续\n"
+        "格式 <workflow_id> <格式>：选择最终输出格式并继续\n"
         "状态 <workflow_id>：查看当前状态\n"
         "修改 <workflow_id> <意见>：按意见选择性重跑\n"
         "帮助：显示本说明"
@@ -125,6 +126,21 @@ class FeishuWorkflowBot:
                 return f"工作流 {workflow_id} 当前没有待确认节点。"
             self.orchestrator.confirm(workflow_id, waiting, f"飞书用户 {open_id} 确认")
             return self._run_and_describe(workflow_id)
+        match = re.match(
+            r"^(?:格式|/format)\s+(\S+)\s+(\S+)$", command
+        )
+        if match:
+            workflow_id, output_format = match.group(1), match.group(2)
+            self._assert_owner(workflow_id, open_id)
+            selected = self.orchestrator.confirm_output_format(
+                workflow_id,
+                output_format,
+                comment=f"飞书用户 {open_id} 选择输出格式",
+            )
+            return (
+                f"工作流 {workflow_id} 已确认输出格式：{selected}\n"
+                + self._run_and_describe(workflow_id)
+            )
         match = re.match(r"^(?:状态|/status)\s+(\S+)$", command)
         if match:
             workflow_id = match.group(1)
@@ -172,6 +188,8 @@ class FeishuWorkflowBot:
         except QualityGateRejected as exc:
             return f"工作流 {workflow_id} 未通过质量门：{exc}"
         if outcome.status == WorkflowStatus.WAITING_CONFIRMATION:
+            if outcome.waiting_at == "output_format_confirmation":
+                return self._format_selection_message(workflow_id)
             return (
                 f"工作流 {workflow_id} 等待确认：{outcome.waiting_at}\n"
                 f"回复：确认 {workflow_id}"
@@ -187,8 +205,25 @@ class FeishuWorkflowBot:
         status = snapshot.get("workflow", {}).get("status", "unknown")
         message = f"工作流 {workflow_id} 状态：{status}"
         if waiting:
+            if waiting == "output_format_confirmation":
+                return message + "\n" + self._format_selection_message(
+                    workflow_id
+                )
             message += f"\n等待确认：{waiting}\n回复：确认 {workflow_id}"
         return message
+
+    def _format_selection_message(self, workflow_id: str) -> str:
+        options = self.orchestrator.output_format_options(workflow_id)
+        allowed = [
+            item["format"] for item in options["options"]
+            if item["allowed"]
+        ]
+        return (
+            f"工作流 {workflow_id} 等待选择最终输出格式。\n"
+            f"当前格式：{options['current_format']}\n"
+            f"可选：{', '.join(allowed)}\n"
+            f"回复：格式 {workflow_id} <格式>"
+        )
 
     def _assert_owner(self, workflow_id: str, open_id: str) -> None:
         operations = self.orchestrator.state.operations(workflow_id, "feishu_owner")

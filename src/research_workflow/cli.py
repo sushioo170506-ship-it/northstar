@@ -67,7 +67,7 @@ def _parser() -> argparse.ArgumentParser:
     create_config = sub.add_parser("create-config")
     create_config.add_argument("config_json", help="完整 ReportConfig JSON 文件")
 
-    for name in ("run", "status", "final"):
+    for name in ("run", "status", "final", "format-options"):
         command = sub.add_parser(name)
         command.add_argument("workflow_id")
 
@@ -86,6 +86,11 @@ def _parser() -> argparse.ArgumentParser:
     confirm.add_argument("workflow_id")
     confirm.add_argument("checkpoint")
     confirm.add_argument("--comment", default="")
+
+    confirm_format = sub.add_parser("confirm-format")
+    confirm_format.add_argument("workflow_id")
+    confirm_format.add_argument("output_format")
+    confirm_format.add_argument("--comment", default="")
 
     modify = sub.add_parser("modify")
     modify.add_argument("workflow_id")
@@ -163,6 +168,21 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "confirm":
             orchestrator.confirm(args.workflow_id, args.checkpoint, args.comment)
             print(json.dumps({"confirmed": args.checkpoint}, ensure_ascii=False))
+        elif args.command == "confirm-format":
+            selected = orchestrator.confirm_output_format(
+                args.workflow_id,
+                args.output_format,
+                comment=args.comment,
+            )
+            print(
+                json.dumps(
+                    {
+                        "confirmed": "output_format_confirmation",
+                        "output_format": selected,
+                    },
+                    ensure_ascii=False,
+                )
+            )
         elif args.command == "modify":
             affected = orchestrator.modify(args.workflow_id, args.node, args.feedback)
             print(json.dumps({"affected": sorted(affected)}, ensure_ascii=False))
@@ -210,6 +230,13 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.command == "status":
             print(json.dumps(orchestrator.state.snapshot(args.workflow_id), ensure_ascii=False))
+        elif args.command == "format-options":
+            print(
+                json.dumps(
+                    orchestrator.output_format_options(args.workflow_id),
+                    ensure_ascii=False,
+                )
+            )
         elif args.command == "artifact":
             artifact = orchestrator.state.node_artifact(
                 args.workflow_id, args.node

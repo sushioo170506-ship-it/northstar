@@ -75,6 +75,12 @@ class FeishuBotTests(unittest.TestCase):
         continued = self.bot.process_text(
             f"确认 {workflow_id}", chat_id="chat-1", open_id="user-1"
         )
+        self.assertIn("等待选择最终输出格式", continued)
+        continued = self.bot.process_text(
+            f"格式 {workflow_id} markdown",
+            chat_id="chat-1",
+            open_id="user-1",
+        )
         self.assertIn("pre_review_confirmation", continued)
 
     def test_message_event_is_deduplicated(self) -> None:

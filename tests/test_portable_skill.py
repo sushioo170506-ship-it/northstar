@@ -61,6 +61,8 @@ class PortableSkillTests(unittest.TestCase):
         self.assertIn("research-workflow", completed.stdout)
         self.assertIn("create-config", completed.stdout)
         self.assertIn("artifact", completed.stdout)
+        self.assertIn("format-options", completed.stdout)
+        self.assertIn("confirm-format", completed.stdout)
 
     def test_cli_create_config_and_read_checkpoint_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

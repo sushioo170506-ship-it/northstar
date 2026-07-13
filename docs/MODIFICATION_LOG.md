@@ -247,6 +247,13 @@
 - 新增仓库定位启动器、Office环境安装脚本及`sync_agent_skill.py`一致性同步工具。
 - 更换对话或Agent时使用同一仓库、`.research-workflow`目录与`workflow_id`恢复，不依赖聊天记忆。
 
+### 最终输出格式确认（2026-07-13）
+
+- 新增强制`output_format_confirmation`节点，位于初稿确认与排版之间，所有Profile均执行。
+- 新增`format-options`、`confirm-format` CLI及Python API，支持在看到完整草稿后选择最终格式。
+- 格式切换后重新计算排版和交付安全策略；内部资料选择飞书时必须重新核验目标租户和数据驻留。
+- 发布清单记录`format_confirmed=true`，Agent Skill不得用默认格式代替用户选择。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

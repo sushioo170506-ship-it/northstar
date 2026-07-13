@@ -6,6 +6,7 @@ import json
 
 from ..contracts import DocumentRenderer, Skill
 from ..models import SkillRequest, SkillResult
+from .writing_standards import delivery_security_policy
 
 
 class PublishSkill(Skill):
@@ -32,6 +33,11 @@ class PublishSkill(Skill):
         capability = json.loads(capability_sweep_text(request.inputs))
         skill_research = json.loads(skill_research_text(request.inputs))
         writing_standard = json.loads(request.inputs["writing_standards"])
+        writing_standard["security"] = delivery_security_policy(
+            request.config.confidentiality_level,
+            request.config.output_format,
+            request.config.extra,
+        )
         if not quality.get("passed"):
             raise ValueError("质量门未通过，禁止发布")
         output_format = request.config.output_format
@@ -48,6 +54,9 @@ class PublishSkill(Skill):
         }
         manifest = {
             "format": output_format,
+            "format_confirmed": bool(
+                request.config.extra.get("output_format_confirmed", False)
+            ),
             "character_count": len(report),
             "visual_asset_count": len(visualizations.get("assets", [])),
             "renderers": renderer_ids,

@@ -247,6 +247,7 @@ GET /healthz
 研究 人工智能治理          创建并运行工作流
 状态 <workflow_id>         查询状态和待确认节点
 确认 <workflow_id>         确认当前节点并继续
+格式 <workflow_id> <格式>  在排版前选择最终输出格式
 修改 <workflow_id> <意见>  路由修改并选择性重跑
 帮助                       显示命令
 ```
