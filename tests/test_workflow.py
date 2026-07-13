@@ -605,6 +605,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('id="slide-1"', html_content)
         self.assertIn("--bg:#f4f1e8", html_content)
         self.assertNotIn("--bg:#07111f", html_content)
+        self.assertNotIn('id="controls"', html_content)
         self.assertEqual(
             html_meta["design_system"], "frontend_slides_swiss_modern"
         )

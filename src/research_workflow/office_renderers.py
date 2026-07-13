@@ -346,9 +346,7 @@ border-radius:0;right:-120px;top:160px;transform:rotate(12deg)}
 font:900 88px Arial;color:#15151522}.page{position:absolute;right:92px;bottom:32px;
 font:600 17px Arial;color:var(--muted)}.progress{position:absolute;left:0;bottom:0;height:5px;
 background:linear-gradient(90deg,var(--cyan),var(--blue))}.notes{display:none}
-#controls{position:fixed;right:24px;bottom:20px;z-index:5;display:flex;gap:8px}
-#controls button{width:44px;height:44px;border:1px solid #151515;background:#f4f1e8ee;
-color:#151515;border-radius:0;font-size:20px;cursor:pointer}.tag{display:inline-block;
+.tag{display:inline-block;
 padding:8px 14px;border:1px solid #46d6c866;border-radius:999px;color:var(--cyan);
 font-size:17px;margin:8px 8px 0 0}
 .slide-nav{position:absolute;right:22px;bottom:18px;display:flex;gap:8px;z-index:8}
@@ -356,8 +354,7 @@ font-size:17px;margin:8px 8px 0 0}
 border:1px solid #151515;background:#f4f1e8ee;color:#151515;text-decoration:none;
 font-size:22px}.slide-nav a:hover{border-color:var(--cyan);color:var(--cyan)}
 </style></head><body><div class="deck-viewport"><main class="deck-stage" id="deckStage">""" + "".join(slides) + """
-</main></div><div id="controls"><button onclick="move(-1)">‹</button>
-<button onclick="move(1)">›</button></div><script>
+</main></div><script>
 const slides=[...document.querySelectorAll('.slide')];let current=0;
 function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080);
 document.querySelector('#deckStage').style.transform=`scale(${s})`}
