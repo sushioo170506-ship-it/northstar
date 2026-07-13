@@ -8,7 +8,12 @@ from .office_renderers import (
     SlidesRenderer,
 )
 from .orchestrator import QualityGateRejected, ResearchReportOrchestrator
-from .providers import CompositeSourceRetriever, OpenAlexRetriever
+from .providers import (
+    ArxivRetriever,
+    CompositeSourceRetriever,
+    CrossrefRetriever,
+    OpenAlexRetriever,
+)
 from .renderers import (
     FeishuApiClient,
     FeishuDocumentRenderer,
@@ -26,6 +31,8 @@ __all__ = [
     "SkillResult",
     "CompositeSourceRetriever",
     "OpenAlexRetriever",
+    "ArxivRetriever",
+    "CrossrefRetriever",
     "PandocDocumentRenderer",
     "FeishuApiClient",
     "FeishuDocumentRenderer",

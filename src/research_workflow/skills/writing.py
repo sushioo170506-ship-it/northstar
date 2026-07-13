@@ -25,6 +25,7 @@ class WritingSkill(Skill):
         materials_text = request.inputs["material_integration"]
         visualizations_text = request.inputs["visualization"]
         standard_text = request.inputs["writing_standards"]
+        verification_text = request.inputs.get("claim_verification", "{}")
         prompt = WRITING_PROMPT.format(
             topic=request.config.topic,
             expected_length=request.config.expected_length,
@@ -37,6 +38,7 @@ class WritingSkill(Skill):
                 f"\n需求简报：\n{requirements_text}\n章节素材：\n{materials_text}"
                 f"\n可视化资产：\n{visualizations_text}"
                 f"\n强制写作规范：\n{standard_text}"
+                f"\n论断验证：\n{verification_text}"
             )
             content = self.generator.generate(
                 system="你是证据驱动的研究报告作者。", prompt=prompt,
@@ -49,6 +51,7 @@ class WritingSkill(Skill):
         visualizations = json.loads(visualizations_text)
         processed = json.loads(processed_text)
         standard = json.loads(standard_text)
+        verification = json.loads(verification_text)
         scene = standard["scene"]
         parts = [f"# {outline['title']}\n"]
         if request.config.confidentiality_level != "public":
@@ -57,7 +60,7 @@ class WritingSkill(Skill):
                 "按组织信息安全制度处理。\n"
             )
         for section_index, section in enumerate(outline["sections"]):
-            target = max(100, int(section["target_length"]))
+            target = max(60, int(section["target_length"]))
             section_materials = materials.get("sections", {}).get(
                 section["id"], {}
             ).get("materials", [])
@@ -84,15 +87,23 @@ class WritingSkill(Skill):
             )
             if evidence_summary:
                 lead += f" 已收集素材显示：{evidence_summary}。"
-            sentences = [lead]
-            counter = 1
-            while len("".join(sentences)) < target:
-                sentences.append(
-                    f"第{counter}项分析从适用范围、证据强度、实施条件和潜在偏差四个方面"
-                    f"检视该议题；现有材料不足以支持的判断不作为确定事实。"
+            evidence_blocks = []
+            for item in section_materials:
+                source_content = str(item.get("content") or "").strip()
+                if source_content:
+                    evidence_blocks.append(
+                        f"据{item.get('title', item.get('source_id'))}："
+                        f"{source_content}"
+                    )
+            if evidence_blocks:
+                available = "\n\n".join(evidence_blocks)
+                remaining = max(0, target - len(lead))
+                section_body = lead + "\n\n" + available[:remaining]
+            else:
+                section_body = lead + (
+                    "\n\n本节没有足够的已验证证据，禁止以模板化文字补足篇幅；"
+                    "应退回调研与论断验证节点。"
                 )
-                counter += 1
-            section_body = "".join(sentences)
             parts.append(f"## {section['title']}\n\n{section_body}\n")
             applicable = [
                 asset for asset in visualizations.get("assets", [])
@@ -128,7 +139,12 @@ class WritingSkill(Skill):
             {
                 "character_count": len(content),
                 "section_count": len(outline["sections"]),
-                "claim_count": len(processed.get("claims", [])),
+                "claim_count": len(
+                    verification.get("claims", processed.get("claims", []))
+                ),
+                "verified_claim_count": verification.get("metrics", {}).get(
+                    "verified_claim_count"
+                ),
                 "scoring_status": processed.get("scoring", {}).get("status"),
                 "writing_standard_profile": standard["profile"]["id"],
                 "writing_scene": scene,

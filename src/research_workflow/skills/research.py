@@ -34,6 +34,16 @@ class ResearchSkill(Skill):
         requirements = json.loads(request.inputs["requirements_analysis"])
         issue_tree = json.loads(request.inputs["issue_tree"])
         outline = json.loads(request.inputs["outline"])
+        standards = json.loads(request.inputs.get("writing_standards", "{}"))
+        scene_categories = {
+            "technical": ("academic",),
+            "industry_investment": ("industry", "academic"),
+            "public_account": ("industry", "social_media"),
+            "official_internal": ("industry",),
+        }
+        required_categories = scene_categories.get(
+            standards.get("scene"), self.REQUIRED_CATEGORIES
+        )
         questions = tuple(
             item.get("question", "") for item in issue_tree.get("issues", [])
             if item.get("included", True)
@@ -41,7 +51,7 @@ class ResearchSkill(Skill):
         raw_sources = list(request.config.extra.get("sources", []))
         retrieval_errors: dict[str, str] = {}
         if self.retriever:
-            for category in self.REQUIRED_CATEGORIES:
+            for category in required_categories:
                 try:
                     raw_sources.extend(
                         self.retriever.retrieve(
@@ -74,7 +84,7 @@ class ResearchSkill(Skill):
             {source["category"] for source in sources if source["category"] != "unknown"}
         )
         missing_categories = [
-            category for category in self.REQUIRED_CATEGORIES
+            category for category in required_categories
             if category not in present_categories
         ]
         social_platforms = sorted(
@@ -98,7 +108,7 @@ class ResearchSkill(Skill):
                 ),
                 "error": retrieval_errors.get(category),
             }
-            for category in self.REQUIRED_CATEGORIES
+            for category in required_categories
         }
         payload = {
             "topic": request.config.topic,
@@ -113,7 +123,7 @@ class ResearchSkill(Skill):
                 for item in outline.get("sections", [])
             ],
             "retrieval_summary": {
-                "required_categories": list(self.REQUIRED_CATEGORIES),
+                "required_categories": list(required_categories),
                 "present_categories": present_categories,
                 "missing_categories": missing_categories,
                 "external_retriever_used": self.retriever is not None,

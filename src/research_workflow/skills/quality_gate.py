@@ -58,6 +58,10 @@ class QualityGateSkill(Skill):
         visualizations = json.loads(request.inputs["visualization"])
         pressure_text = request.inputs["pressure_test"]
         writing_standard = json.loads(request.inputs["writing_standards"])
+        snapshot = json.loads(request.inputs.get("source_snapshot", "{}"))
+        verification = json.loads(
+            request.inputs.get("claim_verification", "{}")
+        )
         evidence = json.loads(evidence_text)
         evidence_grades = processed.get("evidence_grades", {})
         graded_total = sum(evidence_grades.values())
@@ -73,10 +77,17 @@ class QualityGateSkill(Skill):
         requirements_policy = self._requirements_policy(
             final_report, requirements, evidence, processed, materials,
             visualizations, capability, skill_research, outline, cited_draft,
+            snapshot, verification,
         )
         reference_status = writing_standard["reference_selection"]["status"]
         reference_required = bool(
-            request.config.extra.get("require_verified_reference_templates", False)
+            request.config.extra.get(
+                "require_verified_reference_templates",
+                request.config.workflow_profile in {"deep", "regulatory"}
+                and writing_standard["scene"] in {
+                    "technical", "industry_investment", "public_account"
+                },
+            )
         )
         standards_compliant = (
             (
@@ -121,12 +132,10 @@ class QualityGateSkill(Skill):
             passed = (
                 not red_lines
                 and source_count > 0
-                and self.REQUIRED_SOURCE_CATEGORIES <= categories
                 and link_coverage == 1.0
                 and all_links_present
                 and requirements_policy["compliant"]
                 and high_grade_ratio >= minimum_high_grade_ratio
-                and total >= pass_score
             )
             generated.update(
                 {
@@ -136,6 +145,18 @@ class QualityGateSkill(Skill):
                     "maximum_score": 35,
                     "red_lines": red_lines,
                     "decision": "allow_release" if passed else "block_release",
+                    "gate_checklist": {
+                        "source_snapshot": requirements_policy[
+                            "snapshot_policy_passed"
+                        ],
+                        "claim_verification": requirements_policy[
+                            "all_claims_verified"
+                        ],
+                        "evidence_and_requirements": requirements_policy[
+                            "compliant"
+                        ],
+                        "no_red_lines": not red_lines,
+                    },
                 }
             )
             content = json.dumps(generated, ensure_ascii=False, indent=2)
@@ -201,7 +222,6 @@ class QualityGateSkill(Skill):
             and requirements_policy["compliant"]
             and high_grade_ratio >= minimum_high_grade_ratio
             and not red_lines
-            and total >= pass_score
         )
         problems = []
         if evidence_gaps:
@@ -241,6 +261,13 @@ class QualityGateSkill(Skill):
             problems.append("流程图、表格说明、编号或全量链接索引不符合统一规范")
         if not requirements_policy["writing_standard_compliant"]:
             problems.append("写作规范参照或外部发布安全条件未满足")
+        if not requirements_policy["snapshot_policy_passed"]:
+            problems.append("来源快照不完整或未满足当前场景来源策略")
+        if not requirements_policy["all_claims_verified"]:
+            problems.append(
+                "存在未通过原文片段、数字一致性或冲突检查的论断："
+                + "、".join(requirements_policy["unsupported_claim_ids"])
+            )
         if high_grade_ratio < minimum_high_grade_ratio:
             problems.append(
                 f"A+/A/B 级证据占比 {high_grade_ratio:.1%} 低于"
@@ -250,8 +277,6 @@ class QualityGateSkill(Skill):
             problems.append("存在未覆盖的大纲章节")
         if red_lines:
             problems.append("触发证据红线")
-        if total < pass_score:
-            problems.append(f"总分 {total} 低于门槛 {pass_score}")
         payload = {
             "passed": passed,
             "pass_score": pass_score,
@@ -261,6 +286,16 @@ class QualityGateSkill(Skill):
             "dimensions": scores,
             "problems": problems,
             "required_actions": pressure.get("repair_actions", []),
+            "gate_checklist": {
+                "source_snapshot": requirements_policy[
+                    "snapshot_policy_passed"
+                ],
+                "claim_verification": requirements_policy[
+                    "all_claims_verified"
+                ],
+                "evidence_and_requirements": requirements_policy["compliant"],
+                "no_red_lines": not red_lines,
+            },
             "requirements_checks": {
                 "audience": requirements.get("audience"),
                 "style": requirements.get("style"),
@@ -308,6 +343,15 @@ class QualityGateSkill(Skill):
                     "writing_standard_compliant"
                 ],
                 "reference_template_status": reference_status,
+                "source_snapshot_complete": requirements_policy[
+                    "snapshot_policy_passed"
+                ],
+                "all_claims_verified": requirements_policy[
+                    "all_claims_verified"
+                ],
+                "unsupported_claim_ids": requirements_policy[
+                    "unsupported_claim_ids"
+                ],
             },
             "decision": "allow_release" if passed else "block_release",
             "feedback_applied": list(request.feedback),
@@ -339,12 +383,13 @@ class QualityGateSkill(Skill):
         total = round(sum(float(score) for score in scores.values()), 1)
         if payload.get("total_score") != total:
             raise ValueError("quality_gate 总分与维度评分不一致")
-        expected = (
-            not payload.get("red_lines")
-            and total >= float(payload.get("pass_score", self.pass_score))
-        )
+        expected = not payload.get("red_lines")
         if payload["passed"] and not expected:
             raise ValueError("quality_gate 发布决定与红线或分数不一致")
+        if payload["passed"] and not all(
+            payload.get("gate_checklist", {}).values()
+        ):
+            raise ValueError("quality_gate 发布决定与硬门清单不一致")
         expected_decision = "allow_release" if payload["passed"] else "block_release"
         if payload.get("decision") != expected_decision:
             raise ValueError("quality_gate decision 与 passed 不一致")
@@ -361,9 +406,19 @@ class QualityGateSkill(Skill):
         skill_research: dict,
         outline: dict,
         cited_draft: str,
+        snapshot: dict | None = None,
+        verification: dict | None = None,
     ) -> dict:
+        snapshot = snapshot or {}
+        verification = verification or {}
         categories = set(evidence.get("metrics", {}).get("source_categories", []))
-        missing_categories = sorted(self.REQUIRED_SOURCE_CATEGORIES - categories)
+        snapshot_policy = snapshot.get("policy_compliance", {})
+        required_categories = set(
+            snapshot_policy.get(
+                "required_categories", self.REQUIRED_SOURCE_CATEGORIES
+            )
+        )
+        missing_categories = sorted(required_categories - categories)
         missing_report_links = [
             source["id"] for source in evidence.get("sources", [])
             if not source.get("original_url") or source["original_url"] not in final_report
@@ -430,16 +485,31 @@ class QualityGateSkill(Skill):
             len(correctly_mounted) / len(source_issue_ids) if source_issue_ids else 0.0
         )
         visual_asset_count = len(visualizations.get("assets", []))
-        claims = processed.get("claims", [])
+        claims = verification.get("claims", processed.get("claims", []))
         claim_issue_coverage = (
             sum(bool(claim.get("issue_ids")) for claim in claims) / len(claims)
             if claims else 0.0
         )
+        verification_metrics = verification.get("metrics", {})
         triangulation = processed.get("triangulation", {})
-        critical_claims_verified = triangulation.get(
-            "critical_claim_count", 0
-        ) == triangulation.get("critical_verified_count", 0)
-        conflicted_claim_count = triangulation.get("conflicted_claim_count", 0)
+        critical_claims_verified = verification_metrics.get(
+            "critical_claim_count",
+            triangulation.get("critical_claim_count", 0),
+        ) == verification_metrics.get(
+            "critical_verified_count",
+            triangulation.get("critical_verified_count", 0),
+        )
+        conflicted_claim_count = verification_metrics.get(
+            "unresolved_conflict_count",
+            triangulation.get("conflicted_claim_count", 0),
+        )
+        unsupported_claim_ids = verification.get("unsupported_claim_ids", [])
+        all_claims_verified = verification.get(
+            "all_claims_verified", not unsupported_claim_ids and bool(claims)
+        )
+        snapshot_policy_passed = snapshot_policy.get(
+            "passed", not missing_categories and bool(evidence.get("sources"))
+        )
         capability_metrics = capability.get("metrics", {})
         capability_catalog_traversed = capability_metrics.get(
             "external_catalog_count"
@@ -519,6 +589,9 @@ class QualityGateSkill(Skill):
             "skill_provenance_complete": skill_provenance_complete,
             "citation_integrity": citation_integrity,
             "content_structure_compliant": content_structure_compliant,
+            "snapshot_policy_passed": snapshot_policy_passed,
+            "all_claims_verified": all_claims_verified,
+            "unsupported_claim_ids": unsupported_claim_ids,
             "compliant": (
                 not missing_categories
                 and not missing_report_links
@@ -534,6 +607,8 @@ class QualityGateSkill(Skill):
                 and skill_provenance_complete
                 and citation_integrity
                 and content_structure_compliant
+                and snapshot_policy_passed
+                and all_claims_verified
             ),
         }
 

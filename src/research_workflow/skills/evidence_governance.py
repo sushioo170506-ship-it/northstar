@@ -15,7 +15,9 @@ class EvidenceGovernanceSkill(Skill):
         self.generator = generator
 
     def execute(self, request: SkillRequest) -> SkillResult:
-        research_text = request.inputs["research"]
+        research_text = request.inputs.get(
+            "source_snapshot", request.inputs.get("research", "{}")
+        )
         issue_tree_text = request.inputs["issue_tree"]
         model_analysis = None
         if self.generator:
@@ -100,6 +102,9 @@ class EvidenceGovernanceSkill(Skill):
                     "independent_verification": independent,
                     "critical": critical,
                     "issue_ids": linked_issues,
+                    "snapshot_checksum": source.get("snapshot_checksum"),
+                    "snapshot_at": source.get("snapshot_at"),
+                    "snapshot_complete": source.get("snapshot_complete", False),
                 }
             )
         total = len(governed)

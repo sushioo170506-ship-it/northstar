@@ -25,6 +25,8 @@ class ReviewSkill(Skill):
         visualizations = json.loads(request.inputs["visualization"])
         pressure_test = json.loads(request.inputs["pressure_test"])
         writing_standard = json.loads(request.inputs["writing_standards"])
+        snapshot = json.loads(request.inputs.get("source_snapshot", "{}"))
+        verification = json.loads(request.inputs.get("claim_verification", "{}"))
         if self.generator:
             content = self.generator.generate(
                 system="你是独立质量审核员，不得引入未经证实的新事实。",
@@ -46,6 +48,13 @@ class ReviewSkill(Skill):
             issues.append("没有可核验来源，报告中的资料缺口标记不得删除")
         if evidence_ledger.get("red_lines"):
             issues.append("证据治理发现红线，必须由质量门阻断发布")
+        if not snapshot.get("policy_compliance", {}).get("passed", True):
+            issues.append("来源快照不完整或未满足场景来源策略")
+        if verification.get("unsupported_claim_ids"):
+            issues.append(
+                "存在未验证论断："
+                + "、".join(verification["unsupported_claim_ids"])
+            )
         issues.extend(pressure_test.get("repair_actions", []))
         categories = set(evidence_ledger.get("metrics", {}).get("source_categories", []))
         required_categories = {"industry", "academic", "social_media"}

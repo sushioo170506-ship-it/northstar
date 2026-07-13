@@ -26,6 +26,7 @@ class PressureTestSkill(Skill):
         issue_tree_text = request.inputs["issue_tree"]
         materials_text = request.inputs["material_integration"]
         visualizations_text = request.inputs["visualization"]
+        verification = json.loads(request.inputs.get("claim_verification", "{}"))
         model_analysis = None
         if self.generator:
             prompt = (
@@ -111,6 +112,16 @@ class PressureTestSkill(Skill):
                     "location": "证据账本",
                     "message": "部分素材缺少原始来源链接",
                     "repair": "补充每项事实和数据的原始 URL",
+                }
+            )
+        if verification.get("unsupported_claim_ids"):
+            evidence_gaps.append(
+                {
+                    "severity": "high",
+                    "location": "论断验证",
+                    "message": "存在未验证论断："
+                    + "、".join(verification["unsupported_claim_ids"]),
+                    "repair": "补充原文证据片段或修正数字、冲突和来源独立性",
                 }
             )
         if materials.get("metrics", {}).get("mount_coverage", 0.0) < 1.0:

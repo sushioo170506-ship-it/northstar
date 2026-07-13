@@ -19,7 +19,12 @@ from research_workflow.models import (
     SkillRequest,
     WorkflowStatus,
 )
-from research_workflow.providers import CompositeSourceRetriever, OpenAlexRetriever
+from research_workflow.providers import (
+    ArxivRetriever,
+    CompositeSourceRetriever,
+    CrossrefRetriever,
+    OpenAlexRetriever,
+)
 from research_workflow.feishu_oauth import FeishuOAuthClient
 from research_workflow.office_renderers import (
     AestheticDocxRenderer,
@@ -46,6 +51,8 @@ from research_workflow.skills.outline import OutlineSkill
 from research_workflow.skills.publish import PublishSkill
 from research_workflow.skills.research import ResearchSkill
 from research_workflow.skills.skill_research import SkillResearchSkill
+from research_workflow.skills.source_snapshot import SourceSnapshotSkill
+from research_workflow.skills.claim_verification import ClaimVerificationSkill
 from research_workflow.skills.writing_standards import WritingStandardsSkill
 from research_workflow.standards_store import SQLiteWritingStandardStore
 
@@ -259,7 +266,7 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(set(default_registry().names), set(BUILTIN_SKILL_ORDER))
         self.assertEqual(orchestrator_names, {"research_report_orchestrator"})
-        self.assertEqual(len(names) + len(orchestrator_names), 21)
+        self.assertEqual(len(names) + len(orchestrator_names), 23)
         architecture = (
             Path(__file__).parents[1] / "docs" / "ARCHITECTURE.md"
         ).read_text(encoding="utf-8")
@@ -430,6 +437,101 @@ class WorkflowTests(unittest.TestCase):
         summary = json.loads(result.content)["retrieval_summary"]
         self.assertTrue(
             all(item["status"] == "completed" for item in summary["passes"].values())
+        )
+
+    def test_source_snapshot_hashes_and_scene_policy(self) -> None:
+        sources = compliant_sources("SNAPSHOT")
+        request = SkillRequest(
+            workflow_id="snapshot",
+            node_id="source_snapshot",
+            config=ReportConfig.from_dict({"topic": "技术模型研究"}),
+            inputs={
+                "research": json.dumps(
+                    {
+                        "sources": ResearchSkill._normalize_sources(sources),
+                        "retrieval_summary": {},
+                    }
+                ),
+                "writing_standards": json.dumps({"scene": "technical"}),
+                "outline": "{}",
+            },
+        )
+        skill = SourceSnapshotSkill()
+        result = skill.execute(request)
+        skill.validate(result)
+        payload = json.loads(result.content)
+        self.assertTrue(payload["policy_compliance"]["passed"])
+        self.assertEqual(
+            payload["policy_compliance"]["required_categories"], ["academic"]
+        )
+        self.assertTrue(
+            all(len(value) == 64 for value in payload["checksums"].values())
+        )
+        self.assertTrue(
+            all(item["snapshot_complete"] for item in payload["sources"])
+        )
+
+    def test_claim_verification_aligns_spans_and_numbers(self) -> None:
+        content = "官方数据显示样本量为1200，准确率为42%。"
+        request = SkillRequest(
+            workflow_id="claim-verification",
+            node_id="claim_verification",
+            config=ReportConfig.from_dict({"topic": "论断验证"}),
+            inputs={
+                "data_processing": json.dumps(
+                    {
+                        "claims": [
+                            {
+                                "id": "CLAIM-001",
+                                "statement": content,
+                                "source_ids": ["S1"],
+                                "independent_source_count": 1,
+                                "issue_ids": ["ISSUE-01"],
+                                "critical": False,
+                                "grade": "B",
+                                "conflicts": [],
+                            }
+                        ]
+                    }
+                ),
+                "source_snapshot": json.dumps(
+                    {
+                        "sources": [
+                            {
+                                "id": "S1",
+                                "content": content,
+                                "url": "https://example.org/source",
+                                "snapshot_checksum": "a" * 64,
+                            }
+                        ]
+                    }
+                ),
+                "evidence_governance": json.dumps({"sources": []}),
+                "outline": "{}",
+            },
+        )
+        skill = ClaimVerificationSkill()
+        result = skill.execute(request)
+        skill.validate(result)
+        payload = json.loads(result.content)
+        self.assertTrue(payload["all_claims_verified"])
+        claim = payload["claims"][0]
+        self.assertEqual(claim["verification_status"], "verified")
+        self.assertEqual(set(claim["numeric_anchors"]), {"1200", "42%"})
+        self.assertTrue(claim["evidence_spans"])
+
+        broken = json.loads(request.inputs["source_snapshot"])
+        broken["sources"][0]["content"] = "没有任何数字"
+        blocked = SkillRequest(
+            workflow_id=request.workflow_id,
+            node_id=request.node_id,
+            config=request.config,
+            inputs={**request.inputs, "source_snapshot": json.dumps(broken)},
+        )
+        blocked_payload = json.loads(skill.execute(blocked).content)
+        self.assertFalse(blocked_payload["all_claims_verified"])
+        self.assertEqual(
+            blocked_payload["claims"][0]["verification_status"], "blocked"
         )
 
     def test_social_and_wechat_platforms_are_normalized(self) -> None:
@@ -765,6 +867,37 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(source["peer_reviewed"])
         with self.assertRaises(ValueError):
             PandocDocumentRenderer("__definitely_missing_pandoc__")
+
+        import xml.etree.ElementTree as ET
+
+        entry = ET.fromstring(
+            """<entry xmlns="http://www.w3.org/2005/Atom">
+            <id>https://arxiv.org/abs/2601.00001v2</id>
+            <title>Realtime Research</title>
+            <summary>Evidence based abstract.</summary>
+            <published>2026-01-02T00:00:00Z</published>
+            <author><name>Researcher</name></author>
+            </entry>"""
+        )
+        arxiv = ArxivRetriever._normalize(
+            entry, {"atom": "http://www.w3.org/2005/Atom"}
+        )
+        self.assertEqual(arxiv["arxiv_id"], "2601.00001v2")
+        self.assertFalse(arxiv["peer_reviewed"])
+        self.assertEqual(arxiv["provider"], "arxiv")
+        crossref = CrossrefRetriever._normalize(
+            {
+                "DOI": "10.1/example",
+                "title": ["Peer Reviewed"],
+                "abstract": "<jats:p>Abstract text</jats:p>",
+                "author": [{"given": "A", "family": "B"}],
+                "published": {"date-parts": [[2026, 1, 2]]},
+                "URL": "https://doi.org/10.1/example",
+                "type": "journal-article",
+            }
+        )
+        self.assertEqual(crossref["content"], "Abstract text")
+        self.assertTrue(crossref["peer_reviewed"])
 
     def test_node_comments_are_audited_without_invalidating(self) -> None:
         workflow_id = self.create()

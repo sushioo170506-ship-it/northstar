@@ -14,7 +14,9 @@ class DataProcessingSkill(Skill):
     name = "data_processing"
 
     def execute(self, request: SkillRequest) -> SkillResult:
-        research = json.loads(request.inputs["research"])
+        research = json.loads(
+            request.inputs.get("source_snapshot", request.inputs.get("research", "{}"))
+        )
         evidence = json.loads(request.inputs["evidence_governance"])
         outline = json.loads(request.inputs["outline"])
         governed = {item["id"]: item for item in evidence.get("sources", [])}
