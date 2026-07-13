@@ -1,0 +1,112 @@
+{
+  "sources": [
+    {
+      "id": "S-OAI-LIVE",
+      "title": "Introducing GPT-Live",
+      "category": "industry",
+      "source_type": "official",
+      "provider": "OpenAI",
+      "url": "https://openai.com/index/introducing-gpt-live/",
+      "published_at": "2026-07-08",
+      "claim_key": "gpt-live-product-architecture",
+      "issue_ids": ["ISSUE-01", "ISSUE-02", "ISSUE-03", "ISSUE-04", "ISSUE-05"],
+      "content": "OpenAI于2026年7月8日发布GPT-Live。官方说明其采用全双工架构，可在生成输出时持续监听输入，并在每秒多次的交互决策中选择说话、继续倾听、暂停、打断或调用工具。对于搜索、深度推理或更复杂工作，GPT-Live会委派给后台前沿模型；发布时使用GPT-5.5。GPT-Live-1面向Go、Plus和Pro用户，GPT-Live-1 mini面向Free用户。OpenAI表示API计划随后推出，而非发布时已经开放。官方还披露每周超过1.5亿人使用ChatGPT Voice和Dictation，但该数字不能直接等同于GPT-Live活跃用户。"
+    },
+    {
+      "id": "S-OAI-HELP",
+      "title": "ChatGPT Voice",
+      "category": "industry",
+      "source_type": "official",
+      "provider": "OpenAI Help Center",
+      "url": "https://help.openai.com/en/articles/20001274-chatgpt-voice",
+      "published_at": "2026-07-08",
+      "claim_key": "gpt-live-availability-boundaries",
+      "issue_ids": ["ISSUE-01", "ISSUE-02", "ISSUE-05"],
+      "content": "OpenAI帮助中心将Live定义为由付费版GPT-Live-1和免费版GPT-Live-1 mini驱动的新语音体验。Live可以使用网页搜索和记忆、展示部分视觉结果，并在同一会话处理文本与图像。发布初期不支持视频、屏幕共享、connected apps或plugins；不面向ChatGPT Business、Enterprise和Edu工作区。可用性受套餐、地区、工作区和应用版本影响。"
+    },
+    {
+      "id": "S-OAI-SAFETY",
+      "title": "GPT-Live System Card",
+      "category": "industry",
+      "source_type": "official",
+      "provider": "OpenAI Deployment Safety Hub",
+      "url": "https://deploymentsafety.openai.com/gpt-live/introduction",
+      "published_at": "2026-07-08",
+      "claim_key": "gpt-live-safety",
+      "issue_ids": ["ISSUE-03", "ISSUE-05"],
+      "content": "GPT-Live系统卡说明，模型在会话进行中检查输入和输出，必要时可引导或中断响应、播放语音安全提示、提供支持资源或结束会话。生产语音对抗评测中，GPT-Live-1的情感依赖得分由Advanced Voice Mode的0.88变为0.82，官方称差异不具统计显著性；GPT-Live-1 mini的性内容得分由0.97变为0.95，同样不显著。Safety Advisory Group判断，不使用委派时两款模型在生化、AI自我改进和网络安全跟踪类别均未达到High阈值。系统卡强调这些对抗集不按真实流量加权，不能解释为线上风险发生率。"
+    },
+    {
+      "id": "S-GOOGLE-LIVE",
+      "title": "Build real-time conversational agents with Gemini 3.1 Flash Live",
+      "category": "industry",
+      "source_type": "official",
+      "provider": "Google DeepMind",
+      "url": "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-3-1-flash-live/",
+      "published_at": "2026-03-26",
+      "claim_key": "gemini-live-comparison",
+      "issue_ids": ["ISSUE-02", "ISSUE-04"],
+      "content": "Google于2026年3月通过Gemini Live API预览发布Gemini 3.1 Flash Live，面向开发者构建实时语音和视觉智能体。官方强调低延迟、噪声环境下工具触发、复杂指令遵循、音高和语速等声学细节识别以及90多种语言。开发者可通过Gemini API和Google AI Studio接入，文档覆盖工具调用、长会话管理和ephemeral tokens。与GPT-Live发布时尚未开放API相比，Gemini在开发者可接入性和实时语音加视觉方面更成熟。"
+    },
+    {
+      "id": "S-SEEDUPLEX",
+      "title": "Seed全双工语音大模型发布：懂倾听、抗干扰，走向更自然的交互",
+      "category": "industry",
+      "source_type": "official",
+      "provider": "ByteDance Seed",
+      "url": "https://seed.bytedance.com/zh/blog/introducing-seed-full-duplex-speech-llm-attentive-listening-robust-interference-suppression-enabling-more-natural-interaction",
+      "published_at": "2026-04-09",
+      "claim_key": "seeduplex-comparison",
+      "issue_ids": ["ISSUE-02", "ISSUE-03", "ISSUE-04"],
+      "content": "字节跳动Seed于2026年4月9日发布原生全双工语音模型Seeduplex并在豆包App全量上线。官方称其联合建模声学与语义信息，动态决定开始回复、继续倾听或响应打断。相对上一代半双工模型，官方披露判停MOS提高8%、对话流畅度MOS提高12%、复杂场景抢话比例相对减少40%、判停延迟降低约250ms、打断响应延迟缩短约300ms、复杂干扰场景误回复率和误打断率降低一半，整体通话满意度绝对值提升8.34%。这些数据均为厂商自测或A/B结果，缺少与GPT-Live同口径公开评测。"
+    },
+    {
+      "id": "S-MOSHI",
+      "title": "Moshi: a speech-text foundation model for real-time dialogue",
+      "category": "academic",
+      "source_type": "primary_research",
+      "provider": "arXiv",
+      "url": "https://arxiv.org/abs/2410.00037",
+      "published_at": "2024-09-30",
+      "claim_key": "full-duplex-native-architecture",
+      "issue_ids": ["ISSUE-01", "ISSUE-03", "ISSUE-04"],
+      "content": "Moshi论文将全双工语音对话建模为语音到语音生成，并分别对用户和系统语音建立并行流，从而去除显式说话轮次并处理重叠语音、打断和插话。模型以神经音频编解码器的离散token生成语音，并使用与音频时间对齐的文本token作为音频token前缀。论文报告理论延迟160ms、实践延迟200ms。该路线证明全双工不仅是VAD优化，而是并行音频流和交互状态建模问题。"
+    },
+    {
+      "id": "S-MINMO",
+      "title": "MinMo: A Multimodal Large Language Model for Seamless Voice Interaction",
+      "category": "academic",
+      "source_type": "primary_research",
+      "provider": "arXiv",
+      "url": "https://arxiv.org/abs/2501.06282",
+      "published_at": "2025-01-11",
+      "claim_key": "full-duplex-state-predictor",
+      "issue_ids": ["ISSUE-03", "ISSUE-04"],
+      "content": "MinMo论文提出约8B参数的多模态语音交互模型，并增加Full Duplex Predictor，利用LLM隐藏表示判断是否回应当前用户、是否停止正在输出的语音并转入倾听。该模块使用4000小时长时人类对话训练。论文报告语音转文本延迟约100ms，全双工理论延迟约600ms、实践约800ms。该工作代表在语言模型语义表示之上外挂交互状态预测器的路线。"
+    },
+    {
+      "id": "S-FD-SURVEY",
+      "title": "A Survey of Full-Duplex Spoken Dialogue Systems",
+      "category": "academic",
+      "source_type": "survey",
+      "provider": "arXiv",
+      "url": "https://arxiv.org/abs/2606.19453",
+      "published_at": "2026-06-22",
+      "claim_key": "full-duplex-design-space",
+      "issue_ids": ["ISSUE-01", "ISSUE-03", "ISSUE-04"],
+      "content": "2026年全双工语音对话综述将系统差异归纳到架构层级、交互行为本体和决策状态机，指出全双工能力涉及重叠说话、插话、打断、附和、静默和恢复等行为，不应仅以端到端语音生成或低时延替代。综述区分Moshi、MinMo、Freeze-Omni、Mini-Omni2等不同路线，并指出GLM-4-Voice虽为端到端流式语音聊天模型，但原论文未明确宣称标准配置具备全双工行为。"
+    },
+    {
+      "id": "S-AFFECTIVE",
+      "title": "Investigating Affective Use and Emotional Well-being on ChatGPT",
+      "category": "academic",
+      "source_type": "primary_research",
+      "provider": "OpenAI and MIT Media Lab",
+      "url": "https://openai.com/index/affective-use-study/",
+      "published_at": "2025-03-21",
+      "claim_key": "voice-emotional-reliance-risk",
+      "issue_ids": ["ISSUE-05"],
+      "content": "OpenAI与MIT Media Lab的情感使用研究分析超过400万段对话、调查超过4000名用户，并进行接近1000名参与者、28天的随机对照试验。研究发现真实平台中的情感互动总体少见；语音模式对福祉的影响具有混合性，短时使用与较好结果相关，而长时间每日使用与较差结果相关。极高使用量与更高的自报依赖指标相关，结果受用户初始情绪状态和使用时长影响。该研究针对此前语音模式，不能直接当作GPT-Live因果评测，但可用于识别陪伴类场景风险。"
+    }
+  ]
+}

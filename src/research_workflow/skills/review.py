@@ -1,0 +1,150 @@
+"""Quality review and conservative polishing skill."""
+
+from __future__ import annotations
+
+import json
+import re
+
+from ..contracts import Skill, TextGenerator
+from ..models import SkillRequest, SkillResult
+from ..prompts import REVIEW_PROMPT
+
+
+class ReviewSkill(Skill):
+    name = "review"
+
+    def __init__(self, generator: TextGenerator | None = None) -> None:
+        self.generator = generator
+
+    def execute(self, request: SkillRequest) -> SkillResult:
+        from .input_adapters import (
+            claim_verification_text,
+            evidence_governance_text,
+            source_snapshot_text,
+        )
+
+        formatted = request.inputs["formatting"]
+        requirements = json.loads(request.inputs["requirements_analysis"])
+        evidence = json.loads(request.inputs["research"])
+        ledger_text = evidence_governance_text(request.inputs)
+        evidence_ledger = json.loads(ledger_text)
+        material_integration = json.loads(request.inputs["material_integration"])
+        visualizations = json.loads(request.inputs["visualization"])
+        pressure_test = json.loads(request.inputs["pressure_test"])
+        writing_standard = json.loads(request.inputs["writing_standards"])
+        try:
+            snapshot = json.loads(source_snapshot_text(request.inputs))
+        except KeyError:
+            snapshot = {}
+        verification = json.loads(claim_verification_text(request.inputs))
+        quant = json.loads(request.inputs.get("quant_finance_research", "{}"))
+        if self.generator:
+            content = self.generator.generate(
+                system="你是独立质量审核员，不得引入未经证实的新事实。",
+                prompt=(
+                    f"{REVIEW_PROMPT}\n待审报告：\n{formatted}"
+                    f"\n证据账本：\n{ledger_text}"
+                    f"\n需求简报：\n{request.inputs['requirements_analysis']}"
+                    f"\n素材映射：\n{request.inputs['material_integration']}"
+                    f"\n可视化：\n{request.inputs['visualization']}"
+                    f"\n压力测试：\n{request.inputs['pressure_test']}"
+                    f"\n写作规范：\n{request.inputs['writing_standards']}"
+                ),
+                max_tokens=max(2000, request.config.expected_length * 2),
+            )
+            return SkillResult(content, "final_report", {"prompt_version": "1.0"})
+
+        issues: list[str] = []
+        if not evidence.get("sources"):
+            issues.append("没有可核验来源，报告中的资料缺口标记不得删除")
+        if evidence_ledger.get("red_lines"):
+            issues.append("证据治理发现红线，必须由质量门阻断发布")
+        if not snapshot.get("policy_compliance", {}).get("passed", True):
+            issues.append("来源快照不完整或未满足场景来源策略")
+        if verification.get("unsupported_claim_ids"):
+            issues.append(
+                "存在未验证论断："
+                + "、".join(verification["unsupported_claim_ids"])
+            )
+        if quant.get("applicable") and not quant.get("hard_gates_passed"):
+            issues.append(
+                "量化金融工程硬门未通过："
+                + "；".join(quant.get("issues", []))
+            )
+        issues.extend(pressure_test.get("repair_actions", []))
+        categories = set(evidence_ledger.get("metrics", {}).get("source_categories", []))
+        required_categories = {"industry", "academic", "social_media"}
+        missing_categories = sorted(required_categories - categories)
+        if missing_categories:
+            issues.append("缺少必需来源类别：" + "、".join(missing_categories))
+        missing_links = [
+            source["id"] for source in evidence_ledger.get("sources", [])
+            if not source.get("original_url") or source["original_url"] not in formatted
+        ]
+        if missing_links:
+            issues.append("终稿缺少原始来源链接：" + "、".join(missing_links))
+        if material_integration.get("metrics", {}).get("mount_coverage", 0.0) < 1.0:
+            issues.append("存在未挂载到章节的素材")
+        if not visualizations.get("assets"):
+            issues.append("没有生成可视化成果")
+        for boundary in requirements.get("content_boundaries", []):
+            for prefix in ("不得包含:", "不得包含：", "禁止:", "禁止："):
+                if boundary.startswith(prefix):
+                    forbidden = boundary[len(prefix):].strip()
+                    if forbidden and forbidden in formatted:
+                        issues.append(f"违反内容边界：不得包含“{forbidden}”")
+        if request.config.output_format == "markdown" and not re.search(r"^# ", formatted):
+            issues.append("缺少一级标题")
+        if len(formatted) < request.config.expected_length * 0.75:
+            issues.append("正文长度低于目标篇幅的 75%")
+        required_sections = writing_standard.get("required_sections", [])
+        structural_aliases = {"正文"} if writing_standard["scene"] == "official_internal" else set()
+        missing_standard_sections = [
+            title for title in required_sections
+            if title not in formatted and title not in structural_aliases
+        ]
+        if missing_standard_sections:
+            issues.append(
+                "缺少场景写作规范要求的结构："
+                + "、".join(missing_standard_sections)
+            )
+        if (
+            request.config.output_format == "feishu"
+            and not writing_standard["security"]["external_delivery_allowed"]
+        ):
+            issues.append("当前密级或审批状态禁止写入飞书")
+        content = formatted
+        if request.feedback:
+            note = "；".join(request.feedback)
+            if request.config.output_format == "html":
+                content = content.replace("</body>", f"<aside>审核修订：{note}</aside></body>")
+            elif request.config.output_format == "json":
+                payload = json.loads(content)
+                payload["review_feedback"] = list(request.feedback)
+                content = json.dumps(payload, ensure_ascii=False, indent=2)
+            else:
+                content += f"\n\n审核修订：{note}\n"
+        return SkillResult(
+            content,
+            "final_report",
+            {
+                "review_checks_passed": not issues,
+                "issues": issues,
+                "checks": {
+                    "non_empty": bool(content.strip()),
+                    "format": request.config.output_format,
+                    "source_count": len(evidence.get("sources", [])),
+                    "source_categories": sorted(categories),
+                    "missing_source_links": missing_links,
+                    "material_mount_coverage": material_integration.get(
+                        "metrics", {}
+                    ).get("mount_coverage", 0.0),
+                    "visual_asset_count": len(visualizations.get("assets", [])),
+                    "audience": requirements.get("audience"),
+                    "style": requirements.get("style"),
+                    "writing_standard_profile": writing_standard["profile"]["id"],
+                    "writing_scene": writing_standard["scene"],
+                    "missing_standard_sections": missing_standard_sections,
+                },
+            },
+        )

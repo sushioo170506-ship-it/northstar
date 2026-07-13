@@ -1,0 +1,59 @@
+"""Built-in skills; each module can be imported and executed independently."""
+
+from .capability_sweep import CapabilitySweepSkill
+from .citation_management import CitationManagementSkill
+from .claim_verification import ClaimVerificationSkill
+from .compose import ComposeSkill
+from .content_optimization import ContentOptimizationSkill
+from .data_processing import DataProcessingSkill
+from .evidence_governance import EvidenceGovernanceSkill
+from .evidence_pipeline import EvidencePipelineSkill
+from .experience_evolution import ExperienceEvolutionSkill
+from .formatting import FormattingSkill
+from .issue_tree import IssueTreeSkill
+from .material_integration import MaterialIntegrationSkill
+from .outline import OutlineSkill
+from .pressure_test import PressureTestSkill
+from .publish import PublishSkill
+from .quality_assurance import QualityAssuranceSkill
+from .quality_gate import QualityGateSkill
+from .quant_finance_research import QuantFinanceResearchSkill
+from .research import ResearchSkill
+from .requirements_analysis import RequirementsAnalysisSkill
+from .review import ReviewSkill
+from .skill_research import SkillResearchSkill
+from .source_snapshot import SourceSnapshotSkill
+from .visualization import VisualizationSkill
+from .writing import WritingSkill
+from .writing_finalize import WritingFinalizeSkill
+from .writing_standards import WritingStandardsSkill
+
+__all__ = [
+    "CapabilitySweepSkill",
+    "CitationManagementSkill",
+    "ClaimVerificationSkill",
+    "ComposeSkill",
+    "ContentOptimizationSkill",
+    "ResearchSkill",
+    "RequirementsAnalysisSkill",
+    "SkillResearchSkill",
+    "SourceSnapshotSkill",
+    "IssueTreeSkill",
+    "EvidenceGovernanceSkill",
+    "EvidencePipelineSkill",
+    "ExperienceEvolutionSkill",
+    "DataProcessingSkill",
+    "MaterialIntegrationSkill",
+    "VisualizationSkill",
+    "OutlineSkill",
+    "WritingSkill",
+    "WritingFinalizeSkill",
+    "WritingStandardsSkill",
+    "PressureTestSkill",
+    "FormattingSkill",
+    "ReviewSkill",
+    "QualityAssuranceSkill",
+    "QualityGateSkill",
+    "QuantFinanceResearchSkill",
+    "PublishSkill",
+]
