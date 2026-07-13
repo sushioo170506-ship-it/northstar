@@ -124,6 +124,17 @@ DEFAULT_INTEGRATIONS = (
         notes="Low-star fallback; not preferred over mature providers.",
         author="parags", version_checked="main@2026-02-03",
     ),
+    IntegrationSpec(
+        "quants-playbook", "quant_brokerage_research_reference",
+        "https://github.com/hugo2046/QuantsPlaybook",
+        "NOASSERTION", 5_577,
+        notes=(
+            "券商金工研报复现参考库；根目录无开源许可证，部分内容仅声明学习研究用途，"
+            "且依赖jqdata/jqfactor/Tushare。仅登记为observe_only，不复制或执行源码。"
+        ),
+        author="hugo2046",
+        version_checked="87163521c75629a3466564c017ac734a236a9ce4",
+    ),
 )
 
 
@@ -139,6 +150,7 @@ BUILTIN_SKILL_ORDER = (
     "evidence_governance",
     "data_processing",
     "claim_verification",
+    "quant_finance_research",
     "material_integration",
     "visualization",
     "writing",

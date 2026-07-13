@@ -11,8 +11,8 @@
 - 关系存储：SQLite WAL 保存工作流、节点运行、输入/输出 ID、分片产物、确认和用户操作。
 - 向量存储：独立 SQLite WAL 数据库保存 2000 字符分片、200 字符重叠、稀疏哈希向量及
   元数据；查询先按 workflow/node/type 精确过滤，再做相似度排序。
-- 二十二个可执行 Skill：能力遍历、需求、Skill研究、写作标准、议题树、大纲、场景化调研、
-  来源快照、证据治理、数据处理、逐论断验证、素材整合、可视化、写作、引用、内容优化、
+- 二十三个可执行 Skill：能力遍历、需求、Skill研究、写作标准、议题树、大纲、场景化调研、
+  来源快照、证据治理、数据处理、逐论断验证、量化金工校验、素材整合、可视化、写作、引用、内容优化、
   压力测试、排版、审核、质量门、发布和
   自进化；`research_report_orchestrator`主编排Skill不计入DAG执行节点。
 
@@ -26,6 +26,7 @@ capability_sweep -> requirements_analysis -> skill_research -> writing_standards
   -> issue_tree -> [确认主题与议题树]
   -> outline -> [确认大纲] -> research(场景化来源pass) -> source_snapshot
   -> evidence_governance -> data_processing -> claim_verification
+  -> quant_finance_research
   -> material_integration -> visualization
   -> writing -> citation_management -> content_optimization -> pressure_test
   -> [确认初稿] -> formatting
@@ -39,6 +40,7 @@ research             <- requirements_analysis + issue_tree + confirmed outline
 source_snapshot      <- research + writing_standards + outline
 data_processing      <- source_snapshot + evidence_governance + issue_tree + outline
 claim_verification   <- data_processing + source_snapshot + evidence_governance + outline
+quant_finance_research <- claim_verification + data_processing + source_snapshot + writing_standards
 material_integration <- outline + research + evidence_governance + data_processing
 visualization        <- issue_tree + material_integration + data_processing
 citation_management  <- writing + evidence_governance + material_integration

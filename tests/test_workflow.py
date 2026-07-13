@@ -43,6 +43,7 @@ from research_workflow.orchestrator import (
     default_registry,
 )
 from research_workflow.skills.quality_gate import DIMENSIONS, QualityGateSkill
+from research_workflow.skills.quant_finance_research import QuantFinanceResearchSkill
 from research_workflow.skills.data_processing import DataProcessingSkill
 from research_workflow.skills.citation_management import CitationManagementSkill
 from research_workflow.skills.content_optimization import ContentOptimizationSkill
@@ -266,7 +267,7 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(set(default_registry().names), set(BUILTIN_SKILL_ORDER))
         self.assertEqual(orchestrator_names, {"research_report_orchestrator"})
-        self.assertEqual(len(names) + len(orchestrator_names), 23)
+        self.assertEqual(len(names) + len(orchestrator_names), 24)
         architecture = (
             Path(__file__).parents[1] / "docs" / "ARCHITECTURE.md"
         ).read_text(encoding="utf-8")
@@ -1016,6 +1017,92 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(scoring["results"][0]["candidate"], "P4")
         self.assertIn("5 + 5", scoring["results"][0]["details"][0]["calculation"])
 
+    def test_quant_finance_research_enforces_backtest_hard_gates(self) -> None:
+        analysis = {
+            "subtype": "factor",
+            "universe": "中证500成分股",
+            "benchmark": "中证500",
+            "start_date": "2018-01-01",
+            "end_date": "2025-12-31",
+            "frequency": "daily",
+            "data_source": "licensed-market-data",
+            "factor_formula": "zscore(rank(value))",
+            "rebalance": "monthly",
+            "transaction_cost_bps": 10,
+            "metrics": {
+                "annual_return": 0.12,
+                "benchmark_return": 0.08,
+                "excess_return": 0.04,
+                "volatility": 0.16,
+                "sharpe": 0.75,
+                "max_drawdown": -0.18,
+                "turnover": 2.1,
+            },
+            "metric_sources": {
+                name: "SNAPSHOT-BACKTEST-001"
+                for name in (
+                    "annual_return", "benchmark_return", "excess_return",
+                    "volatility", "sharpe", "max_drawdown", "turnover",
+                )
+            },
+            "out_of_sample": True,
+            "lookahead_bias_checked": True,
+            "survivorship_bias_checked": True,
+        }
+        request = SkillRequest(
+            workflow_id="quant",
+            node_id="quant_finance_research",
+            config=ReportConfig.from_dict(
+                {
+                    "topic": "中证500指数增强因子回测",
+                    "output_type": "券商量化金融工程研究报告",
+                    "extra": {"quant_analysis": analysis},
+                }
+            ),
+            inputs={
+                "claim_verification": "{}",
+                "data_processing": "{}",
+                "source_snapshot": "{}",
+                "writing_standards": "{}",
+                "outline": "{}",
+            },
+        )
+        skill = QuantFinanceResearchSkill()
+        result = skill.execute(request)
+        skill.validate(result)
+        payload = json.loads(result.content)
+        self.assertEqual(payload["status"], "completed")
+        self.assertTrue(payload["hard_gates_passed"])
+        self.assertEqual(
+            payload["reference_playbook"]["license"], "NOASSERTION"
+        )
+        self.assertFalse(payload["reference_playbook"]["code_executed"])
+
+        broken_config = request.config.to_dict()
+        broken_config["extra"] = {
+            "quant_analysis": {
+                **analysis,
+                "out_of_sample": False,
+                "metric_sources": {},
+            }
+        }
+        blocked = SkillRequest(
+            workflow_id="quant-blocked",
+            node_id=request.node_id,
+            config=ReportConfig.from_dict(broken_config),
+            inputs=request.inputs,
+        )
+        blocked_payload = json.loads(skill.execute(blocked).content)
+        self.assertEqual(blocked_payload["status"], "incomplete")
+        self.assertFalse(blocked_payload["hard_gates_passed"])
+        self.assertTrue(blocked_payload["untraced_metrics"])
+        catalog = next(
+            item for item in DEFAULT_INTEGRATIONS
+            if item.id == "quants-playbook"
+        )
+        self.assertEqual(catalog.license, "NOASSERTION")
+        self.assertIn("不复制", catalog.notes)
+
     def test_outline_focuses_risk_on_report_subject(self) -> None:
         request = SkillRequest(
             workflow_id="risk-scope",
@@ -1388,7 +1475,11 @@ class WorkflowTests(unittest.TestCase):
 
     def test_writing_standard_profiles_are_versioned_and_triggerable(self) -> None:
         store = SQLiteWritingStandardStore(self.root / "profile-store.db")
-        self.assertEqual(len(store.list_profiles()), 4)
+        self.assertEqual(len(store.list_profiles()), 5)
+        self.assertEqual(
+            store.resolve("中证500指数增强因子回测").id,
+            "quant_finance_brokerage",
+        )
         first = store.register_custom(
             profile_id="custom_policy",
             name="公司政策简报",

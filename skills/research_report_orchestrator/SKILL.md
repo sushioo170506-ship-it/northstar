@@ -48,17 +48,18 @@ outcome = workflow.run(workflow_id)
 9. `evidence_governance`
 10. `data_processing`：数据点与条件评分
 11. `claim_verification`：原文片段、数字、独立来源和冲突硬验证
-12. `material_integration`
-13. `visualization`：6–10 项可视化规范
-14. `writing`
-15. `citation_management`
-16. `content_optimization`：流程图、表格说明、连续编号和全量链接索引
-17. `pressure_test` → `draft_confirmation`
-18. `formatting` → `pre_review_confirmation`
-19. `review`
-20. `quality_gate`
-21. `publish`
-22. `experience_evolution`
+12. `quant_finance_research`：量化金工报告的数据、公式、回测、稳健性和合规硬门
+13. `material_integration`
+14. `visualization`：6–10 项可视化规范
+15. `writing`
+16. `citation_management`
+17. `content_optimization`：流程图、表格说明、连续编号和全量链接索引
+18. `pressure_test` → `draft_confirmation`
+19. `formatting` → `pre_review_confirmation`
+20. `review`
+21. `quality_gate`
+22. `publish`
+23. `experience_evolution`
 
 `run()` 在确认点返回 `waiting_confirmation`。调用
 `confirm(workflow_id, checkpoint_id, comment)` 后再次 `run()`。不得跳过确认。
@@ -66,7 +67,7 @@ outcome = workflow.run(workflow_id)
 
 ## 遍历规则
 
-- 22 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
+- 23 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
 - 外部集成先由 capability_sweep 全量遍历；已配置者交给对应节点调用，未配置者记录
   `reviewed_not_configured` 和原因。禁止静默跳过。
 - 条件能力仍必须执行其包装 Skill：不适用时输出结构化 `not_applicable`，不得伪造结果。

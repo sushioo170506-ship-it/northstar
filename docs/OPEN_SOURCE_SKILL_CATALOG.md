@@ -20,6 +20,7 @@
 | Frontend Slides | Zara Zhang（张咋啦） | 9906a34d640d2111f724544cbc50f7f130569ae1 | 25,388 | MIT | https://github.com/zarazhangrui/frontend-slides | 固定1920×1080画布、Swiss Modern预设、单HTML；clean-room SlidesRenderer |
 | HTML PPT Skill | lewislulu | main@2026-07-13 | 7,099 | MIT | https://github.com/lewislulu/html-ppt-skill | token主题、页面预算和键盘运行时参考 |
 | Marp | marp-team | main@2026-07-13 | 12,172 | MIT | https://github.com/marp-team/marp | 可选CLI；PPTX/HTML多格式参照 |
+| QuantsPlaybook | hugo2046 | 87163521c75629a3466564c017ac734a236a9ce4 | 5,577 | NOASSERTION；部分目录仅限学习研究 | https://github.com/hugo2046/QuantsPlaybook | observe_only方法目录；不复制/执行源码，由quant_finance_research clean-room适配 |
 | OpenClaw Deep Research Agent | MilleniumGenAI | main@2026-03-10 | 2 | MIT-0 | https://github.com/MilleniumGenAI/deep-research-openclaw-agent | claim-verified research |
 | OpenClaw Deep Research Pro | parags | main@2026-02-03 | 7 | MIT | https://github.com/parags/deep-research-pro | 低优先级 fallback |
 

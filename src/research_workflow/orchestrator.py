@@ -32,6 +32,7 @@ from .skills import (
     PressureTestSkill,
     PublishSkill,
     QualityGateSkill,
+    QuantFinanceResearchSkill,
     ResearchSkill,
     RequirementsAnalysisSkill,
     ReviewSkill,
@@ -122,19 +123,37 @@ NODES = (
         ("data_processing", "source_snapshot", "evidence_governance", "outline"),
     ),
     NodeSpec(
+        "quant_finance_research",
+        (
+            "claim_verification", "data_processing", "source_snapshot",
+            "writing_standards", "outline",
+        ),
+        "quant_finance_research",
+        (
+            "claim_verification", "data_processing", "source_snapshot",
+            "writing_standards", "outline",
+        ),
+    ),
+    NodeSpec(
         "material_integration",
         (
             "outline", "research", "source_snapshot", "evidence_governance",
-            "data_processing", "claim_verification",
+            "data_processing", "claim_verification", "quant_finance_research",
         ),
         "material_integration",
         ("outline", "research", "evidence_governance", "data_processing"),
     ),
     NodeSpec(
         "visualization",
-        ("issue_tree", "material_integration", "data_processing"),
+        (
+            "issue_tree", "material_integration", "data_processing",
+            "quant_finance_research",
+        ),
         "visualization",
-        ("issue_tree", "material_integration", "data_processing"),
+        (
+            "issue_tree", "material_integration", "data_processing",
+            "quant_finance_research",
+        ),
     ),
     NodeSpec(
         "writing",
@@ -142,14 +161,14 @@ NODES = (
             "requirements_analysis", "issue_tree", "outline", "research",
             "evidence_governance", "data_processing", "material_integration",
             "visualization", "writing_standards", "source_snapshot",
-            "claim_verification",
+            "claim_verification", "quant_finance_research",
         ),
         "writing",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
             "evidence_governance", "data_processing", "material_integration",
             "visualization", "writing_standards", "source_snapshot",
-            "claim_verification",
+            "claim_verification", "quant_finance_research",
         ),
     ),
     NodeSpec(
@@ -171,13 +190,14 @@ NODES = (
             "evidence_governance", "data_processing", "material_integration",
             "visualization", "writing", "citation_management",
             "content_optimization", "source_snapshot", "claim_verification",
+            "quant_finance_research",
         ),
         "pressure_test",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
             "evidence_governance", "data_processing", "material_integration",
             "visualization", "content_optimization", "source_snapshot",
-            "claim_verification",
+            "claim_verification", "quant_finance_research",
         ),
     ),
     NodeSpec(
@@ -198,7 +218,7 @@ NODES = (
             "requirements_analysis", "research", "evidence_governance", "outline",
             "data_processing", "material_integration", "visualization",
             "pressure_test", "writing_standards", "formatting",
-            "source_snapshot", "claim_verification",
+            "source_snapshot", "claim_verification", "quant_finance_research",
             "pre_review_confirmation",
         ),
         "review",
@@ -206,7 +226,7 @@ NODES = (
             "requirements_analysis", "research", "evidence_governance", "outline",
             "data_processing", "material_integration", "visualization",
             "pressure_test", "writing_standards", "formatting",
-            "source_snapshot", "claim_verification",
+            "source_snapshot", "claim_verification", "quant_finance_research",
         ),
     ),
     NodeSpec(
@@ -217,7 +237,7 @@ NODES = (
             "data_processing", "material_integration", "visualization",
             "citation_management", "content_optimization", "pressure_test",
             "writing_standards", "review", "source_snapshot",
-            "claim_verification",
+            "claim_verification", "quant_finance_research",
         ),
         "quality_gate",
         (
@@ -226,7 +246,7 @@ NODES = (
             "data_processing", "material_integration", "visualization",
             "citation_management", "content_optimization", "pressure_test",
             "writing_standards", "review", "source_snapshot",
-            "claim_verification",
+            "claim_verification", "quant_finance_research",
         ),
         quality_gate=True,
     ),
@@ -268,6 +288,7 @@ def default_registry(
         OutlineSkill(), ResearchSkill(retriever=source_retriever),
         SourceSnapshotSkill(), EvidenceGovernanceSkill(),
         DataProcessingSkill(), ClaimVerificationSkill(),
+        QuantFinanceResearchSkill(),
         MaterialIntegrationSkill(), VisualizationSkill(),
         WritingSkill(), CitationManagementSkill(), ContentOptimizationSkill(),
         PressureTestSkill(),
@@ -616,6 +637,13 @@ class ResearchReportOrchestrator:
                 (
                     ("论断验证", 5), ("原文片段", 5), ("数字核验", 5),
                     ("证据对齐", 4), ("claim verification", 5),
+                ),
+            ),
+            (
+                "quant_finance_research",
+                (
+                    ("量化", 4), ("金工", 4), ("因子", 4), ("回测", 5),
+                    ("交易成本", 5), ("样本外", 5), ("sharpe", 4),
                 ),
             ),
             (

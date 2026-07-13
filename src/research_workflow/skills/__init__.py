@@ -14,6 +14,7 @@ from .outline import OutlineSkill
 from .pressure_test import PressureTestSkill
 from .publish import PublishSkill
 from .quality_gate import QualityGateSkill
+from .quant_finance_research import QuantFinanceResearchSkill
 from .research import ResearchSkill
 from .requirements_analysis import RequirementsAnalysisSkill
 from .review import ReviewSkill
@@ -45,5 +46,6 @@ __all__ = [
     "FormattingSkill",
     "ReviewSkill",
     "QualityGateSkill",
+    "QuantFinanceResearchSkill",
     "PublishSkill",
 ]

@@ -97,6 +97,42 @@ BUILTIN_PROFILES = (
         references=(),
     ),
     WritingStandardProfile(
+        id="quant_finance_brokerage",
+        version=1,
+        scene="industry_investment",
+        name="券商量化金融工程研究报告",
+        trigger_keywords=(
+            "量化", "金工", "因子", "回测", "择时", "组合优化",
+            "指数增强", "quant", "factor", "backtest",
+        ),
+        rules={
+            "required_sections": [
+                "核心结论", "数据与样本", "模型与因子定义", "回测设计",
+                "绩效与归因", "稳健性检验", "风险与适用边界", "合规声明",
+            ],
+            "data_contract": (
+                "明确股票池、基准、样本期、频率、复权、停牌涨跌停、退市和数据来源"
+            ),
+            "methodology": (
+                "公开因子公式、预处理、中性化、调仓、约束与参数，不得只展示结果"
+            ),
+            "backtest": (
+                "同时报告年化收益、基准、超额、波动、Sharpe、最大回撤、换手和交易成本"
+            ),
+            "robustness": (
+                "必须执行样本外/滚动检验、参数稳定性、前视偏差和幸存者偏差检查"
+            ),
+            "compliance": (
+                "历史回测不代表未来收益；不把复现结果表述为投资建议或收益承诺"
+            ),
+            "prohibited": [
+                "忽略交易成本", "只报告最优参数", "使用未来数据",
+                "未披露股票池变化", "将回测等同实盘",
+            ],
+        },
+        references=(),
+    ),
+    WritingStandardProfile(
         id="wechat_public_account",
         version=1,
         scene="public_account",

@@ -36,7 +36,7 @@ ResearchReportOrchestrator
   |      -> issue_tree -> [主题与议题树确认]
   |      -> outline -> [大纲确认] -> research(场景化来源)
   |      -> source_snapshot -> evidence_governance -> data_processing
-  |      -> claim_verification -> material_integration
+  |      -> claim_verification -> quant_finance_research -> material_integration
   |      -> visualization -> writing -> citation_management -> content_optimization
   |      -> pressure_test -> [初稿确认]
   |      -> formatting -> [终审前确认] -> review -> quality_gate -> publish
@@ -176,7 +176,7 @@ completed -> invalidated -> running（用户修改后）
 #### 2.3.1 capability_sweep：技能与外部能力遍历
 
 - 触发：每个工作流第一个节点，禁止跳过。
-- 逻辑：完整列出22个内置Skill；遍历开源/外部集成目录，记录许可证、星数快照、
+- 逻辑：完整列出23个内置Skill；遍历开源/外部集成目录，记录许可证、星数快照、
   configured/disabled/reviewed_not_configured 和原因。
 - 输出：`capability_manifest`。内置清单缺项或外部目录未遍历完整时失败。
 - 边界：盘点不等于执行；无许可证、无认证或不适用的第三方能力不得强行运行。
@@ -336,7 +336,7 @@ SkillResult:
 Skill 必须是显式输入到不可变输出的转换器。远程服务可以实现 Proxy Skill，通过 RPC 传输相同
 结构；编排器无需了解供应商、模型或部署方式。
 
-编排器会把最多16个相关向量分片放入`SkillRequest.context`。当前二十二个内置Skill
+编排器会把最多16个相关向量分片放入`SkillRequest.context`。当前二十三个内置Skill
 均只消费 `inputs` 精确依赖，尚未读取 context；该字段目前供自定义/远程 Skill 使用。
 
 ### 3.3 TextGenerator
@@ -574,7 +574,7 @@ duration_ms, error_type, retryable, trace_id, actor_id
 - 105000 字目标端到端完成，最新基线终稿 120383 字（含引用和参考资料）；
 - 进程重启后从大纲确认点恢复；
 - 四个确认门全部验证；
-- 22个内置Skill全部完成，15个外部集成项全部遍历并记录未执行原因；
+- 23个内置Skill全部完成，16个外部集成项全部遍历并记录未执行原因；
 - 三支柱分别调用、claim ledger、锚点评分、7 项可视化和独立 publish 均进入真实 DAG；
 - 显式编造关键来源会阻断发布并禁止读取终稿；
 - 无来源报告会披露证据缺口并被质量门阻断；

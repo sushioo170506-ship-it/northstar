@@ -62,6 +62,7 @@ class QualityGateSkill(Skill):
         verification = json.loads(
             request.inputs.get("claim_verification", "{}")
         )
+        quant = json.loads(request.inputs.get("quant_finance_research", "{}"))
         evidence = json.loads(evidence_text)
         evidence_grades = processed.get("evidence_grades", {})
         graded_total = sum(evidence_grades.values())
@@ -102,6 +103,14 @@ class QualityGateSkill(Skill):
         requirements_policy["writing_standard_compliant"] = standards_compliant
         requirements_policy["compliant"] = (
             requirements_policy["compliant"] and standards_compliant
+        )
+        quant_compliant = (
+            not quant.get("applicable", False)
+            or quant.get("hard_gates_passed", False)
+        )
+        requirements_policy["quant_finance_compliant"] = quant_compliant
+        requirements_policy["compliant"] = (
+            requirements_policy["compliant"] and quant_compliant
         )
         if self.generator:
             prompt = (
@@ -156,6 +165,7 @@ class QualityGateSkill(Skill):
                             "compliant"
                         ],
                         "no_red_lines": not red_lines,
+                        "quant_finance": quant_compliant,
                     },
                 }
             )
@@ -268,6 +278,11 @@ class QualityGateSkill(Skill):
                 "存在未通过原文片段、数字一致性或冲突检查的论断："
                 + "、".join(requirements_policy["unsupported_claim_ids"])
             )
+        if not quant_compliant:
+            problems.append(
+                "量化金融工程硬门未通过："
+                + "；".join(quant.get("issues", []))
+            )
         if high_grade_ratio < minimum_high_grade_ratio:
             problems.append(
                 f"A+/A/B 级证据占比 {high_grade_ratio:.1%} 低于"
@@ -295,6 +310,7 @@ class QualityGateSkill(Skill):
                 ],
                 "evidence_and_requirements": requirements_policy["compliant"],
                 "no_red_lines": not red_lines,
+                "quant_finance": quant_compliant,
             },
             "requirements_checks": {
                 "audience": requirements.get("audience"),
@@ -352,6 +368,8 @@ class QualityGateSkill(Skill):
                 "unsupported_claim_ids": requirements_policy[
                     "unsupported_claim_ids"
                 ],
+                "quant_finance_applicable": quant.get("applicable", False),
+                "quant_finance_compliant": quant_compliant,
             },
             "decision": "allow_release" if passed else "block_release",
             "feedback_applied": list(request.feedback),

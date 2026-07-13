@@ -27,6 +27,7 @@ class ReviewSkill(Skill):
         writing_standard = json.loads(request.inputs["writing_standards"])
         snapshot = json.loads(request.inputs.get("source_snapshot", "{}"))
         verification = json.loads(request.inputs.get("claim_verification", "{}"))
+        quant = json.loads(request.inputs.get("quant_finance_research", "{}"))
         if self.generator:
             content = self.generator.generate(
                 system="你是独立质量审核员，不得引入未经证实的新事实。",
@@ -54,6 +55,11 @@ class ReviewSkill(Skill):
             issues.append(
                 "存在未验证论断："
                 + "、".join(verification["unsupported_claim_ids"])
+            )
+        if quant.get("applicable") and not quant.get("hard_gates_passed"):
+            issues.append(
+                "量化金融工程硬门未通过："
+                + "；".join(quant.get("issues", []))
             )
         issues.extend(pressure_test.get("repair_actions", []))
         categories = set(evidence_ledger.get("metrics", {}).get("source_categories", []))

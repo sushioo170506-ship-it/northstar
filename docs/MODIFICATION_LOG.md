@@ -205,6 +205,14 @@
 - quality_gate发布决定改由来源快照、论断验证、证据/需求和红线硬门决定；D1-D7仅保留诊断。
 - 新增无密钥ArxivRetriever和CrossrefRetriever；产业、金融、微信仍要求组织授权Provider。
 
+### QuantsPlaybook量化金工适配（2026-07-13）
+
+- 核验`hugo2046/QuantsPlaybook@87163521…`约5.6k Stars，但根目录无LICENSE，部分内容仅声明
+  学习研究用途，并依赖jqdata/jqfactor/Tushare；登记为NOASSERTION/observe_only。
+- 未复制、导入或执行其Notebook与工具代码；新增clean-room`quant_finance_research`Skill。
+- 新增券商量化金工Profile，覆盖数据样本、因子公式、回测设计、绩效归因、稳健性和合规声明。
+- 量化硬门要求基准/样本/交易成本、七项绩效指标及来源、样本外、前视与幸存者偏差检查。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

@@ -22,6 +22,9 @@ class ExperienceEvolutionSkill(Skill):
         "claim_verification": (
             "论断验证", "原文片段", "数字核验", "证据对齐", "冲突仲裁"
         ),
+        "quant_finance_research": (
+            "量化", "金工", "因子", "回测", "交易成本", "样本外", "Sharpe"
+        ),
         "data_processing": ("评分", "claim", "交叉验证", "证据等级"),
         "visualization": ("图表", "可视化", "流程图"),
         "writing_standards": (

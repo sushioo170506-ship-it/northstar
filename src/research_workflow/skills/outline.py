@@ -56,7 +56,14 @@ class OutlineSkill(Skill):
             for item in issue_tree.get("issues", [])
         ]
         scene = standard["scene"]
-        if scene == "technical":
+        profile_id = standard["profile"]["id"]
+        if profile_id == "quant_finance_brokerage":
+            framing = [
+                "核心结论", "数据与样本", "模型与因子定义",
+                "回测设计", "绩效与归因",
+            ]
+            closing = ["稳健性检验", "风险与局限", "合规声明"]
+        elif scene == "technical":
             framing = ["摘要", "引言", "相关工作", "方法", "实验设置", "结果与讨论"]
             closing = ["风险与局限", "结论"]
         elif scene == "industry_investment":

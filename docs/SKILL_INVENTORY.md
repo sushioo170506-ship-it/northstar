@@ -7,8 +7,8 @@ frontmatter `name`、Python `Skill.name`、DAG node id 四者一致。
 ## 计数口径
 
 - 主编排 Skill：1 个，不作为 DAG 功能节点执行；
-- 可执行 Skill：22 个，全部出现在 DAG；
-- SKILL.md 总数：23 个。
+- 可执行 Skill：23 个，全部出现在 DAG；
+- SKILL.md 总数：24 个。
 
 ## 主编排 Skill
 
@@ -31,17 +31,18 @@ frontmatter `name`、Python `Skill.name`、DAG node id 四者一致。
 | 9 | `evidence_governance` | 9 | `skills/evidence_governance/SKILL.md` |
 | 10 | `data_processing` | 10 | `skills/data_processing/SKILL.md` |
 | 11 | `claim_verification` | 11 | `skills/claim_verification/SKILL.md` |
-| 12 | `material_integration` | 12 | `skills/material_integration/SKILL.md` |
-| 13 | `visualization` | 13 | `skills/visualization/SKILL.md` |
-| 14 | `writing` | 14 | `skills/writing/SKILL.md` |
-| 15 | `citation_management` | 15 | `skills/citation_management/SKILL.md` |
-| 16 | `content_optimization` | 16 | `skills/content_optimization/SKILL.md` |
-| 17 | `pressure_test` | 17 | `skills/pressure_test/SKILL.md` |
-| 18 | `formatting` | 18 | `skills/formatting/SKILL.md` |
-| 19 | `review` | 19 | `skills/review/SKILL.md` |
-| 20 | `quality_gate` | 20 | `skills/quality_gate/SKILL.md` |
-| 21 | `publish` | 21 | `skills/publish/SKILL.md` |
-| 22 | `experience_evolution` | 22 | `skills/experience_evolution/SKILL.md` |
+| 12 | `quant_finance_research` | 12 | `skills/quant_finance_research/SKILL.md` |
+| 13 | `material_integration` | 13 | `skills/material_integration/SKILL.md` |
+| 14 | `visualization` | 14 | `skills/visualization/SKILL.md` |
+| 15 | `writing` | 15 | `skills/writing/SKILL.md` |
+| 16 | `citation_management` | 16 | `skills/citation_management/SKILL.md` |
+| 17 | `content_optimization` | 17 | `skills/content_optimization/SKILL.md` |
+| 18 | `pressure_test` | 18 | `skills/pressure_test/SKILL.md` |
+| 19 | `formatting` | 19 | `skills/formatting/SKILL.md` |
+| 20 | `review` | 20 | `skills/review/SKILL.md` |
+| 21 | `quality_gate` | 21 | `skills/quality_gate/SKILL.md` |
+| 22 | `publish` | 22 | `skills/publish/SKILL.md` |
+| 23 | `experience_evolution` | 23 | `skills/experience_evolution/SKILL.md` |
 
 四个确认节点不是 Skill，不计入上表：
 

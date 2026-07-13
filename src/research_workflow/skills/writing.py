@@ -26,6 +26,7 @@ class WritingSkill(Skill):
         visualizations_text = request.inputs["visualization"]
         standard_text = request.inputs["writing_standards"]
         verification_text = request.inputs.get("claim_verification", "{}")
+        quant_text = request.inputs.get("quant_finance_research", "{}")
         prompt = WRITING_PROMPT.format(
             topic=request.config.topic,
             expected_length=request.config.expected_length,
@@ -39,6 +40,7 @@ class WritingSkill(Skill):
                 f"\n可视化资产：\n{visualizations_text}"
                 f"\n强制写作规范：\n{standard_text}"
                 f"\n论断验证：\n{verification_text}"
+                f"\n量化金融工程校验：\n{quant_text}"
             )
             content = self.generator.generate(
                 system="你是证据驱动的研究报告作者。", prompt=prompt,
@@ -52,6 +54,7 @@ class WritingSkill(Skill):
         processed = json.loads(processed_text)
         standard = json.loads(standard_text)
         verification = json.loads(verification_text)
+        quant = json.loads(quant_text)
         scene = standard["scene"]
         parts = [f"# {outline['title']}\n"]
         if request.config.confidentiality_level != "public":
@@ -130,6 +133,15 @@ class WritingSkill(Skill):
             parts.append(
                 "## 互动\n\n"
                 "你最希望进一步核验哪一项数据或应用边界？欢迎基于原始来源讨论。\n"
+            )
+        if quant.get("applicable"):
+            parts.append(
+                "## 量化研究复现与合规说明\n\n"
+                f"- 校验状态：{quant.get('status')}\n"
+                f"- 数据口径：{json.dumps(quant.get('data_contract', {}), ensure_ascii=False)}\n"
+                f"- 回测指标：{json.dumps(quant.get('backtest', {}).get('metrics', {}), ensure_ascii=False)}\n"
+                f"- 稳健性：{json.dumps(quant.get('robustness', {}), ensure_ascii=False)}\n"
+                f"- 声明：{quant.get('disclaimer')}\n"
             )
         if request.feedback:
             parts.append("## 修订说明\n\n" + "；".join(request.feedback))

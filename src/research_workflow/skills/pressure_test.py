@@ -27,6 +27,7 @@ class PressureTestSkill(Skill):
         materials_text = request.inputs["material_integration"]
         visualizations_text = request.inputs["visualization"]
         verification = json.loads(request.inputs.get("claim_verification", "{}"))
+        quant = json.loads(request.inputs.get("quant_finance_research", "{}"))
         model_analysis = None
         if self.generator:
             prompt = (
@@ -122,6 +123,15 @@ class PressureTestSkill(Skill):
                     "message": "存在未验证论断："
                     + "、".join(verification["unsupported_claim_ids"]),
                     "repair": "补充原文证据片段或修正数字、冲突和来源独立性",
+                }
+            )
+        if quant.get("applicable") and not quant.get("hard_gates_passed"):
+            evidence_gaps.append(
+                {
+                    "severity": "high",
+                    "location": "量化金融工程",
+                    "message": "；".join(quant.get("issues", [])),
+                    "repair": "补齐数据口径、绩效来源、交易成本和样本外偏差检查",
                 }
             )
         if materials.get("metrics", {}).get("mount_coverage", 0.0) < 1.0:

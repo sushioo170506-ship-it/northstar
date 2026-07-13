@@ -19,12 +19,14 @@ class VisualizationSkill(Skill):
         issue_tree_text = request.inputs["issue_tree"]
         materials_text = request.inputs["material_integration"]
         processed_text = request.inputs["data_processing"]
+        quant_text = request.inputs.get("quant_finance_research", "{}")
         if self.generator:
             content = self.generator.generate(
                 system="你是信息可视化设计师，仅依据提供材料生成 Mermaid 或 Vega-Lite 规范。",
                 prompt=(
                     f"议题树：{issue_tree_text}\n章节素材：{materials_text}\n"
                     f"处理后数据：{processed_text}\n"
+                    f"量化金融工程：{quant_text}\n"
                     "为流程、架构或量化信息生成可渲染 JSON 资产清单。"
                 ),
                 max_tokens=5000,
@@ -34,6 +36,7 @@ class VisualizationSkill(Skill):
         issue_tree = json.loads(issue_tree_text)
         materials = json.loads(materials_text)
         processed = json.loads(processed_text)
+        quant = json.loads(quant_text)
         assets = []
         flow_lines = ["flowchart TD", '  ROOT["研究主题"]']
         for issue in issue_tree.get("issues", []):
@@ -234,6 +237,32 @@ class VisualizationSkill(Skill):
                 },
             ]
         )
+        if quant.get("applicable"):
+            metrics = quant.get("backtest", {}).get("metrics", {})
+            assets.append(
+                {
+                    "id": "VIS-QUANT-BACKTEST",
+                    "type": "statistical_chart",
+                    "format": "vega-lite",
+                    "title": "交易成本与样本外约束后的回测指标决定策略可信度",
+                    "section_ids": [],
+                    "content": {
+                        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+                        "data": {
+                            "values": [
+                                {"metric": name, "value": value}
+                                for name, value in metrics.items()
+                                if isinstance(value, (int, float))
+                            ]
+                        },
+                        "mark": "bar",
+                        "encoding": {
+                            "x": {"field": "metric", "type": "nominal"},
+                            "y": {"field": "value", "type": "quantitative"},
+                        },
+                    },
+                }
+            )
         payload = {
             "assets": assets,
             "metrics": {

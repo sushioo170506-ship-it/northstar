@@ -134,6 +134,11 @@ published_at、content、issue_ids；内置模式没有检索器时仅整理用�
 `source_snapshot`随后冻结正文、Provider、抓取时间与SHA-256；`claim_verification`要求每项
 论断包含可定位原文片段，数字/单位在来源中一致，关键论断达到双独立来源且无未解决冲突。
 
+量化金融工程报告使用`output_type="券商量化金融工程研究报告"`并配置
+`extra.quant_analysis`。必需字段包括股票池、基准、样本期、频率、数据源、因子公式、调仓、
+交易成本、样本外/前视/幸存者偏差检查，以及年化收益、基准、超额、波动、Sharpe、最大回撤、
+换手和逐指标来源。缺任一项时`quant_finance_research=incomplete`并由质量门阻断。
+
 ```json
 {"sources": [
   {"id": "S1", "title": "官方/产业原文", "category": "industry",
