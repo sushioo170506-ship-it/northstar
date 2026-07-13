@@ -1,11 +1,9 @@
 # Northstar Research Workflow
 
-可持久化、可恢复、可选择性重跑的研究报告 Skill 工作流。系统维护一个主编排 Skill 和二十三个
-名称与 DAG 完全一致的可执行 Skill，覆盖能力遍历、第三方 Skill 研究、需求、议题树、大纲、
-产业/学术/实景三支柱调研、证据治理、
-分场景写作标准、来源快照、逐论断原文/数字验证、量化金工回测硬门、数据锚点评分、素材映射、6–10项可视化、写作、引用管理、
-流程图/表格说明/编号/链接内容优化、压力测试、复核、
-发布阻断、交付和受控自进化。
+可持久化、可恢复、可选择性重跑的研究报告 Skill 工作流。系统对外提供一个主编排能力，
+DAG保留12个可执行节点（11个常驻、1个条件节点）；原23项研究职责作为各管道的内部步骤继续
+运行，覆盖需求、议题树、大纲、调研、证据快照与治理、逐论断验证、量化金工硬门、
+数据锚点评分、素材映射、可视化、写作、引用与内容优化、压力测试、复核、发布和受控进化。
 输出支持Markdown、网页、飞书、JSON、纯文本、可编辑Word/PPTX及自包含HTML Slides，
 并通过DocumentRenderer适配PDF和飞书Docx内嵌原生电子表格；
 私有Slides默认交付离线ZIP（HTML+PPTX+README），不生成Cursor预览或公开托管链接。
@@ -36,6 +34,7 @@ research-workflow create --topic "生成式人工智能治理" --length 8000 \
 - [组件筛选与修改日志](docs/MODIFICATION_LOG.md)
 - [测试报告](docs/TEST_REPORT.md)
 - [分场景写作标准、飞书配置和验收](docs/WRITING_STANDARDS_AND_FEISHU.md)
+- [Cursor/Claude/Codex/Trae/Qoder/WorkBuddy本地调用](docs/PORTABLE_AGENT_SKILL.md)
 - [主编排 Skill 与完整 Prompt](skills/research_report_orchestrator/SKILL.md)
 
 运行测试：

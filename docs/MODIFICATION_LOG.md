@@ -237,6 +237,16 @@
 - 事件回调快速返回，线程池执行工作流，通过飞书消息API回传等待节点或终稿链接。
 - 继续复用FeishuDocumentRenderer；内部/涉密发布策略与来源质量门不因机器人入口而降级。
 
+### 跨Agent本地Skill（2026-07-13）
+
+- 新增`research-report-workflow`顶层Agent Skill；SKILL只负责调用和确认协议，工作流仍由
+  本地Python、SQLite与12节点DAG执行。
+- 同步安装到Cursor、Claude Code、Codex、Trae、Qoder和WorkBuddy项目目录。
+- 新增`create-config`与`artifact` CLI命令，供Agent提交完整配置、展示议题树/大纲/草稿和
+  检查质量门。
+- 新增仓库定位启动器、Office环境安装脚本及`sync_agent_skill.py`一致性同步工具。
+- 更换对话或Agent时使用同一仓库、`.research-workflow`目录与`workflow_id`恢复，不依赖聊天记忆。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

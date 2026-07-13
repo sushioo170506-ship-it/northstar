@@ -64,9 +64,19 @@ def _parser() -> argparse.ArgumentParser:
     )
     create.add_argument("--sources-json", help="包含 sources 数组的 JSON 文件")
 
+    create_config = sub.add_parser("create-config")
+    create_config.add_argument("config_json", help="完整 ReportConfig JSON 文件")
+
     for name in ("run", "status", "final"):
         command = sub.add_parser(name)
         command.add_argument("workflow_id")
+
+    artifact = sub.add_parser("artifact")
+    artifact.add_argument("workflow_id")
+    artifact.add_argument("node")
+    artifact.add_argument(
+        "--json", action="store_true", help="输出包含元数据的完整产物JSON"
+    )
 
     export = sub.add_parser("export")
     export.add_argument("workflow_id")
@@ -140,6 +150,14 @@ def main(argv: list[str] | None = None) -> int:
                 }
             )
             print(json.dumps({"workflow_id": workflow_id}, ensure_ascii=False))
+        elif args.command == "create-config":
+            config = json.loads(
+                Path(args.config_json).read_text(encoding="utf-8")
+            )
+            if not isinstance(config, dict):
+                raise ValueError("config_json 顶层必须是对象")
+            workflow_id = orchestrator.create(config)
+            print(json.dumps({"workflow_id": workflow_id}, ensure_ascii=False))
         elif args.command == "run":
             print(json.dumps(orchestrator.run(args.workflow_id).__dict__, ensure_ascii=False))
         elif args.command == "confirm":
@@ -192,6 +210,16 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.command == "status":
             print(json.dumps(orchestrator.state.snapshot(args.workflow_id), ensure_ascii=False))
+        elif args.command == "artifact":
+            artifact = orchestrator.state.node_artifact(
+                args.workflow_id, args.node
+            )
+            if artifact is None:
+                raise ValueError(f"节点尚无产物: {args.node}")
+            if args.json:
+                print(json.dumps(artifact, ensure_ascii=False))
+            else:
+                print(artifact["content"])
         elif args.command == "final":
             print(orchestrator.final_report(args.workflow_id))
         elif args.command == "export":

@@ -169,6 +169,11 @@ research-workflow --data-dir ./data update-sources WORKFLOW_ID sources.json \
 research-workflow --data-dir ./data status WORKFLOW_ID
 research-workflow --data-dir ./data final WORKFLOW_ID > report.md
 research-workflow --data-dir ./data export WORKFLOW_ID report.html
+
+# Agent/自动化调用可直接提交完整配置并读取确认点产物
+research-workflow --data-dir ./data create-config config.json
+research-workflow --data-dir ./data artifact WORKFLOW_ID outline
+research-workflow --data-dir ./data artifact WORKFLOW_ID quality_assurance --json
 ```
 
 `export`按发布元数据直接写文件：`slides_html`写单个自包含HTML，DOCX/PPTX/PDF解码为二进制；

@@ -37,29 +37,19 @@ outcome = workflow.run(workflow_id)
 
 ## 时序与确认
 
-1. `capability_sweep`：遍历全部内置 Skill 和外部集成目录
-2. `requirements_analysis`
-3. `skill_research`：第三方 Skill 检索、许可筛选、适配草案和溯源
-4. `writing_standards`：场景Profile、触发词、参照核验和信息安全策略
-5. `issue_tree` → `issue_tree_confirmation`
-6. `outline` → `outline_confirmation`
-7. `research`：按场景执行产业、学术或实景来源pass
-8. `source_snapshot`：冻结原文、时间、Provider和SHA-256
-9. `evidence_governance`
-10. `data_processing`：数据点与条件评分
-11. `claim_verification`：原文片段、数字、独立来源和冲突硬验证
-12. `quant_finance_research`：量化金工报告的数据、公式、回测、稳健性和合规硬门
-13. `material_integration`
-14. `visualization`：6–10 项可视化规范
-15. `writing`
-16. `citation_management`
-17. `content_optimization`：流程图、表格说明、连续编号和全量链接索引
-18. `pressure_test` → `draft_confirmation`
-19. `formatting` → `pre_review_confirmation`
-20. `review`
-21. `quality_gate`
-22. `publish`
-23. `experience_evolution`
+1. `requirements_analysis`（内部执行`capability_sweep`）
+2. `writing_standards`（内部执行`skill_research`）
+3. `issue_tree` → `issue_tree_confirmation`
+4. `outline` → `outline_confirmation`
+5. `research`：按场景执行来源pass
+6. `evidence_pipeline`（内部执行来源快照与证据治理）
+7. `data_processing`（内部执行claim ledger与逐论断验证）
+8. `compose`（内部执行素材、可视化、写作、引用、内容优化和压力测试）
+   → `draft_confirmation`
+9. `formatting` → `pre_review_confirmation`
+10. `quality_assurance`（内部执行量化条件校验、review与quality_gate）
+11. `publish`
+12. `experience_evolution`（无反馈操作时条件跳过）
 
 `run()` 在确认点返回 `waiting_confirmation`。调用
 `confirm(workflow_id, checkpoint_id, comment)` 后再次 `run()`。不得跳过确认。
@@ -67,10 +57,10 @@ outcome = workflow.run(workflow_id)
 
 ## 遍历规则
 
-- 23 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
-- 外部集成先由 capability_sweep 全量遍历；已配置者交给对应节点调用，未配置者记录
+- 12 个DAG Skill均有持久化状态；23项原始职责在合并管道内按固定顺序执行。
+- 外部集成先由`requirements_analysis`内的capability_sweep遍历；已配置者交给对应节点调用，未配置者记录
   `reviewed_not_configured` 和原因。禁止静默跳过。
-- 条件能力仍必须执行其包装 Skill：不适用时输出结构化 `not_applicable`，不得伪造结果。
+- 条件能力输出结构化`not_applicable`或`conditional_skip`，不得伪造结果。
 - “调用全部”不等于“执行全部第三方程序”；无凭证、无许可证或不适用组件不得运行。
 
 ## 工作流Profile
@@ -91,14 +81,13 @@ outcome = workflow.run(workflow_id)
 
 | 阶段 | 卡口 | 失败退回 |
 |---|---|---|
-| Skill 研究 | 来源、作者、版本、许可证齐全；未知许可拒绝 | skill_research |
+| Skill 研究 | 来源、作者、版本、许可证齐全；未知许可拒绝 | writing_standards |
 | 议题树 | 3–7 个必要、可证伪、可行动问题 | issue_tree |
 | 大纲 | 核心判断、章节结论、锚点、证伪条件齐全 | outline |
 | 调研 | industry/academic/social_media 三 pass 均有记录 | research |
 | 数据处理 | 论断可追溯、冲突显式、主观评分禁止 | data_processing |
-| 可视化 | 6–10 项；结论式标题；至少比较/结构/时间类 | visualization |
-| 正文 | 数字含数值+时间+来源；段落判断驱动 | writing |
-| 发布 | 红线、链接、claim、挂载、边界、D1–D7 全通过 | 最早受影响节点 |
+| 成文 | 素材挂载、可视化、引用、结构和压力测试完整 | compose |
+| 发布 | 红线、链接、claim、挂载、边界和硬门全通过 | quality_assurance |
 
 ## 参数和产物传递
 
@@ -131,8 +120,8 @@ outcome = workflow.run(workflow_id)
    pre_review_confirmation 停止并等待人工确认；
 4. 修改 {target_node} 时，仅失效该节点及其 DAG 后代，保留其他有效产物；
 5. 每次调用前按 workflow_id、依赖节点、主题检索上下文，并校验产物 checksum；
-6. capability_sweep 必须遍历所有内置 Skill 与外部集成目录，跳过必须有理由；
-7. quality_gate 触发证据红线或低于阈值时必须阻断 publish；
+6. requirements_analysis必须遍历内置能力与外部集成目录，跳过必须有理由；
+7. quality_assurance触发证据红线时必须阻断publish；
 8. 失败时记录错误，恢复后从失败节点继续，禁止重复已完成节点。
 统一参数：{config_json}
 ```
