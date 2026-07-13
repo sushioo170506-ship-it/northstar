@@ -8,6 +8,7 @@
 发布阻断、交付和受控自进化。
 输出支持Markdown、网页、飞书、JSON、纯文本、可编辑Word/PPTX及自包含HTML Slides，
 并通过DocumentRenderer适配PDF和飞书Docx内嵌原生电子表格；
+私有Slides默认交付离线ZIP（HTML+PPTX+README），不生成Cursor预览或公开托管链接。
 未配置真实渲染器时不会伪报二进制导出成功。
 Quick/Standard/Deep/Regulatory Profile分别提供1/2/4/4次确认；生产调研可注入
 CompositeSourceRetriever、OpenAlex和组织授权的产业/社媒Provider。

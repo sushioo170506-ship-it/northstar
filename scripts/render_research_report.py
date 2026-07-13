@@ -9,7 +9,6 @@ import re
 import shutil
 from pathlib import Path
 from urllib.parse import urlparse
-from zipfile import ZIP_DEFLATED, ZipFile
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -436,14 +435,12 @@ def render_slides(markdown: str) -> None:
     )
     SLIDES_HTML.write_text(slides_html, encoding="utf-8")
     SLIDES_HTML_ASCII.write_text(slides_html, encoding="utf-8")
-    with ZipFile(DECK_ZIP, "w", compression=ZIP_DEFLATED) as archive:
-        archive.write(SLIDES_HTML_ASCII, "gpt-live-deck.html")
-        archive.write(PPTX_ASCII, "gpt-live-deck.pptx")
-        archive.writestr(
-            "README.txt",
-            "双击 gpt-live-deck.html 在浏览器中演示；方向键/空格翻页，F全屏。"
-            "gpt-live-deck.pptx 可在 PowerPoint/WPS 中编辑。\n",
-        )
+    package, _ = renderer.render(
+        content=markdown,
+        output_format="slides_zip",
+        visualizations={"assets": []},
+    )
+    DECK_ZIP.write_bytes(base64.b64decode(package))
 
 
 def main() -> None:

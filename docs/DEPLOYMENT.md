@@ -31,6 +31,9 @@ OAuth `user_access_token`，组织自动化可用受限`tenant_access_token`。S
 专业Word和PPTX使用可选`office`依赖（python-docx、python-pptx）；HTML Slides无额外运行时。
 HTML Slides由工作流直接输出单个`.html`，使用`research-workflow export WORKFLOW_ID report.html`
 落盘，不要求ZIP、Node、CDN或构建步骤。
+私有报告不允许公开托管时，使用`output_format=slides`（映射`slides_zip`）并导出`.zip`；
+发布清单固定`delivery_link_policy=file_only`且禁止Cursor预览链接。只有调用方明确选择
+`slides_html`时才直接交付单HTML。
 个人飞书测试使用`FeishuOAuthClient`获取`user_access_token`，支持开发者免审调试的权限无需
 发布正式应用；正式版和不支持免审的权限仍须企业管理员审批。
 

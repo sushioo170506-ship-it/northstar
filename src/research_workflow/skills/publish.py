@@ -53,10 +53,15 @@ class PublishSkill(Skill):
             "limitations": [],
             "writing_standard_profile": writing_standard["profile"]["id"],
             "confidentiality_level": request.config.confidentiality_level,
+            "delivery_link_policy": "file_only",
+            "cursor_preview_link_allowed": False,
+            "public_hosting_allowed": bool(
+                request.config.extra.get("public_hosting_allowed", False)
+            ),
         }
         published_content = report
         if output_format in {
-            "docx", "pdf", "feishu", "pptx", "slides_html"
+            "docx", "pdf", "feishu", "pptx", "slides_html", "slides_zip"
         }:
             if self.renderer is None:
                 raise ValueError(

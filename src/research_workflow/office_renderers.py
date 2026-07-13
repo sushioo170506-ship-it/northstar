@@ -8,6 +8,7 @@ import io
 import re
 from datetime import date
 from typing import Any
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from .contracts import DocumentRenderer
 from .renderers import MarkdownTableParser
@@ -266,6 +267,45 @@ class SlidesRenderer(DocumentRenderer):
     }
 
     def render(self, *, content, output_format, visualizations):
+        if output_format == "slides_zip":
+            html_content = self._html(content)
+            pptx_content, pptx_metadata = self._pptx(content)
+            package = io.BytesIO()
+            with ZipFile(package, "w", compression=ZIP_DEFLATED) as archive:
+                archive.writestr("report.html", html_content)
+                archive.writestr(
+                    "report.pptx", base64.b64decode(pptx_content)
+                )
+                archive.writestr(
+                    "README.txt",
+                    "双击report.html在浏览器中演示；方向键/空格翻页，F全屏。"
+                    "report.pptx可在PowerPoint或WPS中编辑。"
+                    "本包为私有离线交付，不包含公开托管链接。\n",
+                )
+            data = package.getvalue()
+            return (
+                base64.b64encode(data).decode("ascii"),
+                {
+                    "rendered": True,
+                    "renderer": "northstar_private_slides_bundle",
+                    "output_format": "slides_zip",
+                    "media_type": "application/zip",
+                    "encoding": "base64",
+                    "byte_count": len(data),
+                    "slide_count": len(_slide_sections(content)),
+                    "bundle_files": [
+                        "report.html", "report.pptx", "README.txt"
+                    ],
+                    "private_offline": True,
+                    "public_url_generated": False,
+                    "cursor_preview_link_generated": False,
+                    "design_system": "frontend_slides_swiss_modern",
+                    "frontend_slides_commit": (
+                        "9906a34d640d2111f724544cbc50f7f130569ae1"
+                    ),
+                    "pptx_editable": pptx_metadata["editable"],
+                },
+            )
         if output_format == "slides_html":
             rendered = self._html(content)
             return (

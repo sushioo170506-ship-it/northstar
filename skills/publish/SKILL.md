@@ -40,6 +40,9 @@ self_contained、raster_exported、第三方候选审查数、待人工审批改
 - Slides HTML：注入SlidesRenderer，输出自包含HTML、键盘翻页和页码。
 - Slides HTML必须是可直接保存/打开的单文件，不得要求先解压ZIP；采用frontend-slides固定
   1920×1080画布整体缩放、预设化视觉系统、内容预算、无溢出/重叠和键盘/触摸导航规范。
+- 私有汇报默认`slides_zip`（别名`slides`）：离线包仅含`report.html`、可编辑
+  `report.pptx`和README；不生成Cursor预览链接或公开托管地址。显式要求单HTML时使用
+  `slides_html`。
 - renderer 缺失或未返回 `rendered=true` 时，Feishu/DOCX/PDF发布失败，不得静默改成Markdown。
 - secret/confidential/top_secret禁止飞书发布；internal必须有目标租户和数据驻留审批。
 

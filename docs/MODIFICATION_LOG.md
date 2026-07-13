@@ -193,6 +193,8 @@
 - SlidesRenderer固定采用Frontend Slides提交
   `9906a34d640d2111f724544cbc50f7f130569ae1`的1920×1080画布与Swiss Modern方法，
   工作流可通过`export_final`/CLI `export`直接输出单个HTML文件，不以ZIP为前置。
+- 新增`slides_zip`私有交付格式；`slides`默认映射离线包，包含HTML、可编辑PPTX和README，
+  发布清单禁止Cursor预览链接与未授权公开托管。
 
 ## 存储实现
 

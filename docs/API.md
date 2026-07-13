@@ -7,7 +7,7 @@
 | `topic` | string | 必填，去除多余空白，1–500 字符 |
 | `expected_length` | integer | 500–500000，默认 5000 |
 | `style` | string | 默认“专业、客观、证据驱动” |
-| `output_format` | string | markdown/html/feishu/json/text/docx/pdf/pptx/slides_html；支持webpage/飞书/word/ppt/slides等别名 |
+| `output_format` | string | markdown/html/feishu/json/text/docx/pdf/pptx/slides_html/slides_zip；`slides`默认映射私有离线ZIP |
 | `language` | string | 默认 zh-CN |
 | `output_type` | string | 具体产出形态，默认 research_report |
 | `audience` | string | 目标受众，默认通用专业读者 |
@@ -162,7 +162,7 @@ research-workflow --data-dir ./data export WORKFLOW_ID report.html
 ```
 
 `export`按发布元数据直接写文件：`slides_html`写单个自包含HTML，DOCX/PPTX/PDF解码为二进制；
-无需先生成或解压ZIP。
+`slides_zip`写包含`report.html`、`report.pptx`和README的私有离线包。
 
 CLI会自动为DOCX、PPTX和Slides HTML配置内置渲染器。飞书个人授权后设置：
 

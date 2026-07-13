@@ -22,6 +22,7 @@ def _renderer_from_env():
         "docx": AestheticDocxRenderer(),
         "pptx": SlidesRenderer(),
         "slides_html": SlidesRenderer(),
+        "slides_zip": SlidesRenderer(),
     }
     user_token = os.getenv("FEISHU_USER_ACCESS_TOKEN")
     app_id = os.getenv("FEISHU_APP_ID")

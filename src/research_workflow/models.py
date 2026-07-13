@@ -25,7 +25,7 @@ class WorkflowStatus(StrEnum):
 
 SUPPORTED_FORMATS = {
     "markdown", "html", "json", "text", "feishu", "docx", "pdf",
-    "pptx", "slides_html",
+    "pptx", "slides_html", "slides_zip",
 }
 SUPPORTED_WORKFLOW_PROFILES = {"quick", "standard", "deep", "regulatory"}
 SUPPORTED_CONFIDENTIALITY_LEVELS = {
@@ -66,8 +66,8 @@ class ReportConfig:
         aliases = {
             "md": "markdown", "htm": "html", "web": "html", "webpage": "html",
             "网页": "html", "txt": "text", "word": "docx", "飞书": "feishu",
-            "ppt": "pptx", "powerpoint": "pptx", "slides": "slides_html",
-            "幻灯片": "slides_html",
+            "ppt": "pptx", "powerpoint": "pptx", "slides": "slides_zip",
+            "幻灯片": "slides_zip", "private_slides": "slides_zip",
         }
         output_format = aliases.get(output_format, output_format)
         if output_format not in SUPPORTED_FORMATS:

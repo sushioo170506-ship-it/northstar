@@ -11,7 +11,7 @@ version: 1.0.0
 
 输入 `inputs["citation_management"]` 和全局 `style`、`output_format`，输出
 `artifact_type="formatted_draft"`。内置格式为`markdown`、`html/webpage`、`json`、`text`；
-`feishu`、`docx/word`、`pdf`、`pptx/ppt`和`slides_html/slides`输出canonical Markdown并交给
+`feishu`、`docx/word`、`pdf`、`pptx/ppt`、`slides_html`和`slides_zip/slides`输出canonical Markdown并交给
 对应发布渲染器。
 
 ```python

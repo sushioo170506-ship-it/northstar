@@ -610,6 +610,23 @@ class WorkflowTests(unittest.TestCase):
             html_meta["design_system"], "frontend_slides_swiss_modern"
         )
         self.assertTrue(html_meta["self_contained"])
+        zip_content, zip_meta = SlidesRenderer().render(
+            content=markdown,
+            output_format="slides_zip",
+            visualizations={"assets": []},
+        )
+        with ZipFile(BytesIO(base64.b64decode(zip_content))) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(
+                set(archive.namelist()),
+                {"report.html", "report.pptx", "README.txt"},
+            )
+            self.assertTrue(
+                archive.read("report.html").startswith(b"<!doctype html>")
+            )
+        self.assertTrue(zip_meta["private_offline"])
+        self.assertFalse(zip_meta["public_url_generated"])
+        self.assertFalse(zip_meta["cursor_preview_link_generated"])
 
     def test_slides_html_exports_as_direct_file(self) -> None:
         child = ResearchReportOrchestrator(
@@ -636,6 +653,37 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(content.startswith("<!doctype html>"))
         self.assertIn('id="deckStage"', content)
         self.assertIn("width:1920px", content)
+
+        private = ResearchReportOrchestrator(
+            self.root / "private-slides",
+            document_renderer=SlidesRenderer(),
+        )
+        private_id = private.create(
+            {
+                "topic": "私有离线汇报",
+                "expected_length": 500,
+                "output_format": "slides",
+                "workflow_profile": "quick",
+                "extra": {"sources": compliant_sources("PRIVATE-SLIDES")},
+            }
+        )
+        waiting = private.run(private_id)
+        private.confirm(private_id, waiting.waiting_at)
+        self.assertEqual(
+            private.run(private_id).status, WorkflowStatus.COMPLETED
+        )
+        zip_path = private.export_final(
+            private_id, self.root / "private-slides.zip"
+        )
+        with ZipFile(zip_path) as archive:
+            self.assertEqual(
+                set(archive.namelist()),
+                {"report.html", "report.pptx", "README.txt"},
+            )
+        published = private.state.node_artifact(private_id, "publish")
+        manifest = published["metadata"]["publish_manifest"]
+        self.assertEqual(manifest["delivery_link_policy"], "file_only")
+        self.assertFalse(manifest["cursor_preview_link_allowed"])
 
     def test_slides_do_not_treat_ids_or_years_as_business_metrics(self) -> None:
         report = (
@@ -1103,13 +1151,16 @@ class WorkflowTests(unittest.TestCase):
 
     def test_formats_are_valid(self) -> None:
         for output_format in (
-            "html", "json", "text", "feishu", "pptx", "slides_html"
+            "html", "json", "text", "feishu", "pptx", "slides_html",
+            "slides_zip",
         ):
             child = ResearchReportOrchestrator(
                 self.root / output_format,
                 document_renderer=(
                     FakeRenderer()
-                    if output_format in {"feishu", "pptx", "slides_html"}
+                    if output_format in {
+                        "feishu", "pptx", "slides_html", "slides_zip"
+                    }
                     else None
                 ),
             )
@@ -1127,7 +1178,9 @@ class WorkflowTests(unittest.TestCase):
                 self.assertTrue(report.startswith("<!doctype html>"))
             elif output_format == "json":
                 self.assertEqual(json.loads(report)["title"], "格式测试")
-            elif output_format in {"feishu", "pptx", "slides_html"}:
+            elif output_format in {
+                "feishu", "pptx", "slides_html", "slides_zip"
+            }:
                 self.assertTrue(report.startswith(f"base64:{output_format}:"))
             else:
                 self.assertNotIn("# ", report)
@@ -1190,7 +1243,7 @@ class WorkflowTests(unittest.TestCase):
             ReportConfig.from_dict(
                 {"topic": "Slides", "output_format": "slides"}
             ).output_format,
-            "slides_html",
+            "slides_zip",
         )
 
     def test_writing_standard_profiles_are_versioned_and_triggerable(self) -> None:

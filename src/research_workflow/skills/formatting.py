@@ -60,7 +60,9 @@ class FormattingSkill(Skill):
         elif output_format == "feishu":
             # Canonical Markdown is handed to the Feishu Open API renderer.
             content = normalized
-        elif output_format in {"docx", "pdf", "pptx", "slides_html"}:
+        elif output_format in {
+            "docx", "pdf", "pptx", "slides_html", "slides_zip"
+        }:
             # Canonical Markdown is handed to an injected renderer in publish.
             content = normalized
         else:
@@ -71,7 +73,8 @@ class FormattingSkill(Skill):
                 "format": output_format,
                 "style": request.config.style,
                 "requires_renderer": output_format in {
-                    "docx", "pdf", "feishu", "pptx", "slides_html"
+                    "docx", "pdf", "feishu", "pptx", "slides_html",
+                    "slides_zip",
                 },
                 "native_format": output_format in {
                     "markdown", "html", "json", "text"
