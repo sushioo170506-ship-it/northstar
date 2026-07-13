@@ -303,9 +303,10 @@ background:var(--cyan);border-radius:0 5px 5px 0}.card h3{font-size:25px;margin:
 color:#fff}.card p,.card li{font-size:21px;line-height:1.52;color:#bed0df}.card ul{margin:0;padding-left:24px}
 .metric{font:700 62px/1 "Arial";color:var(--cyan);letter-spacing:-.04em}
 .metric-label{font-size:19px;color:var(--muted);margin-top:12px}.metric-card{min-height:170px}
-.flow{display:grid;grid-template-columns:1fr 120px 1fr;align-items:center;gap:12px;margin:12px 0}
-.node{padding:18px 22px;border:2px solid #3b85bd;background:#102c48;border-radius:12px;
-font-size:21px;font-weight:700}.arrow{text-align:center;color:var(--cyan);font-size:26px}
+.flow-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px 34px}.flow{display:grid;
+grid-template-columns:1fr 76px 1fr;align-items:center;gap:8px;margin:4px 0}
+.node{padding:12px 15px;border:2px solid #3b85bd;background:#102c48;border-radius:10px;
+font-size:17px;font-weight:700}.arrow{text-align:center;color:var(--cyan);font-size:19px}
 .risk .card:nth-child(2n):before{background:var(--amber)}.risk .card:nth-child(3n):before{background:var(--red)}
 .timeline{display:grid;grid-template-columns:160px 1fr;gap:14px 24px;align-items:start}
 .step{color:var(--cyan);font:700 24px/1.4 Arial}.step-body{border-left:3px solid #2d5576;
@@ -435,9 +436,9 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
                 + "</div><div class='node'>"
                 + html.escape(right)
                 + "</div></div>"
-                for left, label, right in data["edges"][:8]
+                for left, label, right in data["edges"][:12]
             )
-            content_html = edges
+            content_html = f"<div class='flow-wrap'>{edges}</div>"
         elif len(data["metrics"]) >= 3:
             metric_cards = "".join(
                 f"<div class='card metric-card'><div class='metric'>{html.escape(metric)}</div>"
@@ -522,7 +523,7 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
             title_frame.paragraphs[0].alignment = PP_ALIGN.LEFT
             if data["edges"]:
                 SlidesRenderer._pptx_flow(
-                    slide, data["edges"][:8], MSO_SHAPE, RGBColor, Inches, Pt,
+                    slide, data["edges"][:12], MSO_SHAPE, RGBColor, Inches, Pt,
                     PP_ALIGN, MSO_ANCHOR,
                 )
             elif len(data["metrics"]) >= 3:
@@ -697,13 +698,13 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
         slide, edges, MSO_SHAPE, RGBColor, Inches, Pt, PP_ALIGN, MSO_ANCHOR
     ):
         for i, (left, label, right) in enumerate(edges):
-            row, col = i % 4, i // 4
+            row, col = i % 6, i // 6
             base_x = 0.72 + col * 6.15
-            y = 1.68 + row * 1.22
+            y = 1.62 + row * 0.84
             for x, text in ((base_x, left), (base_x + 3.5, right)):
                 shape = slide.shapes.add_shape(
                     MSO_SHAPE.ROUNDED_RECTANGLE,
-                    Inches(x), Inches(y), Inches(2.62), Inches(0.82),
+                    Inches(x), Inches(y), Inches(2.62), Inches(0.62),
                 )
                 shape.fill.solid()
                 shape.fill.fore_color.rgb = RGBColor.from_string(
@@ -723,7 +724,7 @@ const hash=parseInt(location.hash.replace('#/',''));if(hash>0)show(hash-1);
                     SlidesRenderer.THEME["text"]
                 )
             arrow = slide.shapes.add_textbox(
-                Inches(base_x + 2.68), Inches(y + 0.18), Inches(0.76), Inches(0.4)
+                Inches(base_x + 2.68), Inches(y + 0.10), Inches(0.76), Inches(0.34)
             ).text_frame
             arrow.text = "→" + (f" {label}" if label else "")
             arrow.paragraphs[0].alignment = PP_ALIGN.CENTER
