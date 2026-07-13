@@ -70,12 +70,13 @@ flowchart TD
     N12 -->|双向| N13
     N13 --> N12
     N13 -->|双向| N14
-
-> **表格说明：** 本表以“N12 -->、双向、N13”为字段，共整理1条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
     N14 --> N13
     N14 --> N15
     N15 --> N16
 ```
+
+> **流程图说明：** 级联式把语音拆成ASR、文本推理和TTS；轮次式原生语音减少模块切换，
+> 但仍等待一轮结束；GPT‑Live把持续听说与后台搜索/推理解耦，交互层和深度工作可并行。
 
 ### 2.2 连续全双工交互层
 
@@ -109,6 +110,23 @@ GPT‑Live将低延迟社交交互与高成本推理解耦。简单请求由交�
 ### 2.4 与开发者Realtime API的关系
 
 OpenAI Realtime API已经提供原生Speech-to-Speech、WebRTC、WebSocket、SIP、图像输入、函数调用和远程MCP；当前文档推荐`gpt-realtime-2.1`构建低延迟语音Agent。[Realtime与音频指南](https://developers.openai.com/api/docs/guides/realtime) GPT‑Live则在其上进一步强调“持续全双工交互+后台委托”，并首先作为ChatGPT体验发布。两者可共享工程经验，但不能假定GPT‑Live发布后会沿用相同事件协议、价格或上下文限制。
+
+### 2.5 全双工技术路线并不唯一
+
+公开研究显示，全双工系统至少存在三类实现：
+
+1. **并行音频流生成。** [Moshi](https://arxiv.org/abs/2410.00037)分别建模用户与系统音频流，
+   直接学习重叠说话、打断和插话，论文报告理论延迟160ms、实践约200ms。
+2. **语义状态预测器。** [MinMo](https://arxiv.org/abs/2501.06282)在LLM隐藏状态上训练Full
+   Duplex Predictor，判断继续回应、停止输出或转入倾听；论文报告实践全双工延迟约800ms。
+3. **原生语音语义联合建模。** 字节跳动
+   [Seeduplex](https://seed.bytedance.com/zh/blog/introducing-seed-full-duplex-speech-llm-attentive-listening-robust-interference-suppression-enabling-more-natural-interaction)
+   持续感知音频并综合声学特征和对话上下文决定说、听或接受打断。
+
+[2026年全双工系统综述](https://arxiv.org/abs/2606.19453)进一步指出，端到端语音生成不等于
+全双工；评价必须覆盖重叠讲话、附和、静默、打断、恢复和说话人归属等交互行为。OpenAI尚未
+披露GPT‑Live的参数量、tokenizer、训练数据和网络细节，因此本文只能确认其系统行为与“交互层
++后台委派”架构，不能判断它在上述底层路线中具体采用哪一种。
 
 ## 三、能力、边界与表现
 
@@ -173,13 +191,13 @@ Gemini数据来源：[Live API概览](https://ai.google.dev/gemini-api/docs/live
 | 产品 | 架构/路线 | 能力特点 | 主要边界 |
 |---|---|---|---|
 | Qwen3.5‑Omni Realtime | Thinker‑Talker；Hybrid Attention MoE；文本、图像、音频、视频统一理解与流式语音输出 | 可开放权重/技术报告参照，WebRTC/WebSocket，中文与方言、视频、函数调用；最长会话120分钟 | 部分实时型号仅8轮上下文；联网搜索与工具调用不可同时开启 |
-| 豆包端到端实时语音 | 原生Speech-to-Speech；另有RTC+ASR+LLM+TTS工程方案 | 中文、情绪、人格、客服、车载；支持打断与Function Calling；国内云交付便利 | 厂商文档缺少可与GPT‑Live同口径的公开全双工人评；不同产品路线容易混称 |
+| 字节Seeduplex / 豆包 | 原生全双工语音语义联合建模；持续感知并动态决定听、说或接受打断 | 已在豆包App全量上线；厂商A/B披露满意度绝对值提升8.34%，复杂场景抢话相对减少40%，判停延迟约降低250ms | 指标均为字节相对自家半双工模型的厂商评测，与GPT‑Live没有同口径直接对照；开发者API和企业SLA需另行核验 |
 | MiniMax Realtime / Speech | 实时API+高表现力语音模型，部分方案为模块组合 | 声音克隆、角色化、40+语言；厂商称Speech 2.8端到端时延低于250ms | 对复杂推理与业务工具的端到端公开评测不足；声音克隆带来冒用风险 |
 | 腾讯TRTC实时对话方案 | RTC+可替换ASR/LLM/TTS级联 | 弱网、降噪、腾讯云集成、可替换混元/第三方模型；官方称全链路约1秒 | 不是GPT‑Live式单一全双工模型；多模块维护和误差累积 |
 
 > **表格说明：** 本表以“产品、架构/路线、能力特点、主要边界”为字段，共整理4条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
 
-来源：[Qwen3.5‑Omni技术报告](https://arxiv.org/abs/2604.15804)、[Qwen实时API限制](https://help.aliyun.com/zh/model-studio/realtime)、[豆包实时语音产品说明](https://www.volcengine.com/docs/6561/1631605?lang=zh)、[火山实时对话方案](https://www.volcengine.com/docs/82379/1393085?lang=zh)、[MiniMax Realtime](https://www.minimax.io/news/realtime-api)、[腾讯TRTC方案](https://cloud.tencent.com/document/product/647/115412)。
+来源：[Qwen3.5‑Omni技术报告](https://arxiv.org/abs/2604.15804)、[Qwen实时API限制](https://help.aliyun.com/zh/model-studio/realtime)、[字节Seeduplex官方发布](https://seed.bytedance.com/zh/blog/introducing-seed-full-duplex-speech-llm-attentive-listening-robust-interference-suppression-enabling-more-natural-interaction)、[火山实时对话方案](https://www.volcengine.com/docs/82379/1393085?lang=zh)、[MiniMax Realtime](https://www.minimax.io/news/realtime-api)、[腾讯TRTC方案](https://cloud.tencent.com/document/product/647/115412)。
 
 ### 4.3 架构竞争的本质
 
@@ -206,7 +224,13 @@ GPT‑Live的差异化是“全双工交互控制+后台前沿模型委托”，
 
 ### 5.2 安全、隐私与社会风险
 
-GPT‑Live系统卡显示其增加了实时输入输出检查，可引导、打断、提供支持资源或结束高风险通话；模型使用预设声音并限制模仿真人。[GPT‑Live系统卡](https://deploymentsafety.openai.com/gpt-live) 但系统卡也报告情感依赖得分从旧模型0.88降至0.82、mini性内容从0.97降至0.95的小幅回退，虽未达到统计显著，仍说明“更像人”的体验会扩大依赖和边界混淆风险。
+GPT‑Live系统卡显示其增加了实时输入输出检查，可引导、打断、提供支持资源或结束高风险通话；模型使用预设声音并限制模仿真人。[GPT‑Live系统卡](https://deploymentsafety.openai.com/gpt-live) 系统卡同时报告：生产对抗集中，GPT‑Live‑1情感依赖得分由旧模型0.88变为0.82，mini性内容由0.97变为0.95；官方说明两项差异均不具统计显著性，而且该测试集不按真实流量加权，不能解释为线上发生率。它们仍提示陪伴、心理支持和未成年人场景应持续监测，而不能据此断言GPT‑Live已出现显著安全退化。
+
+OpenAI与MIT Media Lab此前对超过400万段对话、4000多名受访者和接近1000名参与者的28天
+随机对照研究发现，情感互动在真实使用中总体少见，但极高使用量与更高的自报依赖指标相关；
+语音模式对福祉的影响取决于使用时长和用户初始状态。
+[研究原文](https://openai.com/index/affective-use-study/)并非GPT‑Live专项评测，但说明陪伴产品
+不能只优化会话时长和留存，还应设置使用强度、依赖信号和现实社交替代指标。
 
 生产部署必须处理：
 
@@ -339,6 +363,11 @@ GPT‑Live代表实时语音模型从“低延迟回答器”向“持续交互�
 18. [Gartner：人机混合客服预测](https://www.gartner.com/en/newsroom/press-releases/2025-06-10-gartner-predicts-50-percent-of-organizations-will-abandon-plans-to-reduce-customer-service-workforce-due-to-ai)
 19. [OpenAI/Travelers：AI事故报案案例](https://openai.com/index/travelers/)
 20. [Agora：GPT‑Live打断与背景声小样本测试](https://medium.com/agora-io/openai-didnt-publish-gpt-live-s-latency-so-we-measured-it-cf73016db989)
+21. [字节跳动Seed：Seeduplex官方发布](https://seed.bytedance.com/zh/blog/introducing-seed-full-duplex-speech-llm-attentive-listening-robust-interference-suppression-enabling-more-natural-interaction)
+22. [Moshi论文](https://arxiv.org/abs/2410.00037)
+23. [MinMo论文](https://arxiv.org/abs/2501.06282)
+24. [全双工语音对话系统综述](https://arxiv.org/abs/2606.19453)
+25. [OpenAI与MIT Media Lab：情感使用研究](https://openai.com/index/affective-use-study/)
 
 > 证据声明：OpenAI、Google、阿里云、火山引擎、xAI等来源均可能包含厂商立场；报告未进行模型API实测。GPT‑Live于报告日前5天发布，独立研究仍有限，涉及评测和产品可用性的结论应随API开放和第三方复现更新。
 
@@ -366,3 +395,8 @@ GPT‑Live代表实时语音模型从“低延迟回答器”向“持续交互�
 20. [OpenAI/Travelers案例](https://openai.com/index/travelers/)
 21. [OpenAI：Introducing gpt‑realtime](https://openai.com/index/introducing-gpt-realtime/)
 22. [Qwen：Qwen2.5‑Omni架构说明](https://qwenlm.github.io/zh/blog/qwen2.5-omni/)
+23. [字节跳动Seed：Seeduplex](https://seed.bytedance.com/zh/blog/introducing-seed-full-duplex-speech-llm-attentive-listening-robust-interference-suppression-enabling-more-natural-interaction)
+24. [Moshi论文](https://arxiv.org/abs/2410.00037)
+25. [MinMo论文](https://arxiv.org/abs/2501.06282)
+26. [全双工语音对话系统综述](https://arxiv.org/abs/2606.19453)
+27. [OpenAI与MIT Media Lab：情感使用研究](https://openai.com/index/affective-use-study/)

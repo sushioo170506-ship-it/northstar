@@ -1,0 +1,22 @@
+{
+  "topic": "GPT-Live应用方向探索：产品定位、技术架构、能力边界、竞争格局、市场需求与落地场景",
+  "expected_length": 15000,
+  "style": "专业、客观、证据驱动，面向产品与战略决策",
+  "output_format": "markdown",
+  "output_type": "技术与应用战略研究报告",
+  "audience": "AI模型厂商、产品负责人和战略管理层",
+  "language": "zh-CN",
+  "workflow_profile": "deep",
+  "confidentiality_level": "internal",
+  "content_boundaries": [
+    "明确区分GPT-Live、GPT-Live-1、GPT-Live-1 mini、ChatGPT Voice与OpenAI Realtime API",
+    "不得把计划中的API能力表述为已经开放",
+    "不得虚构系统卡、基准测试、价格、时延或用户规模数据",
+    "官方事实、第三方观察和分析判断必须分开表达"
+  ],
+  "prior_thoughts": "重点不是做简单产品选型，而是判断全双工实时语音交互的应用价值、可落地场景、必要条件、风险和模型厂商的战略机会。",
+  "extra": {
+    "enable_competitive_hypotheses": false,
+    "sources": []
+  }
+}
