@@ -129,41 +129,40 @@ class AestheticDocxRenderer(DocumentRenderer):
         toc._p.append(toc_field)
         document.add_page_break()
 
-        in_code = False
-        code_lines: list[str] = []
-        for line in content.splitlines()[1:]:
-            if line.startswith("```"):
-                if in_code:
-                    self._add_code_or_flow(document, code_lines)
-                    code_lines = []
-                in_code = not in_code
-                continue
-            if in_code:
-                code_lines.append(line)
-                continue
-            heading = re.match(r"^(#{2,6})\s+(.+)$", line)
-            if heading:
-                document.add_heading(
-                    _strip_markup(heading.group(2)),
-                    level=min(len(heading.group(1)) - 1, 4),
-                )
-                continue
-            if not line.strip():
-                continue
-            if line.lstrip().startswith("|"):
-                continue
-            item = re.match(r"^(\s*)(\d+\.\s+|-\s+)(.+)$", line)
-            paragraph = document.add_paragraph(
-                style=(
-                    "List Number" if item and item.group(2)[0].isdigit()
-                    else "List Bullet" if item else None
-                )
-            )
-            text = item.group(3) if item else line.lstrip("> ")
-            paragraph.add_run(_strip_markup(text))
-
         for kind, value in MarkdownTableParser.split_document(content):
-            if kind != "table":
+            if kind == "markdown":
+                in_code = False
+                code_lines: list[str] = []
+                for line in str(value).splitlines():
+                    if line.startswith("# "):
+                        continue
+                    if line.startswith("```"):
+                        if in_code:
+                            self._add_code_or_flow(document, code_lines)
+                            code_lines = []
+                        in_code = not in_code
+                        continue
+                    if in_code:
+                        code_lines.append(line)
+                        continue
+                    heading = re.match(r"^(#{2,6})\s+(.+)$", line)
+                    if heading:
+                        document.add_heading(
+                            _strip_markup(heading.group(2)),
+                            level=min(len(heading.group(1)) - 1, 4),
+                        )
+                        continue
+                    if not line.strip():
+                        continue
+                    item = re.match(r"^(\s*)(\d+\.\s+|-\s+)(.+)$", line)
+                    paragraph = document.add_paragraph(
+                        style=(
+                            "List Number" if item and item.group(2)[0].isdigit()
+                            else "List Bullet" if item else None
+                        )
+                    )
+                    text = item.group(3) if item else line.lstrip("> ")
+                    paragraph.add_run(_strip_markup(text))
                 continue
             rows = value.values
             table = document.add_table(rows=len(rows), cols=len(rows[0]))
@@ -203,14 +202,27 @@ class AestheticDocxRenderer(DocumentRenderer):
     @staticmethod
     def _add_code_or_flow(document, lines: list[str]) -> None:
         if lines and lines[0].strip().startswith("flowchart"):
-            paragraph = document.add_paragraph()
-            paragraph.style = "Intense Quote"
-            flow_lines = [
-                re.sub(r"^\s*N\d+\[\"|\"\]\s*$", "", line).strip()
-                for line in lines[1:]
-                if '["' in line
-            ]
-            paragraph.add_run("  →  ".join(filter(None, flow_lines)) or "结构化流程图")
+            labels = {
+                match.group(1): match.group(2)
+                for line in lines
+                if (match := re.search(r'(N\d+)\["(.+)"\]', line))
+            }
+            document.add_paragraph("结构化流程图", style="Heading 3")
+            edge_count = 0
+            for line in lines:
+                edge = re.search(
+                    r"(N\d+)\s+-->(?:\|([^|]+)\|)?\s+(N\d+)", line
+                )
+                if not edge:
+                    continue
+                left = labels.get(edge.group(1), edge.group(1))
+                right = labels.get(edge.group(3), edge.group(3))
+                label = f"〔{edge.group(2)}〕" if edge.group(2) else ""
+                paragraph = document.add_paragraph(style="Intense Quote")
+                paragraph.add_run(f"{left}  →{label}  {right}")
+                edge_count += 1
+            if not edge_count:
+                document.add_paragraph("流程定义见结构化Mermaid源。", style="Intense Quote")
             return
         paragraph = document.add_paragraph()
         run = paragraph.add_run("\n".join(lines))

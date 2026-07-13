@@ -4,10 +4,41 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from .orchestrator import ResearchReportOrchestrator
+from .office_renderers import (
+    AestheticDocxRenderer,
+    CompositeDocumentRenderer,
+    SlidesRenderer,
+)
+from .renderers import FeishuApiClient, FeishuDocumentRenderer
+
+
+def _renderer_from_env():
+    renderers = {
+        "docx": AestheticDocxRenderer(),
+        "pptx": SlidesRenderer(),
+        "slides_html": SlidesRenderer(),
+    }
+    user_token = os.getenv("FEISHU_USER_ACCESS_TOKEN")
+    app_id = os.getenv("FEISHU_APP_ID")
+    app_secret = os.getenv("FEISHU_APP_SECRET")
+    if user_token or (app_id and app_secret):
+        client = FeishuApiClient(
+            access_token=user_token,
+            app_id=app_id,
+            app_secret=app_secret,
+            auth_mode="user_oauth" if user_token else "tenant",
+        )
+        renderers["feishu"] = FeishuDocumentRenderer(
+            client,
+            title=os.getenv("FEISHU_DOCUMENT_TITLE", "研究报告"),
+            folder_token=os.getenv("FEISHU_FOLDER_TOKEN"),
+        )
+    return CompositeDocumentRenderer(renderers)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -24,6 +55,7 @@ def _parser() -> argparse.ArgumentParser:
     create.add_argument("--audience", default="通用专业读者")
     create.add_argument("--boundary", action="append", default=[])
     create.add_argument("--prior-thoughts", default="")
+    create.add_argument("--confidentiality", default="public")
     create.add_argument(
         "--profile",
         choices=("quick", "standard", "deep", "regulatory"),
@@ -78,7 +110,9 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    orchestrator = ResearchReportOrchestrator(args.data_dir)
+    orchestrator = ResearchReportOrchestrator(
+        args.data_dir, document_renderer=_renderer_from_env()
+    )
     try:
         if args.command == "create":
             extra = {}
@@ -96,6 +130,7 @@ def main(argv: list[str] | None = None) -> int:
                     "content_boundaries": args.boundary,
                     "prior_thoughts": args.prior_thoughts,
                     "workflow_profile": args.profile,
+                    "confidentiality_level": args.confidentiality,
                     "extra": extra,
                 }
             )

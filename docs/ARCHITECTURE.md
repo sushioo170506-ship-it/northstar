@@ -7,13 +7,13 @@
 - Profile中心：Quick/Standard/Deep/Regulatory控制确认点和质量阈值。
 - Provider层：CompositeSourceRetriever组合OpenAlex及组织产业/金融/社媒数据源。
 - 写作标准库：`standards.db` 保存四类内置Profile、个性化版本、触发词和应用审计。
-- Renderer层：DocumentRenderer隔离Pandoc/Typst/Word/PDF及飞书远程发布。
+- Renderer层：DocumentRenderer隔离Pandoc、专业Word、PPTX、HTML Slides及飞书远程发布。
 - 关系存储：SQLite WAL 保存工作流、节点运行、输入/输出 ID、分片产物、确认和用户操作。
 - 向量存储：独立 SQLite WAL 数据库保存 2000 字符分片、200 字符重叠、稀疏哈希向量及
   元数据；查询先按 workflow/node/type 精确过滤，再做相似度排序。
-- 十九个可执行 Skill：能力遍历、需求、Skill 研究、写作标准、议题树、大纲、三支柱调研、证据治理、
-  数据处理/评分、素材整合、可视化、写作、压力测试、排版、审核、质量门、发布；另有一个
-  引用管理和自进化节点；`research_report_orchestrator` 主编排 Skill不计入DAG执行节点。
+- 二十个可执行 Skill：能力遍历、需求、Skill研究、写作标准、议题树、大纲、三支柱调研、证据治理、
+  数据处理/评分、素材整合、可视化、写作、引用、内容优化、压力测试、排版、审核、质量门、发布和
+  自进化；`research_report_orchestrator`主编排Skill不计入DAG执行节点。
 
 关系库是执行状态的唯一事实来源；向量库只负责相关上下文召回。完整依赖产物通过产物
 ID 从关系库无损读取，向量召回不替代精确依赖，因此不会因 top-k 丢失必要输入。
@@ -25,7 +25,8 @@ capability_sweep -> requirements_analysis -> skill_research -> writing_standards
   -> issue_tree -> [确认主题与议题树]
   -> outline -> [确认大纲] -> research(产业/学术/实景三 pass)
   -> evidence_governance -> data_processing -> material_integration -> visualization
-  -> writing -> citation_management -> pressure_test -> [确认初稿] -> formatting
+  -> writing -> citation_management -> content_optimization -> pressure_test
+  -> [确认初稿] -> formatting
   -> [审核前确认] -> review -> quality_gate -> publish -> experience_evolution -> completed
 
 精确依赖补充：
@@ -37,13 +38,15 @@ data_processing      <- research + evidence_governance + issue_tree + outline
 material_integration <- outline + research + evidence_governance + data_processing
 visualization        <- issue_tree + material_integration + data_processing
 citation_management  <- writing + evidence_governance + material_integration
+content_optimization <- citation_management + writing_standards
 review               <- requirements + writing_standards + research + evidence + processed data + materials + visuals + pressure + formatting
 quality_gate         <- capability + requirements + writing_standards + evidence + processed data + materials + visuals + pressure + review
 publish              <- capability + writing_standards + visuals + review + quality_gate
 experience_evolution <- user operations + skill_research + quality_gate + publish
 ```
 
-修改节点时，编排器计算传递后代。例如修改 `writing` 只失效 writing、pressure_test、
+修改节点时，编排器计算传递后代。例如修改 `writing` 只失效 writing、citation_management、
+content_optimization、pressure_test、
 draft_confirmation、formatting、pre_review_confirmation、review、quality_gate、publish；research、
 issue_tree、evidence_governance、material_integration、visualization 和 outline 的产物 ID 保持不变。
 旧产物不删除，便于审计或版本比较。

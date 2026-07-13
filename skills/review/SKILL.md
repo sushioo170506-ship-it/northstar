@@ -42,3 +42,7 @@ Review 是编辑性复核和问题汇总，不是最终发布裁决。它可做�
 issues 必须带位置、严重度、修复节点。事实/链接→research；claim/评分→data_processing；
 章节→outline；行文→writing；格式→formatting；图表→visualization。Review 不通过时仍保存
 候选稿和 issues，由 quality_gate 统一阻断。
+
+## 统一输出格式约束
+
+凡本Skill输出、改写或传递Markdown/报告正文，必须遵守：业务流程、逻辑链路和路径走向使用结构化Mermaid流程图；每张统计或说明表后附字段定义、数据逻辑与结论依据；同层有序列表连续递增、子层独立编号，禁止重复“1.”；外部链接保留可点击Markdown语法并由`content_optimization`生成文末全量链接索引。JSON-only产物也不得破坏下游执行这些规则所需的数据和URL。

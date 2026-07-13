@@ -50,3 +50,7 @@ result = OutlineSkill(generator=None).execute(request)
 - 不得提前执行 research、评分或写作。
 - 找不到锚点时保留数据需求，不删除问题。
 - 结构不闭合退回 outline；研究主题有误退回 issue_tree。
+
+## 统一输出格式约束
+
+凡本Skill输出、改写或传递Markdown/报告正文，必须遵守：业务流程、逻辑链路和路径走向使用结构化Mermaid流程图；每张统计或说明表后附字段定义、数据逻辑与结论依据；同层有序列表连续递增、子层独立编号，禁止重复“1.”；外部链接保留可点击Markdown语法并由`content_optimization`生成文末全量链接索引。JSON-only产物也不得破坏下游执行这些规则所需的数据和URL。

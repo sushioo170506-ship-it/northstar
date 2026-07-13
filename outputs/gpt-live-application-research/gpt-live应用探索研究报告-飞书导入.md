@@ -28,6 +28,8 @@ GPT‑Live是ChatGPT Voice的新一代“持续交互层”，产品目标是让
 | GPT‑Live‑1 mini | Free用户 | GPT‑5.5 Instant | ChatGPT网页、iOS、Android逐步推出 | 能力与配额低于完整版 |
 | GPT‑Realtime系列 | 开发者 | Realtime原生语音模型，当前文档推荐`gpt-realtime-2.1` | Realtime API，WebRTC/WebSocket/SIP | 与GPT‑Live不是同一产品；需自行构建交互与安全系统 |
 
+> **表格说明：** 本表以“产品、用户、后台智能、当前渠道、关键限制”为字段，共整理3条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
+
 来源：[GPT‑Live发布说明](https://openai.com/index/introducing-gpt-live/)、[ChatGPT Voice帮助中心](https://help.openai.com/en/articles/20001274-chatgpt-voice)、[OpenAI Realtime开发文档](https://developers.openai.com/api/docs/guides/realtime)。
 
 ### 1.2 GPT‑Live不是什么
@@ -41,19 +43,38 @@ GPT‑Live是ChatGPT Voice的新一代“持续交互层”，产品目标是让
 
 ### 2.1 三代语音AI路线
 
-```text
-级联式：
-用户音频 → ASR → 文本LLM → TTS → 输出音频
+```mermaid
+flowchart TD
+    N1["级联式"]
+    N2["用户音频"]
+    N3["ASR"]
+    N4["文本LLM"]
+    N5["TTS"]
+    N6["输出音频"]
+    N7["轮次式原生语音"]
+    N8["用户完整一轮音频"]
+    N9["单一音频模型"]
+    N10["完整一轮音频"]
+    N11["GPT-Live"]
+    N12["持续输入音频"]
+    N13["GPT-Live全双工交互控制"]
+    N14["持续输出音频"]
+    N15["搜索 / GPT-5.5推理 / Agent任务"]
+    N16["异步返回结果"]
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> N6
+    N8 --> N9
+    N9 --> N10
+    N12 -->|双向| N13
+    N13 --> N12
+    N13 -->|双向| N14
 
-轮次式原生语音：
-用户完整一轮音频 → 单一音频模型 → 完整一轮音频
-
-GPT-Live：
-持续输入音频 ⇄ GPT-Live全双工交互控制 ⇄ 持续输出音频
-                         ↓
-              搜索 / GPT-5.5推理 / Agent任务
-                         ↓
-                    异步返回结果
+> **表格说明：** 本表以“N12 -->、双向、N13”为字段，共整理1条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
+    N14 --> N13
+    N14 --> N15
+    N15 --> N16
 ```
 
 ### 2.2 连续全双工交互层
@@ -106,6 +127,8 @@ OpenAI Realtime API已经提供原生Speech-to-Speech、WebRTC、WebSocket、SIP
 | 长时会话 | 可利用ChatGPT记忆维持上下文 | 帮助中心 | 未公开音频上下文、压缩策略和长期漂移指标 |
 | 情绪与安全 | 有语音专用训练、实时输入输出检测 | GPT‑Live系统卡 | 情感依赖、自伤、未成年人等仍是高风险区 |
 
+> **表格说明：** 本表以“能力、当前表现判断、证据、边界”为字段，共整理10条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
+
 ### 3.2 公开评测结果
 
 | 评测 | GPT‑Live‑1 | GPT‑Live‑1 mini | Advanced Voice Mode | 解读 |
@@ -116,6 +139,8 @@ OpenAI Realtime API已经提供原生Speech-to-Speech、WebRTC、WebSocket、SIP
 | GPQA，High | 84.2% | 未完整披露 | 45.3% | 主要体现GPT‑5.5 High委托后的科学推理 |
 | BrowseComp，High | 75.2% | 31.6% | 0.7% | 主要体现搜索Agent委托能力 |
 | τ³‑Voice Telecom内部变体 | High约65%；Instant约37% | 未披露 | 约30% | 多轮电信客服；内部用户模拟器与内部变体，独立性最低 |
+
+> **表格说明：** 本表以“评测、GPT‑Live‑1、GPT‑Live‑1 mini、Advanced Voice Mode、解读”为字段，共整理6条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
 
 说明：OpenAI正文对评测给出方向性结论，图表数字由官方页面图表的媒体转录交叉核对。[官方发布](https://openai.com/index/introducing-gpt-live/)、[The Decoder](https://the-decoder.com/chatgpt-can-now-listen-and-talk-at-the-same-time-making-ai-conversations-seem-more-human/)、[RuntimeWire](https://runtimewire.com/article/openai-gpt-live-chatgpt-voice)。所有结果均为OpenAI组织或发布的评测，尚不能替代中文、电话窄带、方言、弱网和真实业务数据上的独立A/B测试。
 
@@ -139,6 +164,8 @@ OpenAI Realtime API已经提供原生Speech-to-Speech、WebRTC、WebSocket、SIP
 | Hume EVI | 情感表达与语音韵律导向的原生S2S | 情绪感知、角色与表达能力突出 | 通用推理、搜索和企业工具生态不如前沿综合模型体系 |
 | ElevenLabs Conversational AI | 多数为STT→LLM→TTS模块化Agent | 音色、声音克隆、多语言TTS和可替换LLM | 级联时延与误差累积；“声音好听”不等同原生音频推理 |
 
+> **表格说明：** 本表以“产品、技术路线、主要优势、相对GPT‑Live差异/限制”为字段，共整理5条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
+
 Gemini数据来源：[Live API概览](https://ai.google.dev/gemini-api/docs/live-api)、[会话管理](https://ai.google.dev/gemini-api/docs/live-api/session-management)、[工具能力](https://ai.google.dev/gemini-api/docs/live-api/tools)。xAI数据来源：[Voice Agent API](https://docs.x.ai/developers/models/voice-agent-api)。
 
 ### 4.2 国内竞品
@@ -149,6 +176,8 @@ Gemini数据来源：[Live API概览](https://ai.google.dev/gemini-api/docs/live
 | 豆包端到端实时语音 | 原生Speech-to-Speech；另有RTC+ASR+LLM+TTS工程方案 | 中文、情绪、人格、客服、车载；支持打断与Function Calling；国内云交付便利 | 厂商文档缺少可与GPT‑Live同口径的公开全双工人评；不同产品路线容易混称 |
 | MiniMax Realtime / Speech | 实时API+高表现力语音模型，部分方案为模块组合 | 声音克隆、角色化、40+语言；厂商称Speech 2.8端到端时延低于250ms | 对复杂推理与业务工具的端到端公开评测不足；声音克隆带来冒用风险 |
 | 腾讯TRTC实时对话方案 | RTC+可替换ASR/LLM/TTS级联 | 弱网、降噪、腾讯云集成、可替换混元/第三方模型；官方称全链路约1秒 | 不是GPT‑Live式单一全双工模型；多模块维护和误差累积 |
+
+> **表格说明：** 本表以“产品、架构/路线、能力特点、主要边界”为字段，共整理4条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
 
 来源：[Qwen3.5‑Omni技术报告](https://arxiv.org/abs/2604.15804)、[Qwen实时API限制](https://help.aliyun.com/zh/model-studio/realtime)、[豆包实时语音产品说明](https://www.volcengine.com/docs/6561/1631605?lang=zh)、[火山实时对话方案](https://www.volcengine.com/docs/82379/1393085?lang=zh)、[MiniMax Realtime](https://www.minimax.io/news/realtime-api)、[腾讯TRTC方案](https://cloud.tencent.com/document/product/647/115412)。
 
@@ -225,6 +254,8 @@ GPT‑Live系统卡显示其增加了实时输入输出检查，可引导、打�
 | 情感陪伴/心理支持 | 持续倾听、情绪回应 | 技术适配高 | 极高 | P2；不可替代治疗，限制依赖设计，危机转介 |
 | 医疗诊断/金融交易 | 自然问答与任务执行 | 表面适配 | 极高 | 不宜直接自治；仅信息收集/辅助并强制专业人员确认 |
 
+> **表格说明：** 本表以“场景、用户需求、GPT‑Live适配度、风险、建议”为字段，共整理11条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
+
 ### 6.3 最值得验证的三个产品原型
 
 #### 原型A：可打断的客服解决助手
@@ -284,6 +315,8 @@ GPT‑Live代表实时语音模型从“低延迟回答器”向“持续交互�
 | 攻击 | 提示注入、越权工具、身份冒充、背景音指令、敏感数据套取 |
 | 指标 | 任务成功、字段准确、首音/打断P50/P95、工具正确率、事实错误、转人工、成本 |
 
+> **表格说明：** 本表以“维度、最低覆盖”为字段，共整理6条记录。指标定义以表头、单位和同一统计口径为准；核心结论应依据同列横向比较、同行关联及表内来源推导，不得脱离原表外推。
+
 ## 附录B：主要参考资料
 
 1. [OpenAI：Introducing GPT‑Live](https://openai.com/index/introducing-gpt-live/)
@@ -308,3 +341,28 @@ GPT‑Live代表实时语音模型从“低延迟回答器”向“持续交互�
 20. [Agora：GPT‑Live打断与背景声小样本测试](https://medium.com/agora-io/openai-didnt-publish-gpt-live-s-latency-so-we-measured-it-cf73016db989)
 
 > 证据声明：OpenAI、Google、阿里云、火山引擎、xAI等来源均可能包含厂商立场；报告未进行模型API实测。GPT‑Live于报告日前5天发布，独立研究仍有限，涉及评测和产品可用性的结论应随API开放和第三方复现更新。
+
+## 全量关联链接
+
+1. [OpenAI官方发布](https://openai.com/index/introducing-gpt-live/)
+2. [The Decoder转录](https://the-decoder.com/chatgpt-can-now-listen-and-talk-at-the-same-time-making-ai-conversations-seem-more-human/)
+3. [ChatGPT Voice帮助中心](https://help.openai.com/en/articles/20001274-chatgpt-voice)
+4. [OpenAI Realtime开发文档](https://developers.openai.com/api/docs/guides/realtime)
+5. [RuntimeWire](https://runtimewire.com/article/openai-gpt-live-chatgpt-voice)
+6. [Agora测试转录](https://medium.com/agora-io/openai-didnt-publish-gpt-live-s-latency-so-we-measured-it-cf73016db989)
+7. [Live API概览](https://ai.google.dev/gemini-api/docs/live-api)
+8. [会话管理](https://ai.google.dev/gemini-api/docs/live-api/session-management)
+9. [工具能力](https://ai.google.dev/gemini-api/docs/live-api/tools)
+10. [Voice Agent API](https://docs.x.ai/developers/models/voice-agent-api)
+11. [Qwen3.5‑Omni技术报告](https://arxiv.org/abs/2604.15804)
+12. [Qwen实时API限制](https://help.aliyun.com/zh/model-studio/realtime)
+13. [豆包实时语音产品说明](https://www.volcengine.com/docs/6561/1631605?lang=zh)
+14. [火山实时对话方案](https://www.volcengine.com/docs/82379/1393085?lang=zh)
+15. [MiniMax Realtime](https://www.minimax.io/news/realtime-api)
+16. [腾讯TRTC方案](https://cloud.tencent.com/document/product/647/115412)
+17. [GPT‑Live系统卡](https://deploymentsafety.openai.com/gpt-live)
+18. [Gartner](https://www.gartner.com/en/newsroom/press-releases/2024-12-09-gartner-survey-reveals-85-percent-of-customer-service-leaders-will-explore-or-pilot-customer-facing-conversational-genai-in-2025)
+19. [Gartner](https://www.gartner.com/en/newsroom/press-releases/2025-06-10-gartner-predicts-50-percent-of-organizations-will-abandon-plans-to-reduce-customer-service-workforce-due-to-ai)
+20. [OpenAI/Travelers案例](https://openai.com/index/travelers/)
+21. [OpenAI：Introducing gpt‑realtime](https://openai.com/index/introducing-gpt-realtime/)
+22. [Qwen：Qwen2.5‑Omni架构说明](https://qwenlm.github.io/zh/blog/qwen2.5-omni/)

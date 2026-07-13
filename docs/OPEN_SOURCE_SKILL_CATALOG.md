@@ -1,6 +1,6 @@
 # 开源 Skill 与工具筛选目录
 
-检查日期：2026-07-12。星数仅是采用度信号，不等于质量保证；许可证和维护状态优先。当前
+检查日期：2026-07-13。星数仅是采用度信号，不等于质量保证；许可证和维护状态优先。当前
 交付采用“适配器目录”而非复制第三方源码，运行时仅在部署方显式配置后调用。
 
 ## 已纳入能力目录
@@ -16,6 +16,9 @@
 | Mermaid | mermaid-js | develop@2026-07-12 | 89,188 | MIT | https://github.com/mermaid-js/mermaid | 图/架构渲染 |
 | Vega-Lite | vega | main@2026-07-12 | 5,404 | BSD-3-Clause | https://github.com/vega/vega-lite | 统计图渲染 |
 | Pandoc | jgm/John MacFarlane | main@2026-07-12 | 45,344 | GPL-2.0 | https://github.com/jgm/pandoc | 仅外部 CLI |
+| MiniMax DOCX Skill | MiniMax-AI | main@2026-07-13 | 13,030 | MIT | https://github.com/MiniMax-AI/skills/tree/main/skills/minimax-docx | 参考OOXML模板/校验方法；clean-room Python适配 |
+| Frontend Slides | Zara Zhang（张咋啦） | main@2026-07-13 | 25,376 | MIT | https://github.com/zarazhangrui/frontend-slides | 参考单HTML、自包含和视觉发现；clean-room SlidesRenderer |
+| Marp | marp-team | main@2026-07-13 | 12,172 | MIT | https://github.com/marp-team/marp | 可选CLI；PPTX/HTML多格式参照 |
 | OpenClaw Deep Research Agent | MilleniumGenAI | main@2026-03-10 | 2 | MIT-0 | https://github.com/MilleniumGenAI/deep-research-openclaw-agent | claim-verified research |
 | OpenClaw Deep Research Pro | parags | main@2026-02-03 | 7 | MIT | https://github.com/parags/deep-research-pro | 低优先级 fallback |
 

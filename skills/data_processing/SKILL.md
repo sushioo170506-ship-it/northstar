@@ -45,3 +45,7 @@ critical、A+/A/B/C/D 级、confidence、conflicts、status。
 - MUST NOT：把来源摘要当成已验证事实；用模型印象打分；跨品类比较综合分。
 - ON_FAIL：论断映射问题退回 data_processing；来源不足退回 research；红线退回
   evidence_governance。
+
+## 统一输出格式约束
+
+凡本Skill输出、改写或传递Markdown/报告正文，必须遵守：业务流程、逻辑链路和路径走向使用结构化Mermaid流程图；每张统计或说明表后附字段定义、数据逻辑与结论依据；同层有序列表连续递增、子层独立编号，禁止重复“1.”；外部链接保留可点击Markdown语法并由`content_optimization`生成文末全量链接索引。JSON-only产物也不得破坏下游执行这些规则所需的数据和URL。

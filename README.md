@@ -1,12 +1,13 @@
 # Northstar Research Workflow
 
-可持久化、可恢复、可选择性重跑的研究报告 Skill 工作流。系统维护一个主编排 Skill 和十九个
+可持久化、可恢复、可选择性重跑的研究报告 Skill 工作流。系统维护一个主编排 Skill 和二十个
 名称与 DAG 完全一致的可执行 Skill，覆盖能力遍历、第三方 Skill 研究、需求、议题树、大纲、
 产业/学术/实景三支柱调研、证据治理、
-分场景写作标准、论断账本与数据锚点评分、素材映射、6–10 项可视化、写作、引用管理、压力测试、复核、
+分场景写作标准、论断账本与数据锚点评分、素材映射、6–10项可视化、写作、引用管理、
+流程图/表格说明/编号/链接内容优化、压力测试、复核、
 发布阻断、交付和受控自进化。
-输出支持 Markdown、网页、飞书、JSON、纯文本，并通过 DocumentRenderer 适配 Word/PDF和
-飞书Docx内嵌原生电子表格；
+输出支持Markdown、网页、飞书、JSON、纯文本、可编辑Word/PPTX及自包含HTML Slides，
+并通过DocumentRenderer适配PDF和飞书Docx内嵌原生电子表格；
 未配置真实渲染器时不会伪报二进制导出成功。
 Quick/Standard/Deep/Regulatory Profile分别提供1/2/4/4次确认；生产调研可注入
 CompositeSourceRetriever、OpenAlex和组织授权的产业/社媒Provider。

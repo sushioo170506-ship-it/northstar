@@ -94,7 +94,7 @@ def blocks(markdown: str):
             continue
         item = re.match(r"^(\d+\.\s+|-\s+)(.+)$", line)
         if item:
-            yield "list", (item.group(1)[0].isdigit(), item.group(2))
+            yield "list", (item.group(1).strip(), item.group(2))
             index += 1
             continue
         paragraph.append(line.strip())
@@ -173,9 +173,9 @@ def render_docx(markdown: str) -> None:
                 paragraph.style = "Quote"
             add_docx_runs(paragraph, value)
         elif kind == "list":
-            ordered, text = value
+            marker, text = value
             paragraph = document.add_paragraph(
-                style="List Number" if ordered else "List Bullet"
+                style="List Number" if marker[0].isdigit() else "List Bullet"
             )
             add_docx_runs(paragraph, text)
         elif kind == "code":
@@ -272,8 +272,8 @@ def render_pdf(markdown: str) -> None:
         elif kind == "quote":
             story.append(Paragraph(pdf_markup(value), quote))
         elif kind == "list":
-            ordered, text = value
-            bullet = "1." if ordered else "•"
+            marker, text = value
+            bullet = marker
             story.append(Paragraph(pdf_markup(text), normal, bulletText=bullet))
         elif kind == "code":
             language, code = value

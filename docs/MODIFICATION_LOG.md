@@ -181,6 +181,16 @@
 - 公式和URL使用飞书结构化数据类型；批量保留表头、边框、对齐和整单元格样式，冻结首行。
 - 发布后回读范围并比较；不一致、权限不足或渲染器缺失时失败，不静默降级。
 
+### 内容与多格式美学优化（2026-07-13）
+
+- 新增`content_optimization`：文本链路转Mermaid、逐表解释、连续编号和全量链接索引。
+- 所有Skill文档同步统一输出格式约束，质量门新增结构合规检查。
+- 新增AestheticDocxRenderer，输出封面、目录、页眉页脚、统一标题和可编辑表格。
+- 新增SlidesRenderer，支持可编辑PPTX和自包含HTML Slides。
+- 核验并记录MiniMax DOCX Skill、张咋啦Frontend Slides、Marp的MIT许可证和星数快照；
+  只参考方法并clean-room实现，不复制外部代码。
+- 新增FeishuOAuthClient，支持个人用户OAuth授权码交换和refresh_token刷新。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

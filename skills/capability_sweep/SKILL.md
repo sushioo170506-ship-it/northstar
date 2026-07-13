@@ -30,3 +30,7 @@ version: 1.0.0
 - 内置 Skill 少一项即失败。
 - 未配置能力必须给 reason；静默跳过即失败。
 - 目录损坏或 schema 不完整：节点 failed，从 capability_sweep 重试。
+
+## 统一输出格式约束
+
+凡本Skill输出、改写或传递Markdown/报告正文，必须遵守：业务流程、逻辑链路和路径走向使用结构化Mermaid流程图；每张统计或说明表后附字段定义、数据逻辑与结论依据；同层有序列表连续递增、子层独立编号，禁止重复“1.”；外部链接保留可点击Markdown语法并由`content_optimization`生成文末全量链接索引。JSON-only产物也不得破坏下游执行这些规则所需的数据和URL。

@@ -7,7 +7,7 @@
 | `topic` | string | 必填，去除多余空白，1–500 字符 |
 | `expected_length` | integer | 500–500000，默认 5000 |
 | `style` | string | 默认“专业、客观、证据驱动” |
-| `output_format` | string | markdown/html(feat. webpage)/feishu/json/text/docx/pdf；支持 md/htm/webpage/飞书/word/txt 别名 |
+| `output_format` | string | markdown/html/feishu/json/text/docx/pdf/pptx/slides_html；支持webpage/飞书/word/ppt/slides等别名 |
 | `language` | string | 默认 zh-CN |
 | `output_type` | string | 具体产出形态，默认 research_report |
 | `audience` | string | 目标受众，默认通用专业读者 |
@@ -47,7 +47,7 @@ report = orchestrator.final_report(workflow_id)
 `pre_review_confirmation`。允许修改的产物节点：
 `capability_sweep`、`requirements_analysis`、`skill_research`、`writing_standards`、`issue_tree`、`outline`、`research`、
 `evidence_governance`、`data_processing`、`material_integration`、`visualization`、`writing`、
-`citation_management`、`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`、
+`citation_management`、`content_optimization`、`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`、
 `experience_evolution`。
 
 质量门缺少产业/学术/实景任一支柱、原始链接/claim/素材/图表不足、触发红线、需求不合规
@@ -86,13 +86,14 @@ class SkillResult:
 Skill 实现 `name`、`version`、`execute(request)`，经 `SkillRegistry.register()` 注入。远程部署
 时可实现一个 RPC Proxy Skill：序列化同一请求，调用独立服务并反序列化同一结果。
 
-网页由内置格式器直接支持。飞书、DOCX、PDF必须向PublishSkill注入DocumentRenderer；
+网页由内置格式器直接支持。飞书、DOCX、PDF、PPTX和Slides HTML必须向PublishSkill注入DocumentRenderer；
 未配置或未返回`rendered=true`时发布失败，不会把Markdown中间稿冒充远程文档或二进制文件。
 
 ```python
 from research_workflow import (
     CompositeSourceRetriever, OpenAlexRetriever,
-    FeishuApiClient, FeishuDocumentRenderer,
+    AestheticDocxRenderer, CompositeDocumentRenderer,
+    FeishuApiClient, FeishuDocumentRenderer, SlidesRenderer,
     PandocDocumentRenderer, ResearchReportOrchestrator,
 )
 
@@ -105,6 +106,16 @@ workflow = ResearchReportOrchestrator(
     ]),
     document_renderer=PandocDocumentRenderer(),
 )
+```
+
+```python
+renderer = CompositeDocumentRenderer({
+    "docx": AestheticDocxRenderer(),
+    "pptx": SlidesRenderer(),
+    "slides_html": SlidesRenderer(),
+    "feishu": FeishuDocumentRenderer(feishu_client),
+})
+workflow = ResearchReportOrchestrator(data_dir, document_renderer=renderer)
 ```
 
 飞书使用`FeishuDocumentRenderer(FeishuApiClient(...))`，将GFM表格转换为Docx内嵌原生

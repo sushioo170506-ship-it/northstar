@@ -7,8 +7,8 @@ frontmatter `name`、Python `Skill.name`、DAG node id 四者一致。
 ## 计数口径
 
 - 主编排 Skill：1 个，不作为 DAG 功能节点执行；
-- 可执行 Skill：19 个，全部出现在 DAG；
-- SKILL.md 总数：20 个。
+- 可执行 Skill：20 个，全部出现在 DAG；
+- SKILL.md 总数：21 个。
 
 ## 主编排 Skill
 
@@ -33,12 +33,13 @@ frontmatter `name`、Python `Skill.name`、DAG node id 四者一致。
 | 11 | `visualization` | 11 | `skills/visualization/SKILL.md` |
 | 12 | `writing` | 12 | `skills/writing/SKILL.md` |
 | 13 | `citation_management` | 13 | `skills/citation_management/SKILL.md` |
-| 14 | `pressure_test` | 14 | `skills/pressure_test/SKILL.md` |
-| 15 | `formatting` | 15 | `skills/formatting/SKILL.md` |
-| 16 | `review` | 16 | `skills/review/SKILL.md` |
-| 17 | `quality_gate` | 17 | `skills/quality_gate/SKILL.md` |
-| 18 | `publish` | 18 | `skills/publish/SKILL.md` |
-| 19 | `experience_evolution` | 19 | `skills/experience_evolution/SKILL.md` |
+| 14 | `content_optimization` | 14 | `skills/content_optimization/SKILL.md` |
+| 15 | `pressure_test` | 15 | `skills/pressure_test/SKILL.md` |
+| 16 | `formatting` | 16 | `skills/formatting/SKILL.md` |
+| 17 | `review` | 17 | `skills/review/SKILL.md` |
+| 18 | `quality_gate` | 18 | `skills/quality_gate/SKILL.md` |
+| 19 | `publish` | 19 | `skills/publish/SKILL.md` |
+| 20 | `experience_evolution` | 20 | `skills/experience_evolution/SKILL.md` |
 
 四个确认节点不是 Skill，不计入上表：
 

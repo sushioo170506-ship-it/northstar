@@ -50,12 +50,13 @@ outcome = workflow.run(workflow_id)
 11. `visualization`：6–10 项可视化规范
 12. `writing`
 13. `citation_management`
-14. `pressure_test` → `draft_confirmation`
-15. `formatting` → `pre_review_confirmation`
-16. `review`
-17. `quality_gate`
-18. `publish`
-19. `experience_evolution`
+14. `content_optimization`：流程图、表格说明、连续编号和全量链接索引
+15. `pressure_test` → `draft_confirmation`
+16. `formatting` → `pre_review_confirmation`
+17. `review`
+18. `quality_gate`
+19. `publish`
+20. `experience_evolution`
 
 `run()` 在确认点返回 `waiting_confirmation`。调用
 `confirm(workflow_id, checkpoint_id, comment)` 后再次 `run()`。不得跳过确认。
@@ -63,7 +64,7 @@ outcome = workflow.run(workflow_id)
 
 ## 遍历规则
 
-- 19 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
+- 20 个内置 Skill 均为强制节点：每轮各执行一次，completed 节点不得重复。
 - 外部集成先由 capability_sweep 全量遍历；已配置者交给对应节点调用，未配置者记录
   `reviewed_not_configured` 和原因。禁止静默跳过。
 - 条件能力仍必须执行其包装 Skill：不适用时输出结构化 `not_applicable`，不得伪造结果。
@@ -134,3 +135,7 @@ outcome = workflow.run(workflow_id)
 ```
 
 生产环境可向 `SkillRegistry` 注入独立部署的 Skill RPC 代理；协议保持不变。
+
+## 统一输出格式约束
+
+凡本Skill输出、改写或传递Markdown/报告正文，必须遵守：业务流程、逻辑链路和路径走向使用结构化Mermaid流程图；每张统计或说明表后附字段定义、数据逻辑与结论依据；同层有序列表连续递增、子层独立编号，禁止重复“1.”；外部链接保留可点击Markdown语法并由`content_optimization`生成文末全量链接索引。JSON-only产物也不得破坏下游执行这些规则所需的数据和URL。

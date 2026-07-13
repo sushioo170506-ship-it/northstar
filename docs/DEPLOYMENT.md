@@ -7,7 +7,7 @@
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
-python3 -m pip install -e .
+python3 -m pip install -e ".[office]"
 research-workflow --help
 ```
 
@@ -27,6 +27,10 @@ HTML可使用内置文本格式路径；飞书/Word/PDF必须部署DocumentRende
 `docx:document`、`docx:document.block:convert`、`sheets:spreadsheet`，个人空间优先使用
 OAuth `user_access_token`，组织自动化可用受限`tenant_access_token`。Secret只由部署平台注入。
 飞书完整配置和真实租户验收见`WRITING_STANDARDS_AND_FEISHU.md`。
+
+专业Word和PPTX使用可选`office`依赖（python-docx、python-pptx）；HTML Slides无额外运行时。
+个人飞书测试使用`FeishuOAuthClient`获取`user_access_token`，支持开发者免审调试的权限无需
+发布正式应用；正式版和不支持免审的权限仍须企业管理员审批。
 
 生产检索通过CompositeSourceRetriever组合Provider。仓库自带OpenAlex学术Provider；产业、
 金融和社媒Provider必须使用组织授权API。Provider应设置超时、限流、缓存、来源快照和删除策略。

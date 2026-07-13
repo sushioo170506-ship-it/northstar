@@ -79,7 +79,8 @@ workflow_id = workflow.create({
    - `docx:document.block:convert`（Markdown转文档块）；
    - `sheets:spreadsheet`（写值、样式、冻结行和回读）；
    - 仅在需要指定或管理已有文件夹时追加相应Drive权限。
-3. 创建应用版本并提交管理员审核，安装到目标租户；配置应用可见/数据范围。
+3. 个人测试可在开发者后台切换“测试版/测试企业”，以应用开发者自己的
+   `user_access_token`免审调试支持的用户权限；正式面向企业成员发布时仍须提交管理员审核。
 4. 如果写入个人空间，推荐完成OAuth并传入`user_access_token`；它的资源范围与授权用户一致。
    无人值守组织自动化可用`tenant_access_token`，但应用只能访问已授权资源或应用创建的文件夹。
 5. 写入已有文档/文件夹时，将应用或授权用户设为可编辑协作者。目标租户、数据驻留、保留期和
@@ -119,8 +120,25 @@ workflow = ResearchReportOrchestrator(
 )
 ```
 
-个人空间建议由OAuth服务刷新令牌，再传入`FeishuApiClient(access_token=user_access_token)`。
-当前客户端不会自行执行用户OAuth或刷新流程。
+个人空间使用内置`FeishuOAuthClient`：
+
+```python
+from research_workflow import FeishuOAuthClient, FeishuApiClient
+
+oauth = FeishuOAuthClient(app_id, app_secret, redirect_uri)
+url, state = oauth.authorization_url()
+# 浏览器打开url；飞书回调redirect_uri?code=...&state=...
+token = oauth.exchange_code(code)
+client = FeishuApiClient(
+    access_token=token["access_token"],
+    auth_mode="user_oauth",
+)
+# token含refresh_token时，可在过期前调用oauth.refresh(refresh_token)
+```
+
+OAuth接口为`https://open.feishu.cn/open-apis/authen/v2/oauth/token`，授权码仅可使用一次且
+有效期短。App Secret、access_token和refresh_token只能放入Secret Manager或权限为600的
+本地凭证文件，禁止进入ReportConfig、数据库、日志和Git。
 
 工作流配置：
 

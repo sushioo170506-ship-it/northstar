@@ -35,3 +35,7 @@ formatting 不会无谓重跑初稿压力测试。
 只输出弱点和 repair_actions，不修改正文、不做最终发布裁决。发现硬合规问题也只登记，
 唯一阻断者是 quality_gate。无法解析正文时节点 failed；证据问题路由 data_processing，
 逻辑问题路由 writing，结构遗漏路由 outline。
+
+## 统一输出格式约束
+
+凡本Skill输出、改写或传递Markdown/报告正文，必须遵守：业务流程、逻辑链路和路径走向使用结构化Mermaid流程图；每张统计或说明表后附字段定义、数据逻辑与结论依据；同层有序列表连续递增、子层独立编号，禁止重复“1.”；外部链接保留可点击Markdown语法并由`content_optimization`生成文末全量链接索引。JSON-only产物也不得破坏下游执行这些规则所需的数据和URL。
