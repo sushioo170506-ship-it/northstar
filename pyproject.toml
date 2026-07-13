@@ -20,6 +20,7 @@ office = [
 
 [project.scripts]
 research-workflow = "research_workflow.cli:main"
+research-workflow-feishu-bot = "research_workflow.feishu_bot:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

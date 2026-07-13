@@ -2,6 +2,7 @@
 
 from .models import ReportConfig, RunOutcome, SkillRequest, SkillResult
 from .feishu_oauth import FeishuOAuthClient
+from .feishu_bot import FeishuBotClient, FeishuWorkflowBot
 from .office_renderers import (
     AestheticDocxRenderer,
     CompositeDocumentRenderer,
@@ -40,6 +41,8 @@ __all__ = [
     "SQLiteWritingStandardStore",
     "WritingStandardProfile",
     "FeishuOAuthClient",
+    "FeishuBotClient",
+    "FeishuWorkflowBot",
     "AestheticDocxRenderer",
     "CompositeDocumentRenderer",
     "SlidesRenderer",

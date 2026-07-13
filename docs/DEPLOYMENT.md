@@ -37,6 +37,17 @@ HTML Slides由工作流直接输出单个`.html`，使用`research-workflow expo
 个人飞书测试使用`FeishuOAuthClient`获取`user_access_token`，支持开发者免审调试的权限无需
 发布正式应用；正式版和不支持免审的权限仍须企业管理员审批。
 
+飞书群聊调用使用：
+
+```bash
+research-workflow-feishu-bot --host 127.0.0.1 --port 8080 \
+  --data-dir ./report-data
+```
+
+开放平台事件地址为`https://<domain>/feishu/events`，订阅
+`im.message.receive_v1`；服务端必须设置`FEISHU_VERIFICATION_TOKEN`并由HTTPS网关反向代理。
+机器人命令、消息权限和安全边界见`WRITING_STANDARDS_AND_FEISHU.md`第6节。
+
 生产检索通过CompositeSourceRetriever组合Provider。仓库自带OpenAlex学术Provider；产业、
 arXiv与Crossref无密钥Provider；产业、金融和社媒Provider必须使用组织授权API。Provider应设置
 超时、限流和缓存。所有返回内容由source_snapshot冻结原文、抓取时间、Provider和SHA-256，

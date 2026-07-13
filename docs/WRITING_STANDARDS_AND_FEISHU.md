@@ -190,3 +190,76 @@ Markdown本身不表达Excel条件格式、合并单元格、筛选视图、列�
 自动化测试使用可注入Transport模拟飞书响应，验证端点、原生Sheet、公式/URL值、样式、冻结和
 回读。真实租户验收还必须用非生产样例执行一次端到端冒烟测试；本仓库没有用户凭证，因此不
 宣称已写入任何个人飞书空间。
+
+## 6. 飞书机器人调用工作流
+
+飞书文档输出与飞书机器人是两层能力：
+
+- `FeishuDocumentRenderer`负责把终稿写成飞书文档；
+- `research-workflow-feishu-bot`负责在群聊中创建、确认、查询和修改工作流。
+
+### 6.1 开放平台配置
+
+1. 为企业自建应用启用“机器人”能力。
+2. 除3.1节文档权限外，申请消息读取及“以应用身份发消息”权限。开放平台通常显示为
+   `im:message`、`im:message:send_as_bot`；以当前控制台实际权限名称为准。
+3. 在“事件与回调”订阅 `im.message.receive_v1`（接收消息）。
+4. 设置请求地址：
+
+   ```text
+   https://你的域名/feishu/events
+   ```
+
+5. 将开放平台生成的 Verification Token 配置为服务端
+   `FEISHU_VERIFICATION_TOKEN`，不要提交到Git。
+6. 当前轻量服务不解密`encrypt`事件。必须使用HTTPS，并在开放平台关闭事件加密；若组织
+   强制事件加密，应在网关增加飞书官方加解密实现后再转发明文事件。
+
+### 6.2 启动
+
+```bash
+export FEISHU_APP_ID="cli_xxx"
+export FEISHU_APP_SECRET="..."
+export FEISHU_VERIFICATION_TOKEN="..."
+
+# internal报告写入飞书必须由部署负责人显式确认：
+export FEISHU_TARGET_TENANT_CONFIRMED=true
+export FEISHU_DATA_RESIDENCY_APPROVED=true
+
+research-workflow-feishu-bot \
+  --host 127.0.0.1 \
+  --port 8080 \
+  --data-dir ./report-data
+```
+
+生产环境用Nginx/API Gateway把公网HTTPS的`/feishu/events`反向代理到该端口。健康检查为：
+
+```text
+GET /healthz
+```
+
+个人OAuth测试也可以设置`FEISHU_USER_ACCESS_TOKEN`替代应用身份；长期机器人服务更适合
+使用经过管理员批准的应用身份，Token由客户端自动获取。
+
+### 6.3 群聊命令
+
+```text
+研究 人工智能治理          创建并运行工作流
+状态 <workflow_id>         查询状态和待确认节点
+确认 <workflow_id>         确认当前节点并继续
+修改 <workflow_id> <意见>  路由修改并选择性重跑
+帮助                       显示命令
+```
+
+机器人在创建时把飞书`open_id`记录为工作流所有者；其他成员不能查询、确认或修改该任务。
+事件`event_id`会被去重，回调先快速返回，实际工作由线程池执行，结果再通过
+`/open-apis/im/v1/messages?receive_id_type=chat_id`发回原会话。
+
+### 6.4 生产边界
+
+机器人入口本身不会凭空获得研究资料。完成质量门仍须在部署代码中注入组织
+`SourceRetriever`，或通过受控业务接口向工作流提供带原文和URL的`sources`。不得让机器人
+任意抓取用户提交的URL，以免引入SSRF、恶意内容和版权风险。
+
+当前内置线程池适合单实例试用。正式多实例应把消息任务放入队列，并将事件去重键、工作流
+所有权和执行租约放入PostgreSQL/Redis；同时配置限流、请求体上限、超时、审计和告警。

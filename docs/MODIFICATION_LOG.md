@@ -229,6 +229,14 @@
 - `experience_evolution` 改为条件节点，无修改/评论操作时跳过。
 - 可执行 Skill 收至 **12 个**（主路径 11 + 1 条件）。
 
+### 飞书机器人入口（2026-07-13）
+
+- 新增`research-workflow-feishu-bot`事件回调服务，支持URL校验、Verification Token校验、
+  `im.message.receive_v1`事件和`event_id`去重。
+- 新增“研究/状态/确认/修改/帮助”命令；按飞书`open_id`隔离工作流所有权。
+- 事件回调快速返回，线程池执行工作流，通过飞书消息API回传等待节点或终稿链接。
+- 继续复用FeishuDocumentRenderer；内部/涉密发布策略与来源质量门不因机器人入口而降级。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。
