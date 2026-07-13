@@ -15,6 +15,12 @@ class RequirementsAnalysisSkill(Skill):
         self.generator = generator
 
     def execute(self, request: SkillRequest) -> SkillResult:
+        from .capability_sweep import CapabilitySweepSkill
+
+        sweep = CapabilitySweepSkill().execute(request)
+        CapabilitySweepSkill().validate(sweep)
+        sweep_payload = json.loads(sweep.content)
+
         config = request.config
         sources = config.extra.get("sources", [])
         if self.generator:
@@ -26,7 +32,19 @@ class RequirementsAnalysisSkill(Skill):
             content = self.generator.generate(
                 system="你是研究需求分析师。", prompt=prompt, max_tokens=2400
             )
-            return SkillResult(content, "requirements_brief", {"prompt_version": "1.0"})
+            try:
+                payload = json.loads(content)
+            except json.JSONDecodeError:
+                payload = {"raw": content, "parse_error": True}
+            payload["capability_sweep"] = sweep_payload
+            return SkillResult(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                "requirements_brief",
+                {
+                    "prompt_version": "1.0",
+                    "pipeline_steps": ["capability_sweep", "requirements_analysis"],
+                },
+            )
 
         source_inventory = []
         for index, source in enumerate(sources):
@@ -67,12 +85,17 @@ class RequirementsAnalysisSkill(Skill):
             "workflow_profile": config.workflow_profile,
             "confidentiality_level": config.confidentiality_level,
             "missing_or_defaulted": missing,
+            "capability_sweep": sweep_payload,
             "feedback_applied": list(request.feedback),
         }
         return SkillResult(
             json.dumps(payload, ensure_ascii=False, indent=2),
             "requirements_brief",
-            {"source_count": len(source_inventory), "missing_dimension_count": len(missing)},
+            {
+                "source_count": len(source_inventory),
+                "missing_dimension_count": len(missing),
+                "pipeline_steps": ["capability_sweep", "requirements_analysis"],
+            },
         )
 
     def validate(self, result: SkillResult) -> None:

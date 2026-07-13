@@ -26,24 +26,48 @@ class ExperienceEvolutionSkill(Skill):
             "评分", "claim", "交叉验证", "证据等级",
             "论断验证", "原文片段", "数字核验", "证据对齐", "冲突仲裁",
         ),
-        "quant_finance_research": (
-            "量化", "金工", "因子", "回测", "交易成本", "样本外", "Sharpe"
+        "compose": (
+            "素材", "图表", "可视化", "写作", "引用", "内容优化", "压力测试",
         ),
-        "visualization": ("图表", "可视化", "流程图"),
         "writing_standards": (
             "写作规范", "写作标准", "模板", "触发词", "文体", "券商",
-            "蓝v", "公文格式", "公式排版",
+            "蓝v", "公文格式", "公式排版", "技能研究",
         ),
-        "writing": ("写作", "文风", "段落", "风险"),
-        "writing_finalize": ("引用", "参考文献", "脚注", "格式", "内容优化", "链接索引"),
         "formatting": ("飞书", "word", "pdf", "网页", "排版"),
-        "quality_gate": ("质量门", "复核", "校验", "红线"),
+        "quality_assurance": ("质量门", "复核", "校验", "红线", "量化", "回测"),
         "research_report_orchestrator": ("流程", "确认", "工作流", "节点"),
     }
 
+    @staticmethod
+    def applicable(request: SkillRequest) -> bool:
+        operations = json.loads(request.inputs.get("_user_operations", "[]"))
+        return any(
+            operation.get("operation")
+            in {"modify", "comment", "route_revision", "update_sources"}
+            for operation in operations
+        )
+
     def execute(self, request: SkillRequest) -> SkillResult:
+        if not self.applicable(request):
+            payload = {
+                "period": None,
+                "interaction_count": 0,
+                "lesson_count": 0,
+                "proposals": [],
+                "status": "not_applicable",
+                "reason": "无修改/评论/修订操作，跳过经验沉淀",
+                "feedback_applied": list(request.feedback),
+            }
+            return SkillResult(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                "experience_evolution",
+                {"applicable": False, "status": "not_applicable"},
+            )
         operations = json.loads(request.inputs["_user_operations"])
-        quality = json.loads(request.inputs["quality_gate"])
+        if "quality_gate" in request.inputs:
+            quality = json.loads(request.inputs["quality_gate"])
+        else:
+            quality = json.loads(request.inputs["quality_assurance"])["quality_gate"]
         lessons = []
         for operation in operations:
             if operation.get("operation") not in {

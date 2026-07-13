@@ -7,13 +7,16 @@ frontmatter `name`、Python `Skill.name`、DAG node id 四者一致。
 ## 计数口径
 
 - 主编排 Skill：1 个，不作为 DAG 功能节点执行；
-- 可执行 Skill：20 个，全部出现在 DAG；
-- 其中条件节点：1 个（`quant_finance_research`，非量化场景快速跳过）；
-- 主路径可见 Skill：19 个；
-- SKILL.md 总数：21 个。
+- 可执行 Skill：12 个，全部出现在 DAG；
+- 其中条件节点：1 个（`experience_evolution`，无反馈操作时跳过）；
+- 主路径常驻 Skill：11 个；
+- SKILL.md 总数：13 个。
 
-内部模块（不再单独出现在 DAG）：`source_snapshot`、`evidence_governance`、
-`claim_verification`、`citation_management`、`content_optimization`。
+内部模块（不再单独出现在 DAG）：`capability_sweep`、`skill_research`、
+`source_snapshot`、`evidence_governance`、`claim_verification`、
+`quant_finance_research`、`material_integration`、`visualization`、`writing`、
+`citation_management`、`content_optimization`、`writing_finalize`、`pressure_test`、
+`review`、`quality_gate`。
 
 ## 主编排 Skill
 
@@ -25,26 +28,18 @@ frontmatter `name`、Python `Skill.name`、DAG node id 四者一致。
 
 | # | Canonical name | DAG 顺序 | 路径 |
 |---:|---|---:|---|
-| 1 | `capability_sweep` | 1 | `skills/capability_sweep/SKILL.md` |
-| 2 | `requirements_analysis` | 2 | `skills/requirements_analysis/SKILL.md` |
-| 3 | `skill_research` | 3 | `skills/skill_research/SKILL.md` |
-| 4 | `writing_standards` | 4 | `skills/writing_standards/SKILL.md` |
-| 5 | `issue_tree` | 5 | `skills/issue_tree/SKILL.md` |
-| 6 | `outline` | 6 | `skills/outline/SKILL.md` |
-| 7 | `research` | 7 | `skills/research/SKILL.md` |
-| 8 | `evidence_pipeline` | 8 | `skills/evidence_pipeline/SKILL.md` |
-| 9 | `data_processing` | 9 | `skills/data_processing/SKILL.md` |
-| 10 | `quant_finance_research` | 10（条件） | `skills/quant_finance_research/SKILL.md` |
-| 11 | `material_integration` | 11 | `skills/material_integration/SKILL.md` |
-| 12 | `visualization` | 12 | `skills/visualization/SKILL.md` |
-| 13 | `writing` | 13 | `skills/writing/SKILL.md` |
-| 14 | `writing_finalize` | 14 | `skills/writing_finalize/SKILL.md` |
-| 15 | `pressure_test` | 15 | `skills/pressure_test/SKILL.md` |
-| 16 | `formatting` | 16 | `skills/formatting/SKILL.md` |
-| 17 | `review` | 17 | `skills/review/SKILL.md` |
-| 18 | `quality_gate` | 18 | `skills/quality_gate/SKILL.md` |
-| 19 | `publish` | 19 | `skills/publish/SKILL.md` |
-| 20 | `experience_evolution` | 20 | `skills/experience_evolution/SKILL.md` |
+| 1 | `requirements_analysis` | 1（内含 capability_sweep） | `skills/requirements_analysis/SKILL.md` |
+| 2 | `writing_standards` | 2（内含 skill_research） | `skills/writing_standards/SKILL.md` |
+| 3 | `issue_tree` | 3 | `skills/issue_tree/SKILL.md` |
+| 4 | `outline` | 4 | `skills/outline/SKILL.md` |
+| 5 | `research` | 5 | `skills/research/SKILL.md` |
+| 6 | `evidence_pipeline` | 6 | `skills/evidence_pipeline/SKILL.md` |
+| 7 | `data_processing` | 7（内含 claim_verification） | `skills/data_processing/SKILL.md` |
+| 8 | `compose` | 8 | `skills/compose/SKILL.md` |
+| 9 | `formatting` | 9 | `skills/formatting/SKILL.md` |
+| 10 | `quality_assurance` | 10 | `skills/quality_assurance/SKILL.md` |
+| 11 | `publish` | 11 | `skills/publish/SKILL.md` |
+| 12 | `experience_evolution` | 12（条件） | `skills/experience_evolution/SKILL.md` |
 
 四个确认节点不是 Skill，不计入上表：
 

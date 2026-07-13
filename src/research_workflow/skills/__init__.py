@@ -3,6 +3,7 @@
 from .capability_sweep import CapabilitySweepSkill
 from .citation_management import CitationManagementSkill
 from .claim_verification import ClaimVerificationSkill
+from .compose import ComposeSkill
 from .content_optimization import ContentOptimizationSkill
 from .data_processing import DataProcessingSkill
 from .evidence_governance import EvidenceGovernanceSkill
@@ -14,6 +15,7 @@ from .material_integration import MaterialIntegrationSkill
 from .outline import OutlineSkill
 from .pressure_test import PressureTestSkill
 from .publish import PublishSkill
+from .quality_assurance import QualityAssuranceSkill
 from .quality_gate import QualityGateSkill
 from .quant_finance_research import QuantFinanceResearchSkill
 from .research import ResearchSkill
@@ -30,6 +32,7 @@ __all__ = [
     "CapabilitySweepSkill",
     "CitationManagementSkill",
     "ClaimVerificationSkill",
+    "ComposeSkill",
     "ContentOptimizationSkill",
     "ResearchSkill",
     "RequirementsAnalysisSkill",
@@ -49,6 +52,7 @@ __all__ = [
     "PressureTestSkill",
     "FormattingSkill",
     "ReviewSkill",
+    "QualityAssuranceSkill",
     "QualityGateSkill",
     "QuantFinanceResearchSkill",
     "PublishSkill",

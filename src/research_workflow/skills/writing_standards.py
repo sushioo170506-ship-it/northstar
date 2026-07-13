@@ -18,6 +18,12 @@ class WritingStandardsSkill(Skill):
         self.store = store
 
     def execute(self, request: SkillRequest) -> SkillResult:
+        from .skill_research import SkillResearchSkill
+
+        skill_research = SkillResearchSkill().execute(request)
+        SkillResearchSkill().validate(skill_research)
+        skill_research_payload = json.loads(skill_research.content)
+
         config = request.config
         query = " ".join(
             (config.topic, config.output_type, config.style, config.audience)
@@ -43,6 +49,7 @@ class WritingStandardsSkill(Skill):
             "reference_selection": reference_selection,
             "security": security,
             "one_click_key": profile.id,
+            "skill_research": skill_research_payload,
             "feedback_applied": list(request.feedback),
         }
         return SkillResult(
@@ -54,6 +61,7 @@ class WritingStandardsSkill(Skill):
                 "scene": profile.scene,
                 "reference_status": reference_selection["status"],
                 "external_delivery_allowed": security["external_delivery_allowed"],
+                "pipeline_steps": ["skill_research", "writing_standards"],
             },
         )
 

@@ -46,11 +46,9 @@ html_file = orchestrator.export_final(workflow_id, "report.html")
 `run` 返回 `RunOutcome(workflow_id, status, waiting_at, final_artifact_id)`。确认节点依次为
 `issue_tree_confirmation`、`outline_confirmation`、`draft_confirmation`、
 `pre_review_confirmation`。允许修改的产物节点：
-`capability_sweep`、`requirements_analysis`、`skill_research`、`writing_standards`、`issue_tree`、`outline`、`research`、
-`evidence_pipeline`、`data_processing`、`quant_finance_research`、
-`material_integration`、`visualization`、`writing`、
-`writing_finalize`、`pressure_test`、`formatting`、`review`、`quality_gate`、`publish`、
-`experience_evolution`。
+`requirements_analysis`、`writing_standards`、`issue_tree`、`outline`、`research`、
+`evidence_pipeline`、`data_processing`、`compose`、`formatting`、`quality_assurance`、
+`publish`、`experience_evolution`。
 
 质量门缺少产业/学术/实景任一支柱、原始链接/claim/素材/图表不足、触发红线、需求不合规
 或总分低于 24/35 时，`run` 抛出

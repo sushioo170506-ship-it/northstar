@@ -36,8 +36,9 @@ ResearchReportOrchestrator
   |      -> issue_tree -> [主题与议题树确认]
   |      -> outline -> [大纲确认] -> research(场景化来源)
   |      -> evidence_pipeline -> data_processing
-  |      -> quant_finance_research(条件) -> material_integration
-  |      -> visualization -> writing -> writing_finalize
+  |      -> compose -> [确认初稿] -> formatting
+  |      -> [审核前确认] -> quality_assurance -> publish
+  |      -> experience_evolution(条件)
   |      -> pressure_test -> [初稿确认]
   |      -> formatting -> [终审前确认] -> review -> quality_gate -> publish
   |      -> experience_evolution

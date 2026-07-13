@@ -15,11 +15,22 @@ class PublishSkill(Skill):
         self.renderer = renderer
 
     def execute(self, request: SkillRequest) -> SkillResult:
-        report = request.inputs["review"]
-        quality = json.loads(request.inputs["quality_gate"])
-        visualizations = json.loads(request.inputs["visualization"])
-        capability = json.loads(request.inputs["capability_sweep"])
-        skill_research = json.loads(request.inputs["skill_research"])
+        from .input_adapters import capability_sweep_text, skill_research_text
+
+        if "review" in request.inputs:
+            report = request.inputs["review"]
+        else:
+            report = json.loads(request.inputs["quality_assurance"])["review"]
+        if "quality_gate" in request.inputs:
+            quality = json.loads(request.inputs["quality_gate"])
+        else:
+            quality = json.loads(request.inputs["quality_assurance"])["quality_gate"]
+        if "visualization" in request.inputs:
+            visualizations = json.loads(request.inputs["visualization"])
+        else:
+            visualizations = json.loads(request.inputs["compose"])["visualization"]
+        capability = json.loads(capability_sweep_text(request.inputs))
+        skill_research = json.loads(skill_research_text(request.inputs))
         writing_standard = json.loads(request.inputs["writing_standards"])
         if not quality.get("passed"):
             raise ValueError("质量门未通过，禁止发布")

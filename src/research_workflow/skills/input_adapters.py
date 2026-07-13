@@ -1,4 +1,4 @@
-"""Helpers for reading nested evidence / finalize pipeline inputs."""
+"""Helpers for reading nested evidence / compose / QA pipeline inputs."""
 
 from __future__ import annotations
 
@@ -35,10 +35,34 @@ def claim_verification_text(inputs: dict[str, str]) -> str:
 
 
 def finalized_draft_text(inputs: dict[str, str]) -> str:
+    if "writing_finalize" in inputs:
+        return inputs["writing_finalize"]
+    if "compose" in inputs:
+        payload = json.loads(inputs["compose"])
+        return str(payload.get("draft") or payload.get("writing_finalize") or "")
     return inputs.get(
-        "writing_finalize",
-        inputs.get(
-            "content_optimization",
-            inputs.get("citation_management", inputs.get("writing", "")),
-        ),
+        "content_optimization",
+        inputs.get("citation_management", inputs.get("writing", "")),
     )
+
+
+def capability_sweep_text(inputs: dict[str, str]) -> str:
+    if "capability_sweep" in inputs:
+        return inputs["capability_sweep"]
+    if "requirements_analysis" in inputs:
+        payload = json.loads(inputs["requirements_analysis"])
+        nested = payload.get("capability_sweep")
+        if isinstance(nested, dict):
+            return json.dumps(nested, ensure_ascii=False)
+    raise KeyError("capability_sweep")
+
+
+def skill_research_text(inputs: dict[str, str]) -> str:
+    if "skill_research" in inputs:
+        return inputs["skill_research"]
+    if "writing_standards" in inputs:
+        payload = json.loads(inputs["writing_standards"])
+        nested = payload.get("skill_research")
+        if isinstance(nested, dict):
+            return json.dumps(nested, ensure_ascii=False)
+    raise KeyError("skill_research")

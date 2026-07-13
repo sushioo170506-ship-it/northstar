@@ -18,25 +18,17 @@ from .models import (
 )
 from .profiles import WORKFLOW_PROFILES
 from .skills import (
-    CapabilitySweepSkill,
+    ComposeSkill,
     DataProcessingSkill,
     EvidencePipelineSkill,
     ExperienceEvolutionSkill,
     FormattingSkill,
     IssueTreeSkill,
-    MaterialIntegrationSkill,
     OutlineSkill,
-    PressureTestSkill,
     PublishSkill,
-    QualityGateSkill,
-    QuantFinanceResearchSkill,
+    QualityAssuranceSkill,
     ResearchSkill,
     RequirementsAnalysisSkill,
-    ReviewSkill,
-    SkillResearchSkill,
-    VisualizationSkill,
-    WritingFinalizeSkill,
-    WritingSkill,
     WritingStandardsSkill,
 )
 from .standards_store import SQLiteWritingStandardStore, WritingStandardProfile
@@ -55,27 +47,16 @@ class NodeSpec:
 
 
 NODES = (
-    NodeSpec("capability_sweep", (), "capability_sweep"),
-    NodeSpec(
-        "requirements_analysis",
-        ("capability_sweep",),
-        "requirements_analysis",
-    ),
-    NodeSpec(
-        "skill_research",
-        ("requirements_analysis",),
-        "skill_research",
-        ("requirements_analysis",),
-    ),
+    NodeSpec("requirements_analysis", (), "requirements_analysis"),
     NodeSpec(
         "writing_standards",
-        ("requirements_analysis", "skill_research"),
+        ("requirements_analysis",),
         "writing_standards",
         ("requirements_analysis",),
     ),
     NodeSpec(
         "issue_tree",
-        ("requirements_analysis", "skill_research", "writing_standards"),
+        ("requirements_analysis", "writing_standards"),
         "issue_tree",
         ("requirements_analysis",),
     ),
@@ -109,130 +90,61 @@ NODES = (
         ("evidence_pipeline", "issue_tree", "outline"),
     ),
     NodeSpec(
-        "quant_finance_research",
-        ("data_processing", "evidence_pipeline", "writing_standards", "outline"),
-        "quant_finance_research",
-        ("data_processing", "evidence_pipeline", "writing_standards", "outline"),
-        conditional=True,
-    ),
-    NodeSpec(
-        "material_integration",
-        (
-            "outline", "research", "evidence_pipeline", "data_processing",
-            "quant_finance_research",
-        ),
-        "material_integration",
-        ("outline", "research", "evidence_pipeline", "data_processing"),
-    ),
-    NodeSpec(
-        "visualization",
-        (
-            "issue_tree", "material_integration", "data_processing",
-            "quant_finance_research",
-        ),
-        "visualization",
-        (
-            "issue_tree", "material_integration", "data_processing",
-            "quant_finance_research",
-        ),
-    ),
-    NodeSpec(
-        "writing",
+        "compose",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_pipeline", "data_processing", "material_integration",
-            "visualization", "writing_standards", "quant_finance_research",
+            "evidence_pipeline", "data_processing", "writing_standards",
         ),
-        "writing",
+        "compose",
         (
             "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_pipeline", "data_processing", "material_integration",
-            "visualization", "writing_standards", "quant_finance_research",
-        ),
-    ),
-    NodeSpec(
-        "writing_finalize",
-        ("writing", "evidence_pipeline", "material_integration", "writing_standards"),
-        "writing_finalize",
-        ("writing", "evidence_pipeline", "material_integration", "writing_standards"),
-    ),
-    NodeSpec(
-        "pressure_test",
-        (
-            "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_pipeline", "data_processing", "material_integration",
-            "visualization", "writing", "writing_finalize",
-            "quant_finance_research",
-        ),
-        "pressure_test",
-        (
-            "requirements_analysis", "issue_tree", "outline", "research",
-            "evidence_pipeline", "data_processing", "material_integration",
-            "visualization", "writing_finalize", "quant_finance_research",
+            "evidence_pipeline", "data_processing", "writing_standards",
         ),
     ),
     NodeSpec(
         "draft_confirmation",
-        ("writing", "writing_finalize", "pressure_test"),
+        ("compose",),
         checkpoint=True,
     ),
     NodeSpec(
         "formatting",
-        ("writing_finalize", "writing_standards", "draft_confirmation"),
+        ("compose", "writing_standards", "draft_confirmation"),
         "formatting",
-        ("writing_finalize", "writing_standards"),
+        ("compose", "writing_standards"),
     ),
     NodeSpec("pre_review_confirmation", ("formatting",), checkpoint=True),
     NodeSpec(
-        "review",
+        "quality_assurance",
         (
             "requirements_analysis", "research", "evidence_pipeline", "outline",
-            "data_processing", "material_integration", "visualization",
-            "pressure_test", "writing_standards", "formatting",
-            "quant_finance_research", "pre_review_confirmation",
+            "data_processing", "compose", "writing_standards", "formatting",
+            "pre_review_confirmation",
         ),
-        "review",
+        "quality_assurance",
         (
             "requirements_analysis", "research", "evidence_pipeline", "outline",
-            "data_processing", "material_integration", "visualization",
-            "pressure_test", "writing_standards", "formatting",
-            "quant_finance_research",
-        ),
-    ),
-    NodeSpec(
-        "quality_gate",
-        (
-            "capability_sweep", "skill_research", "requirements_analysis", "outline",
-            "evidence_pipeline", "data_processing", "material_integration",
-            "visualization", "writing_finalize", "pressure_test",
-            "writing_standards", "review", "quant_finance_research",
-        ),
-        "quality_gate",
-        (
-            "capability_sweep", "skill_research", "requirements_analysis", "outline",
-            "evidence_pipeline", "data_processing", "material_integration",
-            "visualization", "writing_finalize", "pressure_test",
-            "writing_standards", "review", "quant_finance_research",
+            "data_processing", "compose", "writing_standards", "formatting",
         ),
         quality_gate=True,
     ),
     NodeSpec(
         "publish",
         (
-            "capability_sweep", "skill_research", "visualization", "review",
-            "writing_standards", "quality_gate",
+            "requirements_analysis", "writing_standards", "compose",
+            "quality_assurance",
         ),
         "publish",
         (
-            "capability_sweep", "skill_research", "visualization", "review",
-            "writing_standards", "quality_gate",
+            "requirements_analysis", "writing_standards", "compose",
+            "quality_assurance",
         ),
     ),
     NodeSpec(
         "experience_evolution",
-        ("skill_research", "quality_gate", "publish"),
+        ("writing_standards", "quality_assurance", "publish"),
         "experience_evolution",
-        ("skill_research", "quality_gate", "publish"),
+        ("writing_standards", "quality_assurance", "publish"),
+        conditional=True,
     ),
 )
 NODE_MAP = {node.id: node for node in NODES}
@@ -248,18 +160,18 @@ def default_registry(
         writing_standard_store = SQLiteWritingStandardStore(":memory:")
     registry = SkillRegistry()
     for skill in (
-        CapabilitySweepSkill(), RequirementsAnalysisSkill(), SkillResearchSkill(),
+        RequirementsAnalysisSkill(),
         WritingStandardsSkill(writing_standard_store),
         IssueTreeSkill(),
-        OutlineSkill(), ResearchSkill(retriever=source_retriever),
+        OutlineSkill(),
+        ResearchSkill(retriever=source_retriever),
         EvidencePipelineSkill(),
         DataProcessingSkill(),
-        QuantFinanceResearchSkill(),
-        MaterialIntegrationSkill(), VisualizationSkill(),
-        WritingSkill(), WritingFinalizeSkill(),
-        PressureTestSkill(),
-        FormattingSkill(), ReviewSkill(), QualityGateSkill(),
-        PublishSkill(renderer=document_renderer), ExperienceEvolutionSkill(),
+        ComposeSkill(),
+        FormattingSkill(),
+        QualityAssuranceSkill(),
+        PublishSkill(renderer=document_renderer),
+        ExperienceEvolutionSkill(),
     ):
         registry.register(skill)
     return registry
@@ -495,6 +407,16 @@ class ResearchReportOrchestrator:
     def _expand_pipeline_inputs(inputs: dict[str, str]) -> dict[str, str]:
         """Expose nested pipeline payloads under legacy input keys for skills."""
         expanded = dict(inputs)
+        if "requirements_analysis" in expanded:
+            requirements = json.loads(expanded["requirements_analysis"])
+            nested = requirements.get("capability_sweep")
+            if "capability_sweep" not in expanded and isinstance(nested, dict):
+                expanded["capability_sweep"] = json.dumps(nested, ensure_ascii=False)
+        if "writing_standards" in expanded:
+            standards = json.loads(expanded["writing_standards"])
+            nested = standards.get("skill_research")
+            if "skill_research" not in expanded and isinstance(nested, dict):
+                expanded["skill_research"] = json.dumps(nested, ensure_ascii=False)
         if "evidence_pipeline" in expanded:
             pipeline = json.loads(expanded["evidence_pipeline"])
             if "source_snapshot" not in expanded and "source_snapshot" in pipeline:
@@ -513,6 +435,49 @@ class ResearchReportOrchestrator:
             nested = processed.get("claim_verification")
             if "claim_verification" not in expanded and isinstance(nested, dict):
                 expanded["claim_verification"] = json.dumps(nested, ensure_ascii=False)
+        if "compose" in expanded:
+            composed = json.loads(expanded["compose"])
+            draft = str(composed.get("draft") or composed.get("writing_finalize") or "")
+            expanded.setdefault("writing_finalize", draft)
+            expanded.setdefault("content_optimization", draft)
+            expanded.setdefault("citation_management", draft)
+            expanded.setdefault(
+                "writing", str(composed.get("writing") or draft)
+            )
+            if "material_integration" not in expanded and isinstance(
+                composed.get("material_integration"), dict
+            ):
+                expanded["material_integration"] = json.dumps(
+                    composed["material_integration"], ensure_ascii=False
+                )
+            if "visualization" not in expanded and isinstance(
+                composed.get("visualization"), dict
+            ):
+                expanded["visualization"] = json.dumps(
+                    composed["visualization"], ensure_ascii=False
+                )
+            if "pressure_test" not in expanded and isinstance(
+                composed.get("pressure_test"), dict
+            ):
+                expanded["pressure_test"] = json.dumps(
+                    composed["pressure_test"], ensure_ascii=False
+                )
+        if "quality_assurance" in expanded:
+            assurance = json.loads(expanded["quality_assurance"])
+            if "review" not in expanded and "review" in assurance:
+                expanded["review"] = str(assurance["review"])
+            if "quality_gate" not in expanded and isinstance(
+                assurance.get("quality_gate"), dict
+            ):
+                expanded["quality_gate"] = json.dumps(
+                    assurance["quality_gate"], ensure_ascii=False
+                )
+            if "quant_finance_research" not in expanded and isinstance(
+                assurance.get("quant_finance_research"), dict
+            ):
+                expanded["quant_finance_research"] = json.dumps(
+                    assurance["quant_finance_research"], ensure_ascii=False
+                )
         if "writing_finalize" in expanded:
             expanded.setdefault("content_optimization", expanded["writing_finalize"])
             expanded.setdefault("citation_management", expanded["writing_finalize"])
@@ -597,7 +562,8 @@ class ResearchReportOrchestrator:
                 (
                     ("目标受众", 3), ("内容边界", 3), ("前置思考", 3),
                     ("产出形态", 3), ("主题", 1), ("需求", 1),
-                    ("audience", 3), ("scope", 2),
+                    ("audience", 3), ("scope", 2), ("能力目录", 4),
+                    ("capability", 4),
                 ),
             ),
             (
@@ -608,18 +574,13 @@ class ResearchReportOrchestrator:
                 ),
             ),
             (
-                "skill_research",
-                (
-                    ("检索技能", 4), ("技能仓库", 4), ("github skill", 4),
-                    ("openclaw", 4), ("第三方技能", 4), ("技能改造", 4),
-                ),
-            ),
-            (
                 "writing_standards",
                 (
                     ("写作规范", 5), ("写作标准", 5), ("模板", 3),
                     ("触发词", 4), ("券商模板", 4), ("arxiv格式", 4),
-                    ("蓝v", 4), ("公文规范", 4),
+                    ("蓝v", 4), ("公文规范", 4), ("检索技能", 4),
+                    ("技能仓库", 4), ("github skill", 4), ("openclaw", 4),
+                    ("第三方技能", 4), ("技能改造", 4),
                 ),
             ),
             (
@@ -652,57 +613,35 @@ class ResearchReportOrchestrator:
                 ),
             ),
             (
-                "quant_finance_research",
+                "compose",
                 (
-                    ("量化", 4), ("金工", 4), ("因子", 4), ("回测", 5),
-                    ("交易成本", 5), ("样本外", 5), ("sharpe", 4),
-                ),
-            ),
-            (
-                "material_integration",
-                (("素材挂载", 4), ("素材整合", 4), ("章节素材", 3)),
-            ),
-            (
-                "visualization",
-                (
+                    ("素材挂载", 4), ("素材整合", 4), ("章节素材", 3),
                     ("图表", 3), ("可视化", 3), ("流程图", 4),
                     ("架构图", 4), ("chart", 3), ("diagram", 3),
+                    ("篇幅", 3), ("文风", 3), ("措辞", 2), ("论证", 2),
+                    ("内容", 1), ("语气", 2), ("style", 3),
+                    ("参考文献", 4), ("表格说明", 5), ("编号", 4),
+                    ("链接索引", 5), ("内容优化", 4), ("成文定稿", 5),
+                    ("压力测试", 4), ("反方论证", 3), ("完整性审计", 3),
+                    ("写作", 2),
                 ),
-            ),
-            (
-                "writing_finalize",
-                (
-                    ("引用", 4), ("参考文献", 4), ("流程图", 5),
-                    ("表格说明", 5), ("编号", 4), ("链接索引", 5),
-                    ("内容优化", 4), ("成文定稿", 5),
-                ),
-            ),
-            (
-                "pressure_test",
-                (("压力测试", 4), ("反方论证", 3), ("完整性审计", 3)),
             ),
             (
                 "formatting",
                 (("格式", 3), ("排版", 3), ("html", 3), ("json", 3), ("markdown", 3)),
             ),
             (
-                "review",
-                (("复核", 3), ("审核", 2), ("真实性校验", 4), ("合规校验", 4)),
-            ),
-            (
-                "quality_gate",
-                (("质量门", 4), ("发布阻断", 4), ("质量分", 3)),
+                "quality_assurance",
+                (
+                    ("质量门", 4), ("发布阻断", 4), ("质量分", 3),
+                    ("复核", 3), ("审核", 2), ("真实性校验", 4), ("合规校验", 4),
+                    ("量化", 4), ("金工", 4), ("因子", 4), ("回测", 5),
+                    ("交易成本", 5), ("样本外", 5), ("sharpe", 4),
+                ),
             ),
             (
                 "publish",
                 (("png导出", 4), ("svg导出", 4), ("报告发布", 4), ("发布包", 3)),
-            ),
-            (
-                "writing",
-                (
-                    ("篇幅", 3), ("文风", 3), ("措辞", 2), ("论证", 2),
-                    ("内容", 1), ("语气", 2), ("style", 3),
-                ),
             ),
         )
         scores = {
@@ -711,7 +650,7 @@ class ResearchReportOrchestrator:
             )
             for candidate, weighted_keywords in routes
         }
-        target = max(scores, key=scores.get) if max(scores.values(), default=0) else "writing"
+        target = max(scores, key=scores.get) if max(scores.values(), default=0) else "compose"
         self.state.record_operation(
             workflow_id,
             "route_revision",

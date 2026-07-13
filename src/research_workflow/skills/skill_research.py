@@ -29,12 +29,17 @@ class SkillResearchSkill(Skill):
 
     def execute(self, request: SkillRequest) -> SkillResult:
         requirements = json.loads(request.inputs["requirements_analysis"])
+        topic = str(requirements.get("topic") or request.config.topic)
+        output_type = str(
+            (requirements.get("deliverable") or {}).get("type")
+            or request.config.output_type
+        )
         candidates = self._curated_candidates()
         candidates.extend(self._configured_candidates(request))
         live_errors = []
         if request.config.extra.get("live_skill_research", False):
             try:
-                candidates.extend(self._github_search(requirements["topic"]))
+                candidates.extend(self._github_search(topic))
             except Exception as exc:
                 live_errors.append({"channel": "github", "error": str(exc)})
         deduplicated = {
@@ -77,7 +82,7 @@ class SkillResearchSkill(Skill):
             candidate = {
                 **candidate,
                 "minimum_stars": minimum_stars,
-                "match_score": self._match_score(candidate, requirements),
+                "match_score": self._match_score(candidate, topic, output_type),
                 "decision": decision,
                 "decision_reason": reason,
             }
@@ -94,8 +99,8 @@ class SkillResearchSkill(Skill):
         reference_table = self._reference_table(ranked)
         payload = {
             "query": {
-                "topic": requirements["topic"],
-                "output_type": requirements["deliverable"]["type"],
+                "topic": topic,
+                "output_type": output_type,
                 "channels": ["github", "openclaw_hub", "configured_repository"],
                 "live_github_search": request.config.extra.get(
                     "live_skill_research", False
@@ -260,7 +265,7 @@ class SkillResearchSkill(Skill):
         return "review_required", "许可证不在自动允许列表，需法律审查"
 
     @staticmethod
-    def _match_score(candidate: dict[str, Any], requirements: dict) -> float:
+    def _match_score(candidate: dict[str, Any], topic: str, output_type: str) -> float:
         haystack = " ".join(
             str(candidate.get(key, "")).lower()
             for key in ("name", "description", "capability")
@@ -268,8 +273,8 @@ class SkillResearchSkill(Skill):
         terms = re.findall(
             r"[a-z0-9_-]+|[\u3400-\u9fff]{2,}",
             (
-                requirements["topic"] + " "
-                + requirements["deliverable"]["type"]
+                topic + " "
+                + output_type
                 + " research academic data chart report"
             ).lower(),
         )

@@ -267,7 +267,7 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(set(default_registry().names), set(BUILTIN_SKILL_ORDER))
         self.assertEqual(orchestrator_names, {"research_report_orchestrator"})
-        self.assertEqual(len(names) + len(orchestrator_names), 21)
+        self.assertEqual(len(names) + len(orchestrator_names), 13)
         architecture = (
             Path(__file__).parents[1] / "docs" / "ARCHITECTURE.md"
         ).read_text(encoding="utf-8")
@@ -1191,15 +1191,14 @@ class WorkflowTests(unittest.TestCase):
         child.confirm(workflow_id, "pre_review_confirmation")
         with self.assertRaises(QualityGateRejected):
             child.run(workflow_id)
-        quant = json.loads(
+        assurance = json.loads(
             child.state.node_artifact(
-                workflow_id, "quant_finance_research"
+                workflow_id, "quality_assurance"
             )["content"]
         )
+        quant = assurance["quant_finance_research"]
         self.assertEqual(quant["status"], "incomplete")
-        gate = json.loads(
-            child.state.node_artifact(workflow_id, "quality_gate")["content"]
-        )
+        gate = assurance["quality_gate"]
         self.assertFalse(
             gate["requirements_checks"]["quant_finance_compliant"]
         )
@@ -1260,8 +1259,8 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaises(QualityGateRejected):
             self.workflow.run(workflow_id)
         gate = json.loads(
-            self.workflow.state.node_artifact(workflow_id, "quality_gate")["content"]
-        )
+            self.workflow.state.node_artifact(workflow_id, "quality_assurance")["content"]
+        )["quality_gate"]
         self.assertEqual(
             gate["requirements_checks"]["missing_source_categories"],
             ["academic"],
@@ -1300,8 +1299,8 @@ class WorkflowTests(unittest.TestCase):
         skipped = quick.state.operations(quick_id, "auto_skip_checkpoint")
         self.assertEqual(len(skipped), 3)
         gate = json.loads(
-            quick.state.node_artifact(quick_id, "quality_gate")["content"]
-        )
+            quick.state.node_artifact(quick_id, "quality_assurance")["content"]
+        )["quality_gate"]
         self.assertEqual(gate["pass_score"], 22.0)
 
         standard = ResearchReportOrchestrator(self.root / "profile-standard")
@@ -1328,8 +1327,8 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaises(QualityGateRejected):
             self.workflow.run(workflow_id)
         gate = json.loads(
-            self.workflow.state.node_artifact(workflow_id, "quality_gate")["content"]
-        )
+            self.workflow.state.node_artifact(workflow_id, "quality_assurance")["content"]
+        )["quality_gate"]
         self.assertEqual(
             gate["requirements_checks"]["boundary_violations"], ["本节围绕"]
         )
@@ -1346,8 +1345,8 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaises(QualityGateRejected):
             self.workflow.run(workflow_id)
         gate = json.loads(
-            self.workflow.state.node_artifact(workflow_id, "quality_gate")["content"]
-        )
+            self.workflow.state.node_artifact(workflow_id, "quality_assurance")["content"]
+        )["quality_gate"]
         self.assertEqual(
             gate["requirements_checks"]["material_mount_coverage"], 0.0
         )
@@ -1380,7 +1379,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('id="ref-S-OFFICIAL"', final_report)
         self.assertEqual(reloaded.state.node(workflow_id, "research")["attempts"], 1)
         self.assertEqual(
-            reloaded.state.node(workflow_id, "quality_gate")["status"], NodeStatus.COMPLETED
+            reloaded.state.node(workflow_id, "quality_assurance")["status"], NodeStatus.COMPLETED
         )
         for skill_name in BUILTIN_SKILL_ORDER:
             self.assertEqual(
@@ -1389,16 +1388,16 @@ class WorkflowTests(unittest.TestCase):
                 skill_name,
             )
         capability = json.loads(
-            reloaded.state.node_artifact(workflow_id, "capability_sweep")["content"]
-        )
+            reloaded.state.node_artifact(workflow_id, "requirements_analysis")["content"]
+        )["capability_sweep"]
         self.assertEqual(
             capability["metrics"]["external_traversed_count"], len(DEFAULT_INTEGRATIONS)
         )
         self.assertTrue(
             all(item["reason"] for item in capability["external_integrations"])
         )
-        gate = reloaded.state.node_artifact(workflow_id, "quality_gate")
-        self.assertTrue(json.loads(gate["content"])["passed"])
+        gate = reloaded.state.node_artifact(workflow_id, "quality_assurance")
+        self.assertTrue(json.loads(gate["content"])["quality_gate"]["passed"])
         published = reloaded.state.node_artifact(workflow_id, "publish")
         self.assertEqual(published["artifact_type"], "published_report")
         ledger = json.loads(
@@ -1424,15 +1423,21 @@ class WorkflowTests(unittest.TestCase):
             reloaded.state.node_artifact(workflow_id, "requirements_analysis")["content"]
         )
         self.assertEqual(brief["audience"], "企业管理层")
-        materials = reloaded.state.node_artifact(workflow_id, "material_integration")
-        self.assertEqual(json.loads(materials["content"])["metrics"]["mount_coverage"], 1.0)
+        materials = reloaded.state.node_artifact(workflow_id, "compose")
+        self.assertEqual(
+            json.loads(materials["content"])["material_integration"]["metrics"]["mount_coverage"],
+            1.0,
+        )
         processed = json.loads(
             reloaded.state.node_artifact(workflow_id, "data_processing")["content"]
         )
         self.assertEqual(processed["triangulation"]["claim_count"], 3)
         self.assertEqual(processed["scoring"]["status"], "not_applicable")
-        visuals = reloaded.state.node_artifact(workflow_id, "visualization")
-        self.assertGreaterEqual(json.loads(visuals["content"])["metrics"]["asset_count"], 6)
+        visuals = reloaded.state.node_artifact(workflow_id, "compose")
+        self.assertGreaterEqual(
+            json.loads(visuals["content"])["visualization"]["metrics"]["asset_count"],
+            6,
+        )
 
     def test_modification_only_reruns_descendants(self) -> None:
         workflow_id = self.create()
@@ -1440,15 +1445,15 @@ class WorkflowTests(unittest.TestCase):
         old_research = self.workflow.state.node_artifact(workflow_id, "research")["id"]
         old_outline = self.workflow.state.node_artifact(workflow_id, "outline")["id"]
 
-        affected = self.workflow.modify(workflow_id, "writing", "加强风险讨论")
+        affected = self.workflow.modify(workflow_id, "compose", "加强风险讨论")
         self.assertNotIn("research", affected)
         self.assertNotIn("outline", affected)
-        self.assertIn("pressure_test", affected)
-        self.assertIn("review", affected)
-        self.assertIn("quality_gate", affected)
+        self.assertIn("compose", affected)
+        self.assertIn("formatting", affected)
+        self.assertIn("quality_assurance", affected)
         self.assertIn("publish", affected)
         self.assertEqual(
-            self.workflow.state.node(workflow_id, "writing")["status"],
+            self.workflow.state.node(workflow_id, "compose")["status"],
             NodeStatus.INVALIDATED,
         )
         self.assertEqual(
@@ -1466,15 +1471,15 @@ class WorkflowTests(unittest.TestCase):
         self.workflow.confirm(workflow_id, "pre_review_confirmation")
         self.assertEqual(self.workflow.run(workflow_id).status, WorkflowStatus.COMPLETED)
         self.assertEqual(self.workflow.state.node(workflow_id, "research")["attempts"], 1)
-        self.assertEqual(self.workflow.state.node(workflow_id, "writing")["attempts"], 2)
+        self.assertEqual(self.workflow.state.node(workflow_id, "compose")["attempts"], 2)
         active = self.workflow.context.query(
-            workflow_id, "风险讨论", node_ids={"writing"}, limit=100
+            workflow_id, "风险讨论", node_ids={"compose"}, limit=100
         )
         active_artifact_ids = {item.metadata["artifact_id"] for item in active}
         self.assertEqual(len(active_artifact_ids), 1)
         self.assertEqual(
             active_artifact_ids,
-            {self.workflow.state.node_artifact(workflow_id, "writing")["id"]},
+            {self.workflow.state.node_artifact(workflow_id, "compose")["id"]},
         )
 
     def test_formats_are_valid(self) -> None:
@@ -1657,7 +1662,15 @@ class WorkflowTests(unittest.TestCase):
                     },
                 }
             ),
-            inputs={"requirements_analysis": "{}"},
+            inputs={
+                "requirements_analysis": json.dumps(
+                    {
+                        "topic": "半导体行业投研",
+                        "deliverable": {"type": "行业研究报告"},
+                    },
+                    ensure_ascii=False,
+                )
+            },
         )
         result = WritingStandardsSkill(store).execute(request)
         payload = json.loads(result.content)
@@ -1738,10 +1751,10 @@ class WorkflowTests(unittest.TestCase):
         target, affected = self.workflow.request_revision(
             workflow_id, "请调整图表和架构图的表达"
         )
-        self.assertEqual(target, "visualization")
-        self.assertIn("writing", affected)
-        self.assertIn("quality_gate", affected)
-        self.assertNotIn("material_integration", affected)
+        self.assertEqual(target, "compose")
+        self.assertIn("compose", affected)
+        self.assertIn("quality_assurance", affected)
+        self.assertNotIn("research", affected)
         snapshot = self.workflow.state.snapshot(workflow_id)
         operations = [row["operation"] for row in snapshot["operations"]]
         self.assertIn("route_revision", operations)
@@ -1771,14 +1784,12 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertGreater(len(artifact["content"]), 100_000)
         self.assertGreater(artifact["chunk_count"], 6)
-        cited = self.workflow.state.node_artifact(
-            workflow_id, "writing_finalize"
-        )
-        writing = self.workflow.state.node_artifact(workflow_id, "writing")
+        composed = self.workflow.state.node_artifact(workflow_id, "compose")
+        draft = json.loads(composed["content"])["draft"]
         self.assertNotIn(
-            "第1项分析从适用范围、证据强度", writing["content"]
+            "第1项分析从适用范围、证据强度", draft
         )
-        self.assertTrue(cited["content"])
+        self.assertTrue(draft)
         matches = self.workflow.context.query(
             workflow_id, "可核验证据 样本量", node_ids={"evidence_pipeline"}, limit=5
         )
@@ -1810,18 +1821,17 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(
             self.workflow.state.workflow_status(workflow_id), WorkflowStatus.FAILED
         )
-        gate_node = self.workflow.state.node(workflow_id, "quality_gate")
+        gate_node = self.workflow.state.node(workflow_id, "quality_assurance")
         self.assertEqual(gate_node["status"], NodeStatus.FAILED)
         self.assertIsNone(self.workflow.state.node(workflow_id, "publish"))
         gate = self.workflow.state.artifact(gate_node["output_artifact_id"])
-        decision = json.loads(gate["content"])
+        decision = json.loads(gate["content"])["quality_gate"]
         self.assertFalse(decision["passed"])
         self.assertEqual(decision["decision"], "block_release")
         self.assertTrue(decision["red_lines"])
         with self.assertRaises(ValueError):
             self.workflow.final_report(workflow_id)
-        with self.assertRaises(PermissionError):
-            self.workflow.state.node_artifact(workflow_id, "review")
+        self.assertIsNone(self.workflow.state.node(workflow_id, "publish"))
         with self.assertRaises(QualityGateRejected):
             self.workflow.run(workflow_id)
         with self.assertRaises(ValueError):
@@ -1831,12 +1841,12 @@ class WorkflowTests(unittest.TestCase):
             compliant_sources("REPLACEMENT"),
             "移除编造来源并替换为官方材料",
         )
-        self.assertIn("quality_gate", affected)
+        self.assertIn("quality_assurance", affected)
         recovered = complete(self.workflow, workflow_id)
         self.assertEqual(recovered.status, WorkflowStatus.COMPLETED)
         recovered_gate = json.loads(
-            self.workflow.state.node_artifact(workflow_id, "quality_gate")["content"]
-        )
+            self.workflow.state.node_artifact(workflow_id, "quality_assurance")["content"]
+        )["quality_gate"]
         self.assertTrue(recovered_gate["passed"])
 
     def test_no_sources_are_disclosed_and_block_release(self) -> None:
@@ -1854,11 +1864,11 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaises(QualityGateRejected):
             self.workflow.run(workflow_id)
         pressure = json.loads(
-            self.workflow.state.node_artifact(workflow_id, "pressure_test")["content"]
-        )
+            self.workflow.state.node_artifact(workflow_id, "compose")["content"]
+        )["pressure_test"]
         self.assertTrue(pressure["evidence_audit"]["gaps"])
-        gate = self.workflow.state.node_artifact(workflow_id, "quality_gate")
-        self.assertFalse(json.loads(gate["content"])["passed"])
+        gate = self.workflow.state.node_artifact(workflow_id, "quality_assurance")
+        self.assertFalse(json.loads(gate["content"])["quality_gate"]["passed"])
 
     def test_generator_cannot_bypass_missing_source_gate(self) -> None:
         generated = json.dumps(

@@ -221,6 +221,14 @@
 - `quant_finance_research`标记为条件节点；非量化场景记录`conditional_skip`并快速返回。
 - 可执行 Skill 从 23 个收至 20 个（主路径 19 + 1 条件）；编排器对管道产物做兼容输入展开。
 
+### Skill 主路径二次瘦身（2026-07-13）
+
+- `requirements_analysis` 内嵌 `capability_sweep`；`writing_standards` 内嵌 `skill_research`。
+- 新增 `compose`：素材、可视化、写作、定稿、压力测试五步合一。
+- 新增 `quality_assurance`：量化校验、审核、质量门三步合一，作为唯一发布阻断节点。
+- `experience_evolution` 改为条件节点，无修改/评论操作时跳过。
+- 可执行 Skill 收至 **12 个**（主路径 11 + 1 条件）。
+
 ## 存储实现
 
 - `state.db`：关系事务状态及 16384 字符无损产物分片。

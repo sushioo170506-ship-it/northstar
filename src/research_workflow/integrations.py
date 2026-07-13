@@ -139,24 +139,16 @@ DEFAULT_INTEGRATIONS = (
 
 
 BUILTIN_SKILL_ORDER = (
-    "capability_sweep",
     "requirements_analysis",
-    "skill_research",
     "writing_standards",
     "issue_tree",
     "outline",
     "research",
     "evidence_pipeline",
     "data_processing",
-    "quant_finance_research",
-    "material_integration",
-    "visualization",
-    "writing",
-    "writing_finalize",
-    "pressure_test",
+    "compose",
     "formatting",
-    "review",
-    "quality_gate",
+    "quality_assurance",
     "publish",
     "experience_evolution",
 )
