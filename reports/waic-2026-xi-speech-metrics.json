@@ -1,0 +1,121 @@
+{
+  "window": "2026-07-13 to 2026-07-23",
+  "method": {
+    "mention": "speech keywords + key points",
+    "engagement": "likes + comments/replies + shares/reposts",
+    "views": "YouTube view_count (browse volume)",
+    "sentiment": "post content + likes attributed by post valence (neutral->positive) + comment text rules; retweets follow like attribution",
+    "reddit_likes": "unavailable via API in this environment; Reddit engagement currently comment-based",
+    "youtube_likes": "unavailable via flat search / bot wall"
+  },
+  "reddit": {
+    "mentions": 61,
+    "views": 0,
+    "engagement": 669,
+    "likes": 0,
+    "comments_or_replies": 669,
+    "shares_or_reposts": 0,
+    "post_sentiment_counts": {
+      "neutral": 44,
+      "positive": 17
+    },
+    "sentiment_units": {
+      "positive": 160,
+      "negative": 24,
+      "neutral": 527
+    },
+    "sentiment_pct": {
+      "positive": 22.5,
+      "neutral": 74.1,
+      "negative": 3.4
+    }
+  },
+  "x": {
+    "mentions": 59,
+    "views": 0,
+    "engagement": 3636,
+    "likes": 2822,
+    "comments_or_replies": 172,
+    "shares_or_reposts": 642,
+    "post_sentiment_counts": {
+      "positive": 46,
+      "neutral": 9,
+      "negative": 4
+    },
+    "sentiment_units": {
+      "positive": 3167,
+      "negative": 347,
+      "neutral": 9
+    },
+    "sentiment_pct": {
+      "positive": 89.9,
+      "neutral": 0.3,
+      "negative": 9.8
+    }
+  },
+  "youtube": {
+    "mentions": 71,
+    "views": 414826,
+    "engagement": 0,
+    "likes": 0,
+    "comments_or_replies": 0,
+    "shares_or_reposts": 0,
+    "post_sentiment_counts": {
+      "neutral": 60,
+      "negative": 3,
+      "positive": 8
+    },
+    "sentiment_units": {
+      "positive": 8,
+      "negative": 3,
+      "neutral": 60
+    },
+    "sentiment_pct": {
+      "positive": 11.3,
+      "neutral": 84.5,
+      "negative": 4.2
+    }
+  },
+  "instagram": {
+    "mentions": 7,
+    "views": 0,
+    "engagement": 12421,
+    "likes": 12356,
+    "comments_or_replies": 65,
+    "shares_or_reposts": 0,
+    "post_sentiment_counts": {
+      "neutral": 5,
+      "positive": 2
+    },
+    "sentiment_units": {
+      "positive": 12358,
+      "negative": 0,
+      "neutral": 5
+    },
+    "sentiment_pct": {
+      "positive": 100.0,
+      "neutral": 0.0,
+      "negative": 0.0
+    }
+  },
+  "TOTAL": {
+    "mentions": 198,
+    "views": 414826,
+    "engagement": 16726,
+    "post_sentiment_counts": {
+      "neutral": 118,
+      "positive": 73,
+      "negative": 7
+    },
+    "sentiment_units": {
+      "positive": 15693,
+      "negative": 374,
+      "neutral": 601
+    },
+    "sentiment_pct": {
+      "positive": 94.2,
+      "neutral": 3.6,
+      "negative": 2.2
+    }
+  }
+}
